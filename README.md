@@ -33,9 +33,16 @@ online-learning-platform/
 │   ├── routes/                # API endpoints
 │   ├── scripts/               # Database seeding
 │   ├── utils/                 # Development tools
-│   └── README.md              # 👈 Backend deployment guide
+│   └── README.md              # Backend deployment guide
+├── frontend/                   # Y2K Style Web Interface
+│   ├── css/                   # Retro styling
+│   ├── js/                    # Authentication logic
+│   ├── index.html             # Login page
+│   ├── register.html          # Registration page
+│   ├── dashboard.html         # Dashboard
+│   └── README.md              # Frontend usage guide
 ├── ENVIRONMENT_SETUP.md       # Environment configuration
-└── README.md                  # 👈 This file
+└── README.md                  # This file
 ```
 
 ## Quick Start
@@ -50,45 +57,40 @@ cd online-learning-platform
 
 ### Option 2: Manual Setup
 
-1. **Clone and navigate**:
+1. **Backend Setup**:
 
    ```bash
-   git clone <repository-url>
-   cd online-learning-platform/backend
+   cd backend
+   npm install
+   # Configure MongoDB connection in .env
+   npm run dev
    ```
 
-2. **Follow backend setup**:
-   📖 See [`backend/README.md`](backend/README.md) for detailed deployment instructions
+2. **Access Application**:
 
-3. **For environment configuration**:
-   📖 See [`ENVIRONMENT_SETUP.md`](ENVIRONMENT_SETUP.md) for advanced configuration
+   - Backend API: `http://localhost:3761/api`
+   - Frontend Interface: `http://localhost:3761`
 
-## Database Collections
+3. **Create Account**: Register → Login → Dashboard
 
-The platform uses 5 MongoDB collections:
+## Application Components
 
-- **Users** - Students, instructors, admins with profile data
-- **Courses** - Course information with instructor relationships
-- **Enrollments** - Student-course relationships with progress tracking
-- **Lessons** - Course content (video, text, quiz, assignment types)
-- **Exams** - Assessments with various question types
+### Backend API
 
-## User Roles & Permissions
+- **Collections**: Users, Courses, Enrollments, Lessons, Exams
+- **Authentication**: JWT with role-based access (Student/Instructor/Admin)
+- **Features**: CRUD operations, search, pagination, validation
 
-- **Student**: Enroll in courses, track progress, submit exams
-- **Instructor**: Create/manage courses, lessons, and exams
-- **Admin**: Full system access and user management
+### Frontend Interface
 
-## API Overview
+- **Pages**: Login, Registration, Dashboard
+- **Features**: Token-based auth, responsive layout, nostalgic UI
 
-The REST API provides endpoints for:
+## User Roles
 
-- **Authentication**: Register, login, profile management
-- **Courses**: CRUD operations with search and filtering
-- **Enrollments**: Student course management
-- **Lessons**: Course content management
-- **Exams**: Assessment creation and submission
-- **Users**: User management (admin)
+- **Student**: Enroll in courses, track progress
+- **Instructor**: Create/manage courses and lessons
+- **Admin**: Full system access
 
 ## Getting Started
 
@@ -100,52 +102,51 @@ The REST API provides endpoints for:
 ## Sample API Usage
 
 ```bash
-# Get all courses
-curl http://localhost:3761/api/courses
-
 # Register user
 curl -X POST http://localhost:3761/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"firstName":"Test","lastName":"User","email":"test@example.com","password":"password123","role":"student"}'
 
-# Login and get token
+# Login
 curl -X POST http://localhost:3761/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}'
+
+# Get courses
+curl http://localhost:3761/api/courses
 ```
 
 ## MongoDB Features Demonstrated
 
-- **Document-oriented design** with nested JSON structures
-- **Collection relationships** using ObjectIds and references
-- **Indexing strategies** for performance optimization
-- **Schema validation** with Mongoose
-- **Aggregation pipelines** for statistics and analytics
-- **Full-text search** capabilities
+- Document-oriented design with nested JSON structures
+- Collection relationships using ObjectIds and references
+- Indexing strategies for performance optimization
+- Schema validation with Mongoose
+- Aggregation pipelines for analytics
+- Full-text search capabilities
 
 ## Development Status
 
 - ✅ MongoDB schema design and data population
 - ✅ RESTful API with CRUD operations
 - ✅ JWT authentication and authorization
-- ✅ Role-based access control
-- ✅ Comprehensive sample data
-- 🚧 Frontend interface (future enhancement)
+- ✅ Y2K style frontend interface
+- ✅ User registration and login flow
+- 🚧 Course management interface (coming soon)
 - 🚧 ACID transactions (future enhancement)
 
 ## Technical Stack
 
-- **Backend**: Node.js, Express.js
-- **Database**: MongoDB (local or Atlas cloud)
+- **Backend**: Node.js, Express.js, MongoDB
+- **Frontend**: HTML, CSS, JavaScript (Vanilla)
 - **Authentication**: JWT tokens
-- **Validation**: Mongoose schemas, express-validator
-- **Development**: Nodemon, sample data seeding
+- **Styling**: Retro Y2K/Windows 98 theme
 
 ## Documentation
 
-- [`backend/README.md`](backend/README.md) - Backend deployment and API usage
+- [`backend/README.md`](backend/README.md) - Backend API and deployment
+- [`frontend/README.md`](frontend/README.md) - Frontend setup and usage
 - [`ENVIRONMENT_SETUP.md`](ENVIRONMENT_SETUP.md) - Environment configuration
-- Backend route folders contain individual README files for each module
 
 ## Learning Objectives Met
 
