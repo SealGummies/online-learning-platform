@@ -8,10 +8,7 @@ const connectDB = async () => {
       process.env.MONGODB_URI ||
       "mongodb://localhost:27017/online-learning-platform";
 
-    const conn = await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    const conn = await mongoose.connect(mongoURI);
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     console.log(`Database: ${conn.connection.name}`);
