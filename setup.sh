@@ -40,7 +40,7 @@ if [ ! -f .env ]; then
     echo "   - JWT secret key"
     echo "   - Other settings as needed"
     echo ""
-    echo "📖 For detailed configuration instructions, see: backend/ENV_CONFIGURATION.md"
+    echo "📖 For detailed configuration instructions, see backend/README.md"
 else
     echo "✅ .env file already exists"
 fi
@@ -67,7 +67,6 @@ echo ""
 echo "🎉 Setup complete! Next steps:"
 echo "1. Edit backend/.env with your database credentials"
 echo "2. Run 'npm run dev' to start the development server"
-echo "3. Visit http://localhost:3001 to access the API"
+echo "3. Visit http://localhost:3761 to access the API"
 echo ""
 echo "📚 For more information, see README.md"
-echo "🐛 If you encounter issues, check backend/ENV_CONFIGURATION.md"
