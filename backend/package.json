@@ -1,0 +1,36 @@
+{
+  "name": "online-learning-platform-backend",
+  "version": "1.0.0",
+  "description": "Backend for Online Learning Platform using MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "seed": "node scripts/seedDatabase.js",
+    "test": "node test-server.js",
+    "test-db": "node test-connection.js",
+    "test-atlas": "node test-atlas.js",
+    "config-db": "node configure-db.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.17.0",
+    "mongoose": "^7.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "mongodb",
+    "nodejs",
+    "express",
+    "learning-platform"
+  ],
+  "author": "",
+  "license": "MIT"
+}
