@@ -17,7 +17,12 @@ A comprehensive online learning platform demonstrating advanced MongoDB usage wi
 
 ### ✅ Requirement 2: CRUD Operations & API (20 pts)
 
-- RESTful API with full CRUD operations
+- RESTful API with full CRUD operations for all 5 collections
+- **Users Collection**: Create (register), Read (profile), Update (profile), Delete (account)
+- **Courses Collection**: Create/Read/Update/Delete courses (instructor/admin)
+- **Enrollments Collection**: Create (enroll), Read (progress), Update (progress), Delete (unenroll)
+- **Lessons Collection**: Full CRUD for course content management
+- **Exams Collection**: Full CRUD for assessments and submissions
 - JWT authentication with role-based access control
 - Input validation and error handling
 - Pagination, search, and filtering
@@ -78,8 +83,9 @@ cd online-learning-platform
 ### Backend API
 
 - **Collections**: Users, Courses, Enrollments, Lessons, Exams
+- **CRUD Support**: Full Create/Read/Update/Delete for all collections
 - **Authentication**: JWT with role-based access (Student/Instructor/Admin)
-- **Features**: CRUD operations, search, pagination, validation
+- **Features**: Search, pagination, validation, error handling
 
 ### Frontend Interface
 
@@ -102,18 +108,35 @@ cd online-learning-platform
 ## Sample API Usage
 
 ```bash
-# Register user
+# Register user (CREATE)
 curl -X POST http://localhost:3761/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"firstName":"Test","lastName":"User","email":"test@example.com","password":"password123","role":"student"}'
 
-# Login
+# Login (READ)
 curl -X POST http://localhost:3761/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}'
 
-# Get courses
+# CRUD Examples:
+# CREATE course
+curl -X POST http://localhost:3761/api/courses \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"New Course","description":"Course description"}'
+
+# READ courses
 curl http://localhost:3761/api/courses
+
+# UPDATE course
+curl -X PUT http://localhost:3761/api/courses/COURSE_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Updated Course Title"}'
+
+# DELETE course
+curl -X DELETE http://localhost:3761/api/courses/COURSE_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ## MongoDB Features Demonstrated
@@ -130,7 +153,7 @@ curl http://localhost:3761/api/courses
 - ✅ MongoDB schema design and data population
 - ✅ RESTful API with CRUD operations
 - ✅ JWT authentication and authorization
-- ✅ Y2K style frontend interface
+- ✅ Frontend interface
 - ✅ User registration and login flow
 - 🚧 Course management interface (coming soon)
 - 🚧 ACID transactions (future enhancement)
