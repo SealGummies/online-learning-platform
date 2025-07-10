@@ -55,6 +55,24 @@ online-learning-platform/
 
 ### Installation
 
+#### Option A: Quick Setup (Recommended)
+
+```bash
+git clone <repository-url>
+cd online-learning-platform
+./setup.sh
+```
+
+The setup script will automatically:
+
+- Check system requirements
+- Install dependencies
+- Create .env file from template
+- Test database connection
+- Seed sample data
+
+#### Option B: Manual Setup
+
 1. **Clone the repository:**
 
 ```bash
@@ -72,9 +90,13 @@ npm install
 3. **Set up environment variables:**
 
 ```bash
-# Copy .env file and update with your settings
+# Copy .env template and update with your settings
+cd backend
 cp .env.example .env
+# Edit .env with your database credentials and JWT secret
 ```
+
+> 📝 **For detailed configuration instructions, see [`backend/ENV_CONFIGURATION.md`](backend/ENV_CONFIGURATION.md)**
 
 4. **Choose your database option:**
 

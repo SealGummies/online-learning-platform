@@ -10,7 +10,8 @@
     "test": "node test-server.js",
     "test-db": "node test-connection.js",
     "test-atlas": "node test-atlas.js",
-    "config-db": "node configure-db.js"
+    "config-db": "node configure-db.js",
+    "validate-env": "node validate-env.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
