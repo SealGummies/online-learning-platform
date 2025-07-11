@@ -153,8 +153,8 @@ curl -X DELETE http://localhost:3761/api/courses/COURSE_ID \
 - ✅ MongoDB schema design and data population
 - ✅ RESTful API with CRUD operations
 - ✅ JWT authentication and authorization
-- ✅ Frontend interface
-- ✅ User registration and login flow
+- 🚧 Frontend interface
+- 🚧 User registration and login flow
 - 🚧 Course management interface (coming soon)
 - 🚧 ACID transactions (future enhancement)
 
