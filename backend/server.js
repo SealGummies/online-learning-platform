@@ -11,6 +11,7 @@ const courseRoutes = require("./routes/courses");
 const enrollmentRoutes = require("./routes/enrollments");
 const lessonRoutes = require("./routes/lessons");
 const examRoutes = require("./routes/exams");
+const analyticsRoutes = require("./routes/analytics");
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/lessons", lessonRoutes);
 app.use("/api/exams", examRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Serve frontend for any non-API routes
 app.get("*", (req, res) => {

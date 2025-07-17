@@ -4,6 +4,7 @@ const AuthController = require("./AuthController");
 const UserController = require("./UserController");
 const ExamController = require("./ExamController");
 const LessonController = require("./LessonController");
+const AnalyticsController = require("./AnalyticsController");
 
 module.exports = {
   CourseController,
@@ -12,4 +13,5 @@ module.exports = {
   UserController,
   ExamController,
   LessonController,
+  AnalyticsController,
 };

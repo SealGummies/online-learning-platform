@@ -268,7 +268,7 @@ class CourseService {
     const [course, enrollmentStats] = await Promise.all([
       Course.findById(courseId).lean(),
       Enrollment.aggregate([
-        { $match: { course: mongoose.Types.ObjectId(courseId) } },
+        { $match: { course: new mongoose.Types.ObjectId(courseId) } },
         {
           $group: {
             _id: "$status",

@@ -5,6 +5,7 @@ const AuthService = require("./AuthService");
 const UserService = require("./UserService");
 const ExamService = require("./ExamService");
 const LessonService = require("./LessonService");
+const AnalyticsService = require("./AnalyticsService");
 
 module.exports = {
   TransactionService,
@@ -14,4 +15,5 @@ module.exports = {
   UserService,
   ExamService,
   LessonService,
+  AnalyticsService,
 };

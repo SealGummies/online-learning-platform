@@ -294,7 +294,7 @@ class EnrollmentService {
    */
   static async getStudentStats(studentId) {
     const stats = await Enrollment.aggregate([
-      { $match: { student: mongoose.Types.ObjectId(studentId) } },
+      { $match: { student: new mongoose.Types.ObjectId(studentId) } },
       {
         $group: {
           _id: "$status",
