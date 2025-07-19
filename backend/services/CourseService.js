@@ -45,7 +45,7 @@ class CourseService {
         .sort(sort)
         .skip(skip)
         .limit(parseInt(limit))
-        .populate("instructor", "name email")
+        .populate("instructor", "firstName lastName email")
         .lean(),
       Course.countDocuments(query),
     ]);
@@ -70,7 +70,7 @@ class CourseService {
    */
   static async getCourseById(courseId, userId = null) {
     const course = await Course.findById(courseId)
-      .populate("instructor", "name email profile.bio")
+      .populate("instructor", "firstName lastName email")
       .lean();
 
     if (!course) {
@@ -83,9 +83,8 @@ class CourseService {
         course: courseId,
         student: userId,
       }).lean();
-
       course.isEnrolled = !!enrollment;
-      course.enrollmentProgress = enrollment?.progress || 0;
+      course.enrollmentCompletion = enrollment?.completionPercentage || 0;
       course.enrollmentStatus = enrollment?.status || null;
     }
 
@@ -100,65 +99,31 @@ class CourseService {
    */
   static async enrollStudent(courseId, userId) {
     return TransactionService.executeWithTransaction(async (session) => {
-      // Check if course exists and has capacity
+      // Check if course exists且激活
       const course = await Course.findById(courseId).session(session);
-      if (!course) {
-        throw new Error("Course not found");
+      if (!course || !course.isActive) {
+        throw new Error("Course not found or inactive");
       }
-
-      // Check if course is published
-      if (!course.settings.isPublished) {
-        throw new Error("Course is not available for enrollment");
-      }
-
-      if (
-        course.maxStudents &&
-        course.stats.enrollments >= course.maxStudents
-      ) {
-        throw new Error("Course is full");
-      }
-
-      // Check if already enrolled
+      // 检查是否已报名
       const existingEnrollment = await Enrollment.findOne({
         course: courseId,
         student: userId,
       }).session(session);
-
       if (existingEnrollment) {
         throw new Error("Already enrolled in this course");
       }
-
-      // Create enrollment
+      // 创建报名
       const enrollment = new Enrollment({
         course: courseId,
         student: userId,
         enrollmentDate: new Date(),
         status: "enrolled",
-        progress: 0,
-        paymentDetails: {
-          amount: course.price,
-          currency: course.currency || "USD",
-          paymentMethod: "credit_card",
-          transactionId: `tx_${Date.now()}_${userId}`,
-          paymentDate: new Date(),
-        },
       });
-
       await enrollment.save({ session });
-
-      // Update course enrollment count
-      await Course.findByIdAndUpdate(
-        courseId,
-        { $inc: { "stats.enrollments": 1 } },
-        { session }
-      );
-
-      // Populate enrollment details for response
       await enrollment.populate([
         { path: "course", select: "title category level" },
-        { path: "student", select: "name email" },
+        { path: "student", select: "firstName lastName email" },
       ]);
-
       return {
         enrollment: enrollment.toObject(),
         message: "Successfully enrolled in course",
@@ -176,13 +141,9 @@ class CourseService {
     const course = new Course({
       ...courseData,
       instructor: instructorId,
-      enrollmentCount: 0,
-      createdAt: new Date(),
     });
-
     await course.save();
-    await course.populate("instructor", "name email");
-
+    await course.populate("instructor", "firstName lastName email");
     return course.toObject();
   }
 
@@ -204,16 +165,13 @@ class CourseService {
       throw new Error("Not authorized to update this course");
     }
 
-    // Prevent updating enrollment count directly
-    delete updateData.enrollmentCount;
+    // Prevent updating instructor directly
     delete updateData.instructor;
-
     const updatedCourse = await Course.findByIdAndUpdate(
       courseId,
       { ...updateData, updatedAt: new Date() },
       { new: true, runValidators: true }
-    ).populate("instructor", "name email");
-
+    ).populate("instructor", "firstName lastName email");
     return updatedCourse.toObject();
   }
 
@@ -235,10 +193,10 @@ class CourseService {
         throw new Error("Not authorized to delete this course");
       }
 
-      // Check for active enrollments
+      // 检查是否有在读报名
       const activeEnrollments = await Enrollment.countDocuments({
         course: courseId,
-        status: "active",
+        status: { $in: ["enrolled", "in-progress"] },
       }).session(session);
 
       if (activeEnrollments > 0) {
@@ -273,26 +231,23 @@ class CourseService {
           $group: {
             _id: "$status",
             count: { $sum: 1 },
-            avgProgress: { $avg: "$progress" },
+            avgCompletion: { $avg: "$completionPercentage" },
           },
         },
       ]),
     ]);
-
     if (!course) {
       throw new Error("Course not found");
     }
-
     const stats = {
       course: {
         id: course._id,
         title: course.title,
-        enrollmentCount: course.enrollmentCount,
       },
       enrollments: enrollmentStats.reduce((acc, stat) => {
         acc[stat._id] = {
           count: stat.count,
-          averageProgress: Math.round(stat.avgProgress || 0),
+          averageCompletion: Math.round(stat.avgCompletion || 0),
         };
         return acc;
       }, {}),
@@ -301,7 +256,6 @@ class CourseService {
         0
       ),
     };
-
     return stats;
   }
 }

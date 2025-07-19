@@ -59,16 +59,6 @@ class AuthService {
         password: hashedPassword,
         role,
         isActive: true,
-        profile: {
-          bio: "",
-          profilePicture: "",
-          socialLinks: {},
-          preferences: {
-            emailNotifications: true,
-            pushNotifications: true,
-            language: "en",
-          },
-        },
       });
 
       await user.save({ session });
@@ -156,16 +146,11 @@ class AuthService {
       const allowedUpdates = [
         "firstName",
         "lastName",
-        "profile.bio",
-        "profile.profilePicture",
-        "profile.socialLinks",
-        "profile.preferences",
       ];
-
       // Filter out non-allowed updates
       const filteredData = {};
       Object.keys(updateData).forEach((key) => {
-        if (allowedUpdates.includes(key) || key.startsWith("profile.")) {
+        if (allowedUpdates.includes(key)) {
           filteredData[key] = updateData[key];
         }
       });
