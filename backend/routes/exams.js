@@ -5,9 +5,7 @@ const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-/**
- * Validation middleware for exam creation
- */
+// Validation middleware for exam creation (simplified fields only)
 const validateExam = [
   body("title")
     .notEmpty()
@@ -23,76 +21,6 @@ const validateExam = [
     .withMessage("Course ID is required")
     .isMongoId()
     .withMessage("Invalid course ID"),
-  body("questions")
-    .isArray({ min: 1 })
-    .withMessage("Exam must have at least one question"),
-  body("questions.*.text")
-    .notEmpty()
-    .withMessage("Question text is required")
-    .isLength({ min: 10 })
-    .withMessage("Question text must be at least 10 characters"),
-  body("questions.*.type")
-    .isIn(["multiple-choice", "true-false", "short-answer"])
-    .withMessage("Invalid question type"),
-  body("questions.*.points")
-    .isFloat({ min: 0.1 })
-    .withMessage("Question points must be greater than 0"),
-  body("timeLimit")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Time limit must be a positive integer"),
-  body("maxAttempts")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Max attempts must be a positive integer"),
-  body("passingScore")
-    .optional()
-    .isFloat({ min: 0, max: 100 })
-    .withMessage("Passing score must be between 0 and 100"),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: errors.array(),
-      });
-    }
-    next();
-  },
-];
-
-/**
- * Validation middleware for exam submission
- */
-const validateExamSubmission = [
-  body("answers")
-    .isArray()
-    .withMessage("Answers must be an array"),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: errors.array(),
-      });
-    }
-    next();
-  },
-];
-
-/**
- * Validation middleware for exam grading
- */
-const validateExamGrading = [
-  body("grades")
-    .isArray()
-    .withMessage("Grades must be an array"),
-  body("feedback")
-    .optional()
-    .isString()
-    .withMessage("Feedback must be a string"),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -111,9 +39,6 @@ router.get("/", protect, ExamController.getExams);
 
 // Get specific exam details
 router.get("/:id", protect, ExamController.getExamById);
-
-// Get exam attempts for a specific exam
-router.get("/:id/attempts", protect, ExamController.getExamAttempts);
 
 // Instructor routes
 router.post(
@@ -144,23 +69,6 @@ router.get(
   protect,
   authorize("instructor"),
   ExamController.getExamStats
-);
-
-router.post(
-  "/:examId/attempts/:attemptId/grade",
-  protect,
-  authorize("instructor"),
-  validateExamGrading,
-  ExamController.gradeExam
-);
-
-// Student routes
-router.post(
-  "/:id/submit",
-  protect,
-  authorize("student"),
-  validateExamSubmission,
-  ExamController.submitExam
 );
 
 module.exports = router;

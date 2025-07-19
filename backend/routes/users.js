@@ -5,9 +5,7 @@ const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-/**
- * Validation middleware for user creation
- */
+// Validation middleware for user creation
 const validateCreateUser = [
   body("firstName")
     .trim()
@@ -40,9 +38,7 @@ const validateCreateUser = [
   },
 ];
 
-/**
- * Validation middleware for user update
- */
+// Validation middleware for user update
 const validateUpdateUser = [
   body("firstName")
     .optional()
@@ -80,9 +76,7 @@ const validateUpdateUser = [
   },
 ];
 
-/**
- * Validation middleware for user status update
- */
+// Validation middleware for user status update
 const validateStatusUpdate = [
   body("isActive")
     .isBoolean()
@@ -100,7 +94,7 @@ const validateStatusUpdate = [
   },
 ];
 
-// Public routes for getting instructors/students lists (if needed)
+// Public routes for getting instructors/students lists
 router.get("/instructors", UserController.getInstructors);
 router.get("/students", UserController.getStudents);
 
