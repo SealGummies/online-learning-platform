@@ -1,5 +1,8 @@
 const ExamService = require("../services/ExamService");
 
+/**
+ * Exam Controller - Handles HTTP requests for exam operations (aligned with simplified models)
+ */
 class ExamController {
   /**
    * Get exams for a course
@@ -11,16 +14,14 @@ class ExamController {
       const { course } = req.query;
       const userId = req.user.id;
       const userRole = req.user.role;
-
       const exams = await ExamService.getExams(course, userId, userRole);
-
       res.json({
         success: true,
+        data: exams,
         count: exams.length,
-        data: { exams },
+        message: "Exams retrieved successfully",
       });
     } catch (error) {
-      console.error("Get exams error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Failed to retrieve exams",
@@ -38,15 +39,13 @@ class ExamController {
       const examId = req.params.id;
       const userId = req.user.id;
       const userRole = req.user.role;
-
       const exam = await ExamService.getExamById(examId, userId, userRole);
-
       res.json({
         success: true,
-        data: { exam },
+        data: exam,
+        message: "Exam retrieved successfully",
       });
     } catch (error) {
-      console.error("Get exam by ID error:", error);
       res.status(404).json({
         success: false,
         message: error.message || "Exam not found",
@@ -62,15 +61,15 @@ class ExamController {
   static async createExam(req, res) {
     try {
       const instructorId = req.user.id;
-      const exam = await ExamService.createExam(req.body, instructorId);
-
+      // Only allow fields in simplified model
+      const { title, description, course, type, isActive } = req.body;
+      const exam = await ExamService.createExam({ title, description, course, type, isActive }, instructorId);
       res.status(201).json({
         success: true,
+        data: exam,
         message: "Exam created successfully",
-        data: { exam },
       });
     } catch (error) {
-      console.error("Create exam error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Exam creation failed",
@@ -87,16 +86,16 @@ class ExamController {
     try {
       const examId = req.params.id;
       const instructorId = req.user.id;
-
-      const exam = await ExamService.updateExam(examId, req.body, instructorId);
-
+      // Only allow fields in simplified model
+      const { title, description, type, isActive } = req.body;
+      const updateData = { title, description, type, isActive };
+      const exam = await ExamService.updateExam(examId, updateData, instructorId);
       res.json({
         success: true,
+        data: exam,
         message: "Exam updated successfully",
-        data: { exam },
       });
     } catch (error) {
-      console.error("Update exam error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Exam update failed",
@@ -113,15 +112,12 @@ class ExamController {
     try {
       const examId = req.params.id;
       const instructorId = req.user.id;
-
       await ExamService.deleteExam(examId, instructorId);
-
       res.json({
         success: true,
         message: "Exam deleted successfully",
       });
     } catch (error) {
-      console.error("Delete exam error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Exam deletion failed",
@@ -130,65 +126,7 @@ class ExamController {
   }
 
   /**
-   * Submit exam attempt
-   * @route POST /api/exams/:id/submit
-   * @access Private/Student
-   */
-  static async submitExam(req, res) {
-    try {
-      const examId = req.params.id;
-      const studentId = req.user.id;
-      const { answers } = req.body;
-
-      const result = await ExamService.submitExam(examId, studentId, answers);
-
-      res.json({
-        success: true,
-        message: "Exam submitted successfully",
-        data: { result },
-      });
-    } catch (error) {
-      console.error("Submit exam error:", error);
-      res.status(400).json({
-        success: false,
-        message: error.message || "Exam submission failed",
-      });
-    }
-  }
-
-  /**
-   * Get exam attempts for a student
-   * @route GET /api/exams/:id/attempts
-   * @access Private
-   */
-  static async getExamAttempts(req, res) {
-    try {
-      const examId = req.params.id;
-      const userId = req.user.id;
-      const userRole = req.user.role;
-
-      const attempts = await ExamService.getExamAttempts(
-        examId,
-        userId,
-        userRole
-      );
-
-      res.json({
-        success: true,
-        count: attempts.length,
-        data: { attempts },
-      });
-    } catch (error) {
-      console.error("Get exam attempts error:", error);
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to retrieve exam attempts",
-      });
-    }
-  }
-
-  /**
-   * Get exam statistics
+   * Get exam statistics (if supported)
    * @route GET /api/exams/:id/stats
    * @access Private/Instructor
    */
@@ -196,51 +134,16 @@ class ExamController {
     try {
       const examId = req.params.id;
       const instructorId = req.user.id;
-
       const stats = await ExamService.getExamStats(examId, instructorId);
-
       res.json({
         success: true,
-        data: { stats },
+        data: stats,
+        message: "Exam statistics retrieved successfully",
       });
     } catch (error) {
-      console.error("Get exam stats error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Failed to retrieve exam statistics",
-      });
-    }
-  }
-
-  /**
-   * Grade exam manually (for subjective questions)
-   * @route POST /api/exams/:examId/attempts/:attemptId/grade
-   * @access Private/Instructor
-   */
-  static async gradeExam(req, res) {
-    try {
-      const { examId, attemptId } = req.params;
-      const instructorId = req.user.id;
-      const { grades, feedback } = req.body;
-
-      const result = await ExamService.gradeExam(
-        examId,
-        attemptId,
-        grades,
-        feedback,
-        instructorId
-      );
-
-      res.json({
-        success: true,
-        message: "Exam graded successfully",
-        data: { result },
-      });
-    } catch (error) {
-      console.error("Grade exam error:", error);
-      res.status(400).json({
-        success: false,
-        message: error.message || "Exam grading failed",
       });
     }
   }

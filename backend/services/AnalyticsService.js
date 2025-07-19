@@ -328,6 +328,75 @@ class AnalyticsService {
       throw new Error(`Error fetching platform overview: ${error.message}`);
     }
   }
+
+  /**
+   * Get filtered analytics based on date range and criteria
+   * @param {Object} filters - { startDate, endDate, category, level, type }
+   * @returns {Promise<Array>} Filtered analytics data
+   */
+  static async getFilteredAnalytics({ startDate, endDate, category, level, type }) {
+    // Build match conditions
+    const match = {};
+    if (startDate || endDate) {
+      match.enrollmentDate = {};
+      if (startDate) match.enrollmentDate.$gte = new Date(startDate);
+      if (endDate) match.enrollmentDate.$lte = new Date(endDate);
+    }
+    if (category) match["courseInfo.category"] = category;
+    if (level) match["courseInfo.level"] = level;
+    // type: filter exam type if needed (e.g., quiz, midterm, final, assignment)
+
+    // Aggregate enrollments with course info
+    const pipeline = [
+      {
+        $lookup: {
+          from: "courses",
+          localField: "course",
+          foreignField: "_id",
+          as: "courseInfo",
+        },
+      },
+      { $unwind: "$courseInfo" },
+    ];
+    if (Object.keys(match).length > 0) {
+      pipeline.push({ $match: match });
+    }
+    // Optionally join exams if type is specified
+    if (type) {
+      pipeline.push(
+        {
+          $lookup: {
+            from: "exams",
+            localField: "course",
+            foreignField: "course",
+            as: "exams",
+          },
+        },
+        { $unwind: "$exams" },
+        { $match: { "exams.type": type } }
+      );
+    }
+    // Group and summarize
+    pipeline.push({
+      $group: {
+        _id: {
+          course: "$courseInfo.title",
+          category: "$courseInfo.category",
+          level: "$courseInfo.level",
+        },
+        totalEnrollments: { $sum: 1 },
+        completed: {
+          $sum: {
+            $cond: [{ $eq: ["$status", "completed"] }, 1, 0],
+          },
+        },
+        averageCompletion: { $avg: "$completionPercentage" },
+        averageGrade: { $avg: "$finalGrade" },
+      },
+    });
+    pipeline.push({ $sort: { totalEnrollments: -1 } });
+    return await (this.Enrollment || require("../models/Enrollment")).aggregate(pipeline);
+  }
 }
 
 module.exports = AnalyticsService;

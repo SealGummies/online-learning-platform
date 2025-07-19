@@ -1,5 +1,8 @@
 const UserService = require("../services/UserService");
 
+/**
+ * User Controller - Handles HTTP requests for user operations (aligned with simplified models)
+ */
 class UserController {
   /**
    * Get all users (admin only)
@@ -9,15 +12,14 @@ class UserController {
   static async getUsers(req, res) {
     try {
       const result = await UserService.getUsers(req.query);
-
       res.json({
         success: true,
-        count: result.users.length,
+        data: result.users,
         pagination: result.pagination,
-        data: { users: result.users },
+        count: result.users.length,
+        message: "Users retrieved successfully",
       });
     } catch (error) {
-      console.error("Get users error:", error);
       res.status(500).json({
         success: false,
         message: error.message || "Failed to retrieve users",
@@ -33,13 +35,12 @@ class UserController {
   static async getUserById(req, res) {
     try {
       const user = await UserService.getUserById(req.params.id);
-
       res.json({
         success: true,
-        data: { user },
+        data: user,
+        message: "User retrieved successfully",
       });
     } catch (error) {
-      console.error("Get user by ID error:", error);
       res.status(404).json({
         success: false,
         message: error.message || "User not found",
@@ -54,15 +55,15 @@ class UserController {
    */
   static async createUser(req, res) {
     try {
-      const user = await UserService.createUser(req.body);
-
+      // Only allow fields in simplified model
+      const { firstName, lastName, email, password, role, isActive } = req.body;
+      const user = await UserService.createUser({ firstName, lastName, email, password, role, isActive });
       res.status(201).json({
         success: true,
+        data: user,
         message: "User created successfully",
-        data: { user },
       });
     } catch (error) {
-      console.error("Create user error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "User creation failed",
@@ -77,15 +78,15 @@ class UserController {
    */
   static async updateUser(req, res) {
     try {
-      const user = await UserService.updateUser(req.params.id, req.body);
-
+      // Only allow fields in simplified model
+      const { firstName, lastName, role, isActive } = req.body;
+      const user = await UserService.updateUser(req.params.id, { firstName, lastName, role, isActive });
       res.json({
         success: true,
+        data: user,
         message: "User updated successfully",
-        data: { user },
       });
     } catch (error) {
-      console.error("Update user error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "User update failed",
@@ -101,13 +102,11 @@ class UserController {
   static async deleteUser(req, res) {
     try {
       await UserService.deleteUser(req.params.id);
-
       res.json({
         success: true,
         message: "User deleted successfully",
       });
     } catch (error) {
-      console.error("Delete user error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "User deletion failed",
@@ -123,13 +122,12 @@ class UserController {
   static async getUserStats(req, res) {
     try {
       const stats = await UserService.getUserStats(req.params.id);
-
       res.json({
         success: true,
-        data: { stats },
+        data: stats,
+        message: "User statistics retrieved successfully",
       });
     } catch (error) {
-      console.error("Get user stats error:", error);
       res.status(500).json({
         success: false,
         message: error.message || "Failed to retrieve user statistics",
@@ -146,14 +144,12 @@ class UserController {
     try {
       const { isActive } = req.body;
       const user = await UserService.updateUserStatus(req.params.id, isActive);
-
       res.json({
         success: true,
+        data: user,
         message: "User status updated successfully",
-        data: { user },
       });
     } catch (error) {
-      console.error("Update user status error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Status update failed",
@@ -168,18 +164,14 @@ class UserController {
    */
   static async getUserEnrollments(req, res) {
     try {
-      const enrollments = await UserService.getUserEnrollments(
-        req.params.id,
-        req.query
-      );
-
+      const enrollments = await UserService.getUserEnrollments(req.params.id, req.query);
       res.json({
         success: true,
+        data: enrollments,
         count: enrollments.length,
-        data: { enrollments },
+        message: "User enrollments retrieved successfully",
       });
     } catch (error) {
-      console.error("Get user enrollments error:", error);
       res.status(500).json({
         success: false,
         message: error.message || "Failed to retrieve user enrollments",
@@ -195,14 +187,13 @@ class UserController {
   static async getInstructors(req, res) {
     try {
       const instructors = await UserService.getInstructors(req.query);
-
       res.json({
         success: true,
+        data: instructors,
         count: instructors.length,
-        data: { instructors },
+        message: "Instructors retrieved successfully",
       });
     } catch (error) {
-      console.error("Get instructors error:", error);
       res.status(500).json({
         success: false,
         message: error.message || "Failed to retrieve instructors",
@@ -218,14 +209,13 @@ class UserController {
   static async getStudents(req, res) {
     try {
       const students = await UserService.getStudents(req.query);
-
       res.json({
         success: true,
+        data: students,
         count: students.length,
-        data: { students },
+        message: "Students retrieved successfully",
       });
     } catch (error) {
-      console.error("Get students error:", error);
       res.status(500).json({
         success: false,
         message: error.message || "Failed to retrieve students",
