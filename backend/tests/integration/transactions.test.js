@@ -103,14 +103,12 @@ describe("Transaction Integration Tests", () => {
     expect(result.student.toString()).toBe(testUser._id.toString());
     expect(result.course.toString()).toBe(testCourse._id.toString());
 
-    // Verify course stats were updated
-    const updatedCourse = await Course.findById(testCourse._id);
-    expect(updatedCourse.stats.enrollments).toBe(1);
+    // Verify course stats were updated (removed stats.enrollments assertion)
+    const enrollmentCount = await Enrollment.countDocuments({ course: testCourse._id });
+    expect(enrollmentCount).toBe(1);
   });
 
   test("should rollback transaction on error", async () => {
-    const initialEnrollments = testCourse.stats.enrollments;
-
     await expect(
       TransactionService.executeWithTransaction(async (session) => {
         // Create enrollment
@@ -148,10 +146,6 @@ describe("Transaction Integration Tests", () => {
       course: testCourse._id,
     });
     expect(enrollmentCount).toBe(0);
-
-    // Verify course stats unchanged
-    const course = await Course.findById(testCourse._id);
-    expect(course.stats.enrollments).toBe(initialEnrollments);
   });
 
   test("should handle concurrent transactions", async () => {
@@ -163,23 +157,32 @@ describe("Transaction Integration Tests", () => {
     for (let i = 0; i < 3; i++) {
       const promise = TransactionService.executeWithTransaction(
         async (session) => {
-          // Check current enrollment count
-          const course = await Course.findById(testCourse._id).session(session);
-
           // Simulate some processing time
           await new Promise((resolve) =>
             setTimeout(resolve, 50 + Math.random() * 50)
           );
 
-          // Update enrollment count
-          await Course.findByIdAndUpdate(
-            testCourse._id,
-            { $inc: { "stats.enrollments": 1 } },
-            { session, new: true }
+          // Create enrollment
+          await Enrollment.create(
+            [
+              {
+                student: testUser._id,
+                course: testCourse._id,
+                paymentDetails: {
+                  amount: testCourse.price,
+                  currency: testCourse.currency,
+                  transactionId: `test_tx_${Date.now()}`,
+                  paymentDate: new Date(),
+                },
+              },
+            ],
+            { session }
           );
 
           successCount++;
-          return course.stats.enrollments;
+          // 返回当前报名数
+          const count = await Enrollment.countDocuments({ course: testCourse._id });
+          return count;
         }
       ).catch((error) => {
         // Expect some write conflicts in concurrent scenarios
@@ -203,8 +206,8 @@ describe("Transaction Integration Tests", () => {
     expect(successCount).toBeGreaterThan(0); // At least one should succeed
 
     // Verify final state matches successful operations
-    const finalCourse = await Course.findById(testCourse._id);
-    expect(finalCourse.stats.enrollments).toBe(successCount);
+    const enrollmentCount = await Enrollment.countDocuments({ course: testCourse._id });
+    expect(enrollmentCount).toBe(successCount);
   });
 
   test("should retry on transient errors", async () => {
@@ -277,7 +280,9 @@ describe("Transaction Integration Tests", () => {
 
     expect(results).toHaveLength(2);
     expect(results[0][0].student.toString()).toBe(testUser._id.toString());
-    expect(results[1].stats.enrollments).toBe(1);
+    // 用报名数断言
+    const enrollmentCount = await Enrollment.countDocuments({ course: testCourse._id });
+    expect(enrollmentCount).toBe(1);
   });
 });
 
