@@ -23,13 +23,7 @@ function redirectToLogin() {
   // Get current path to determine correct redirect path
   const currentPath = window.location.pathname;
 
-  if (currentPath.includes('/pages/')) {
-    // If we're in pages directory, go to index.html in same directory
-    window.location.href = "index.html";
-  } else {
-    // If we're in root, go to pages/index.html
-    window.location.href = "pages/index.html";
-  }
+  window.location.href = "/pages/index.html";
 }
 
 function isLoggedIn() {
