@@ -1,76 +1,122 @@
 # Online Learning Platform - Frontend
 
-This is a simple frontend for the Online Learning Platform built with HTML, CSS, and vanilla JavaScript.
-
-## Features
-
-- User Login/Registration
-- Simple authentication with JWT tokens
-- Dashboard with "Development in Progress" message
-- Responsive design
-- Clean and modern UI
-
-## Pages
-
-1. **Login Page** (`index.html`) - User authentication
-2. **Register Page** (`register.html`) - New user registration
-3. **Dashboard** (`dashboard.html`) - Post-login landing page
-
-## File Structure
+## 📁 Project Structure
 
 ```
 frontend/
-├── index.html          # Login page
-├── register.html       # Registration page
-├── dashboard.html      # Dashboard page
-├── css/
-│   └── style.css      # All styles
-└── js/
-    ├── auth.js        # Authentication logic
-    └── dashboard.js   # Dashboard functionality
+├── index.html              # Main entry page (redirects to login)
+├── config.js              # Frontend configuration
+├── README.md              # Project documentation
+├── assets/                # Static resources
+│   ├── icons/            # Icon files
+│   │   └── favicon.ico   # Website icon
+│   └── images/           # Image resources
+├── components/            # Reusable components
+│   ├── header.html       # Header component
+│   └── footer.html       # Footer component
+├── css/                  # Stylesheets
+│   └── style.css         # Main stylesheet
+├── js/                   # JavaScript files
+│   ├── auth.js           # Authentication logic
+│   └── dashboard.js      # Dashboard logic
+└── pages/                # Page files
+    ├── index.html        # Login page
+    ├── register.html     # Registration page
+    └── dashboard.html    # Dashboard page
 ```
 
-## Setup
+## 🚀 Quick Start
 
-1. Make sure the backend server is running on `http://localhost:3761`
-2. The frontend is served by the backend server as static files
-3. Access the application at `http://localhost:3761`
+### Start Frontend Server
 
-## Usage
+```bash
+cd frontend
+python3 -m http.server 8000
+```
 
-1. Start by visiting `http://localhost:3761`
-2. If you don't have an account, click "Register here" to create one
-3. Fill in the registration form (First Name, Last Name, Email, Password, Role)
-4. After successful registration, you'll be redirected to login
-5. Login with your credentials
-6. You'll be redirected to the dashboard showing "Development in Progress"
+### Access URLs
 
-## Authentication Flow
+- **Home**: http://localhost:8000
+- **Login**: http://localhost:8000/pages/index.html
+- **Register**: http://localhost:8000/pages/register.html
+- **Dashboard**: http://localhost:8000/pages/dashboard.html
 
-- Tokens are stored in localStorage
-- Automatic redirection based on authentication status
-- Logout clears tokens and redirects to login
-- Protected routes check for valid tokens
+## 🎨 Tech Stack
 
-## API Integration
+- **HTML5** - Page structure
+- **CSS3** - Styling
+- **Vanilla JavaScript** - Frontend logic
+- **Python HTTP Server** - Local development server
 
-The frontend communicates with the backend API:
+## 📋 Features
 
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
+### ✅ Implemented
 
-## Browser Compatibility
+- User login/registration
+- Responsive design
+- Error handling
+- Loading states
+- Local storage management
 
-- Modern browsers with ES6+ support
-- Local storage support required
-- Fetch API support required
+### 🚧 In Development
 
-## Development Status
+- Course management
+- Learning progress tracking
+- User dashboard
+- Real-time notifications
 
-This is a basic implementation for initial development. Future enhancements will include:
+## 🔧 Configuration
 
-- Course management interface
-- User profile management
-- Progress tracking
-- Interactive lessons
-- More sophisticated UI components
+### API Configuration
+
+Modify API address in `config.js`:
+
+```javascript
+API_BASE_URL: "http://localhost:3761/api";
+```
+
+### Routes Configuration
+
+```javascript
+ROUTES: {
+    LOGIN: '/pages/index.html',
+    REGISTER: '/pages/register.html',
+    DASHBOARD: '/pages/dashboard.html'
+}
+```
+
+## 📝 Development Guide
+
+### Adding New Pages
+
+1. Create HTML file in `pages/` directory
+2. Update routes in `config.js`
+3. Add corresponding styles and scripts
+
+### Adding New Components
+
+1. Create component file in `components/` directory
+2. Reference component in pages
+3. Add component styles
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Page not accessible**: Check if server is running
+2. **API requests fail**: Verify backend server on correct port
+3. **Styles not loading**: Check CSS file paths
+
+### Debug Tips
+
+- Use browser developer tools
+- Check console error messages
+- Verify network request status
+
+## 📄 License
+
+MIT License
+
+---
+
+_Last updated: July 2024_

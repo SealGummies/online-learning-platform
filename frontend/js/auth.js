@@ -110,11 +110,11 @@ function isLoggedIn() {
 
 // Redirect functions
 function redirectToDashboard() {
-  window.location.href = "dashboard.html";
+  window.location.href = "pages/dashboard.html";
 }
 
 function redirectToLogin() {
-  window.location.href = "index.html";
+  window.location.href = "pages/index.html";
 }
 
 // Event listeners

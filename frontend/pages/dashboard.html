@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Learning Platform - Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="../assets/icons/favicon.ico">
+    <link rel="stylesheet" href="../css/style.css?v=1.1">
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard">
+            <!-- Header Component Placeholder -->
+            <div id="header-placeholder"></div>
+            
+            <main class="dashboard-content">
+                <!-- Student Dashboard -->
+                <div id="studentDashboard" class="role-dashboard" style="display: none;">
+                    <h2>🎓 Student Dashboard</h2>
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <h3>📚 My Enrollments</h3>
+                            <p>View your enrolled courses and progress</p>
+                            <button class="btn-primary" data-action="view-enrollments">View Enrollments</button>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>📝 Course Lessons</h3>
+                            <p>Access course content and materials</p>
+                            <button class="btn-primary" data-action="view-lessons">View Lessons</button>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>📊 My Progress</h3>
+                            <p>Track completion percentage and grades</p>
+                            <button class="btn-primary" data-action="view-progress">View Progress</button>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>📋 Exams & Quizzes</h3>
+                            <p>Take exams and view results</p>
+                            <button class="btn-primary" data-action="view-exams">View Exams</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructor Dashboard -->
+                <div id="instructorDashboard" class="role-dashboard" style="display: none;">
+                    <h2>👨‍🏫 Instructor Dashboard</h2>
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <h3>📚 My Courses</h3>
+                            <p>Manage your created courses</p>
+                            <button class="btn-primary" data-action="manage-courses">Manage Courses</button>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>📝 Course Content</h3>
+                            <p>Create and manage lessons</p>
+                            <button class="btn-primary" data-action="manage-lessons">Manage Lessons</button>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>📋 Exams & Assessments</h3>
+                            <p>Create and manage exams</p>
+                            <button class="btn-primary" data-action="manage-exams">Manage Exams</button>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>👥 Student Management</h3>
+                            <p>View enrolled students and progress</p>
+                            <button class="btn-primary" data-action="view-students">View Students</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Dashboard -->
+                <div id="adminDashboard" class="role-dashboard" style="display: none;">
+                    <h2>⚙️ Admin Dashboard</h2>
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <h3>👥 User Management</h3>
+                            <p>Manage all users (students, instructors, admins)</p>
+                            <button class="btn-primary" data-action="manage-users">Manage Users</button>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>📚 Course Management</h3>
+                            <p>Oversee all courses in the platform</p>
+                            <button class="btn-primary" data-action="manage-all-courses">Manage All Courses</button>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>📊 Enrollment Analytics</h3>
+                            <p>View enrollment statistics and trends</p>
+                            <button class="btn-primary" data-action="view-analytics">View Analytics</button>
+                        </div>
+                        <div class="dashboard-card">
+                            <h3>⚙️ System Settings</h3>
+                            <p>Configure platform settings</p>
+                            <button class="btn-primary" data-action="system-settings">System Settings</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Default Dashboard (for unknown roles) -->
+                <div id="defaultDashboard" class="role-dashboard">
+                    <div class="development-notice">
+                        <h2>🚧 Development in Progress 🚧</h2>
+                        <p>Thank you for logging in! Our platform is currently under development.</p>
+                        <p>More features will be available soon.</p>
+                        
+                        <div class="coming-soon">
+                            <h3>Coming Soon:</h3>
+                            <ul>
+                                <li>📚 Course Catalog</li>
+                                <li>📝 Interactive Lessons</li>
+                                <li>📊 Progress Tracking</li>
+                                <li>🎓 Certificates</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer Component Placeholder -->
+            <div id="footer-placeholder"></div>
+        </div>
+    </div>
+    
+    <script src="../js/components.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

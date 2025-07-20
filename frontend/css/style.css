@@ -350,3 +350,182 @@ button:disabled {
 ::-webkit-scrollbar-thumb:hover {
     background: #606060;
 }
+
+/* Role-based Dashboard Styles */
+.user-role {
+    background: #ffffcc;
+    border: 1px solid #ffcc00;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #800000;
+}
+
+.role-dashboard {
+    margin-top: 20px;
+}
+
+.role-dashboard h2 {
+    color: #000080;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+    text-decoration: underline;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.dashboard-card {
+    background: #ffffff;
+    border: 2px outset #c0c0c0;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-card h3 {
+    color: #000080;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    text-decoration: underline;
+}
+
+.dashboard-card p {
+    color: #000000;
+    font-size: 11px;
+    margin-bottom: 12px;
+    line-height: 1.3;
+}
+
+.dashboard-card .btn-primary {
+    width: 100% !important;
+    margin-top: 8px !important;
+}
+
+.btn-primary {
+    background: #000080 !important;
+    color: #ffffff !important;
+    border: 1px outset #000080 !important;
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    min-height: 32px !important;
+    height: auto !important;
+    width: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+}
+
+.btn-primary:hover {
+    background: #0000a0;
+    border-color: #0000a0;
+}
+
+.btn-primary:active {
+    border: 1px inset #000080;
+    background: #000060;
+}
+
+/* Responsive adjustments for dashboard */
+@media (max-width: 600px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .dashboard-card {
+        padding: 12px;
+    }
+
+    .role-dashboard h2 {
+        font-size: 16px;
+    }
+
+    .user-role {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+
+    .btn-primary {
+        font-size: 10px !important;
+        padding: 8px 10px !important;
+        min-height: 36px !important;
+    }
+
+    .dashboard-card .btn-primary {
+        font-size: 10px !important;
+        padding: 8px 8px !important;
+    }
+}
+
+/* Footer Styles */
+.site-footer {
+    background: #c0c0c0;
+    border-top: 2px solid #808080;
+    padding: 15px 20px;
+    margin-top: 30px;
+    font-size: 11px;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.footer-content p {
+    color: #000000;
+    margin: 0;
+}
+
+.footer-links {
+    display: flex;
+    gap: 20px;
+}
+
+.footer-links a {
+    color: #000080;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.footer-links a:hover {
+    text-decoration: underline;
+}
+
+.footer-links a:visited {
+    color: #800080;
+}
+
+/* Responsive footer */
+@media (max-width: 600px) {
+    .footer-content {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .footer-links {
+        gap: 15px;
+    }
+}
