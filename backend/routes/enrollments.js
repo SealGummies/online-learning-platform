@@ -31,21 +31,46 @@ const validateProgress = [
   },
 ];
 
-// All routes require authentication and student role
+// All routes require authentication
 router.use(protect);
-router.use(authorize("student"));
 
-// Student enrollment routes
-router.get("/", EnrollmentController.getStudentEnrollments);
-router.get("/stats", EnrollmentController.getStudentStats);
-router.get("/:id", EnrollmentController.getEnrollmentById);
+// Instructor-specific enrollment routes (must come before other routes to avoid pattern conflicts)
+router.get(
+  "/instructor",
+  authorize("instructor"),
+  EnrollmentController.getInstructorEnrollments
+);
 
-// Progress management
+// Student-specific routes
+router.get(
+  "/",
+  authorize("student"),
+  EnrollmentController.getStudentEnrollments
+);
+router.get(
+  "/stats",
+  authorize("student"),
+  EnrollmentController.getStudentStats
+);
+
+// Progress management (student only)
 router.put(
   "/:id/progress",
+  authorize("student"),
   validateProgress,
   EnrollmentController.updateProgress
 );
-router.post("/:id/withdraw", EnrollmentController.withdrawEnrollment);
+router.post(
+  "/:id/withdraw",
+  authorize("student"),
+  EnrollmentController.withdrawEnrollment
+);
+
+// Individual enrollment by ID (must come last to avoid conflicts)
+router.get(
+  "/:id",
+  authorize("student"),
+  EnrollmentController.getEnrollmentById
+);
 
 module.exports = router;
