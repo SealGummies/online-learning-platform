@@ -32,8 +32,9 @@ async function loadHandlers() {
     InstructorHandler = instructorModule.InstructorHandler;
     AdminHandler = adminModule.AdminHandler;
 
-    // Make instructor handler available globally for onclick handlers
+    // Make handlers available globally for onclick handlers
     window.instructorHandler = InstructorHandler;
+    window.adminHandler = AdminHandler;
 
     console.log("Action handlers loaded successfully");
   } catch (error) {

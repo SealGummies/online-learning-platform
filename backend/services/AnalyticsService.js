@@ -395,69 +395,628 @@ class AnalyticsService {
     level,
     type,
   }) {
-    // Build match conditions
-    const match = {};
-    if (startDate || endDate) {
-      match.enrollmentDate = {};
-      if (startDate) match.enrollmentDate.$gte = new Date(startDate);
-      if (endDate) match.enrollmentDate.$lte = new Date(endDate);
-    }
-    if (category) match["courseInfo.category"] = category;
-    if (level) match["courseInfo.level"] = level;
-    // type: filter exam type if needed (e.g., quiz, midterm, final, assignment)
+    try {
+      // Build match conditions
+      const match = {};
+      if (startDate || endDate) {
+        match.enrollmentDate = {};
+        if (startDate) match.enrollmentDate.$gte = new Date(startDate);
+        if (endDate) match.enrollmentDate.$lte = new Date(endDate);
+      }
+      if (category) match["courseInfo.category"] = category;
+      if (level) match["courseInfo.level"] = level;
 
-    // Aggregate enrollments with course info
-    const pipeline = [
-      {
-        $lookup: {
-          from: "courses",
-          localField: "course",
-          foreignField: "_id",
-          as: "courseInfo",
-        },
-      },
-      { $unwind: "$courseInfo" },
-    ];
-    if (Object.keys(match).length > 0) {
-      pipeline.push({ $match: match });
-    }
-    // Optionally join exams if type is specified
-    if (type) {
-      pipeline.push(
+      // Aggregate enrollments with course info
+      const pipeline = [
         {
           $lookup: {
-            from: "exams",
+            from: "courses",
             localField: "course",
-            foreignField: "course",
-            as: "exams",
+            foreignField: "_id",
+            as: "courseInfo",
           },
         },
-        { $unwind: "$exams" },
-        { $match: { "exams.type": type } }
+        { $unwind: "$courseInfo" },
+      ];
+
+      if (Object.keys(match).length > 0) {
+        pipeline.push({ $match: match });
+      }
+
+      // Optionally join exams if type is specified
+      if (type) {
+        pipeline.push(
+          {
+            $lookup: {
+              from: "exams",
+              localField: "course",
+              foreignField: "course",
+              as: "exams",
+            },
+          },
+          { $unwind: "$exams" },
+          { $match: { "exams.type": type } }
+        );
+      }
+
+      // Group and summarize
+      pipeline.push({
+        $group: {
+          _id: {
+            course: "$courseInfo.title",
+            category: "$courseInfo.category",
+            level: "$courseInfo.level",
+          },
+          totalEnrollments: { $sum: 1 },
+          completed: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "completed"] }, 1, 0],
+            },
+          },
+          averageCompletion: { $avg: "$completionPercentage" },
+          averageGrade: { $avg: "$finalGrade" },
+        },
+      });
+
+      pipeline.push({ $sort: { totalEnrollments: -1 } });
+      return await Enrollment.aggregate(pipeline);
+    } catch (error) {
+      throw new Error(`Error fetching filtered analytics: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get admin-specific analytics overview
+   * Purpose: Provide comprehensive platform statistics for admin dashboard
+   * Business Value: Enable data-driven decision making for platform management
+   */
+  static async getAdminDashboardOverview() {
+    try {
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+
+      // User statistics with growth
+      const totalUsers = await User.countDocuments();
+      const newUsersThisMonth = await User.countDocuments({
+        createdAt: { $gte: thirtyDaysAgo },
+      });
+      const activeUsers = await User.countDocuments({
+        lastLogin: { $gte: thirtyDaysAgo },
+      });
+
+      // Course statistics
+      const totalCourses = await Course.countDocuments();
+      const activeCourses = await Course.countDocuments({ isActive: true });
+      const newCoursesThisMonth = await Course.countDocuments({
+        createdAt: { $gte: thirtyDaysAgo },
+      });
+
+      // Enrollment statistics
+      const totalEnrollments = await Enrollment.countDocuments();
+      const newEnrollmentsThisMonth = await Enrollment.countDocuments({
+        enrollmentDate: { $gte: thirtyDaysAgo },
+      });
+
+      // Revenue calculation
+      const revenueData = await this.calculateTotalRevenue();
+
+      return {
+        users: {
+          total: totalUsers,
+          newThisMonth: newUsersThisMonth,
+          active: activeUsers,
+          growthRate:
+            totalUsers > 0
+              ? ((newUsersThisMonth / totalUsers) * 100).toFixed(1)
+              : 0,
+        },
+        courses: {
+          total: totalCourses,
+          active: activeCourses,
+          newThisMonth: newCoursesThisMonth,
+          growthRate:
+            totalCourses > 0
+              ? ((newCoursesThisMonth / totalCourses) * 100).toFixed(1)
+              : 0,
+        },
+        enrollments: {
+          total: totalEnrollments,
+          newThisMonth: newEnrollmentsThisMonth,
+          growthRate:
+            totalEnrollments > 0
+              ? ((newEnrollmentsThisMonth / totalEnrollments) * 100).toFixed(1)
+              : 0,
+        },
+        revenue: revenueData,
+      };
+    } catch (error) {
+      throw new Error(
+        `Error fetching admin dashboard overview: ${error.message}`
       );
     }
-    // Group and summarize
-    pipeline.push({
-      $group: {
-        _id: {
-          course: "$courseInfo.title",
-          category: "$courseInfo.category",
-          level: "$courseInfo.level",
-        },
-        totalEnrollments: { $sum: 1 },
-        completed: {
-          $sum: {
-            $cond: [{ $eq: ["$status", "completed"] }, 1, 0],
+  }
+
+  /**
+   * Get user analytics for charts and distribution
+   * Purpose: Analyze user demographics and activity patterns
+   * Business Value: Support user engagement and retention strategies
+   */
+  static async getUserAnalytics() {
+    try {
+      // User role distribution
+      const roleDistribution = await User.aggregate([
+        {
+          $group: {
+            _id: "$role",
+            count: { $sum: 1 },
           },
         },
-        averageCompletion: { $avg: "$completionPercentage" },
-        averageGrade: { $avg: "$finalGrade" },
-      },
-    });
-    pipeline.push({ $sort: { totalEnrollments: -1 } });
-    return await (this.Enrollment || require("../models/Enrollment")).aggregate(
-      pipeline
-    );
+        { $sort: { count: -1 } },
+      ]);
+
+      // User status distribution
+      const statusDistribution = await User.aggregate([
+        {
+          $group: {
+            _id: {
+              $cond: [{ $eq: ["$isActive", true] }, "active", "inactive"],
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ]);
+
+      // Monthly registration trends
+      const monthlyRegistrations = await User.aggregate([
+        {
+          $match: {
+            createdAt: {
+              $gte: new Date(
+                new Date().getFullYear() - 1,
+                new Date().getMonth(),
+                1
+              ),
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+            },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
+      ]);
+
+      return {
+        roleDistribution,
+        statusDistribution,
+        monthlyRegistrations,
+      };
+    } catch (error) {
+      throw new Error(`Error fetching user analytics: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get course analytics for admin dashboard
+   * Purpose: Analyze course performance, categories, and completion rates
+   * Business Value: Optimize course catalog and identify successful content patterns
+   */
+  static async getCourseAnalytics() {
+    try {
+      // Course category distribution
+      const categoryDistribution = await Course.aggregate([
+        {
+          $group: {
+            _id: "$category",
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]);
+
+      // Course level distribution
+      const levelDistribution = await Course.aggregate([
+        {
+          $group: {
+            _id: "$level",
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]);
+
+      // Popular courses with enrollment data
+      const popularCourses = await Course.aggregate([
+        {
+          $lookup: {
+            from: "enrollments",
+            localField: "_id",
+            foreignField: "course",
+            as: "enrollments",
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "instructor",
+            foreignField: "_id",
+            as: "instructorInfo",
+          },
+        },
+        {
+          $addFields: {
+            enrollmentCount: { $size: "$enrollments" },
+            completionRate: {
+              $cond: [
+                { $gt: [{ $size: "$enrollments" }, 0] },
+                {
+                  $multiply: [
+                    {
+                      $divide: [
+                        {
+                          $size: {
+                            $filter: {
+                              input: "$enrollments",
+                              cond: { $eq: ["$$this.status", "completed"] },
+                            },
+                          },
+                        },
+                        { $size: "$enrollments" },
+                      ],
+                    },
+                    100,
+                  ],
+                },
+                0,
+              ],
+            },
+            revenue: {
+              $multiply: [
+                { $size: "$enrollments" },
+                { $ifNull: ["$price", 0] },
+              ],
+            },
+            instructorName: {
+              $concat: [
+                { $arrayElemAt: ["$instructorInfo.firstName", 0] },
+                " ",
+                { $arrayElemAt: ["$instructorInfo.lastName", 0] },
+              ],
+            },
+          },
+        },
+        {
+          $project: {
+            title: 1,
+            category: 1,
+            level: 1,
+            price: 1,
+            isActive: 1,
+            enrollmentCount: 1,
+            completionRate: 1,
+            revenue: 1,
+            instructorName: 1,
+          },
+        },
+        { $sort: { enrollmentCount: -1 } },
+        { $limit: 20 },
+      ]);
+
+      return {
+        categoryDistribution,
+        levelDistribution,
+        popularCourses,
+      };
+    } catch (error) {
+      throw new Error(`Error fetching course analytics: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get financial analytics for admin dashboard
+   * Purpose: Track revenue trends, course profitability, and financial performance
+   * Business Value: Support financial planning and revenue optimization
+   */
+  static async getFinancialAnalytics() {
+    try {
+      // Monthly revenue trends
+      const monthlyRevenue = await Enrollment.aggregate([
+        {
+          $lookup: {
+            from: "courses",
+            localField: "course",
+            foreignField: "_id",
+            as: "courseInfo",
+          },
+        },
+        { $unwind: "$courseInfo" },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$enrollmentDate" },
+              month: { $month: "$enrollmentDate" },
+            },
+            revenue: { $sum: { $ifNull: ["$courseInfo.price", 0] } },
+            enrollments: { $sum: 1 },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
+        { $limit: 12 },
+      ]);
+
+      // Revenue by course
+      const courseRevenue = await Course.aggregate([
+        {
+          $lookup: {
+            from: "enrollments",
+            localField: "_id",
+            foreignField: "course",
+            as: "enrollments",
+          },
+        },
+        {
+          $addFields: {
+            revenue: {
+              $multiply: [
+                { $size: "$enrollments" },
+                { $ifNull: ["$price", 0] },
+              ],
+            },
+          },
+        },
+        {
+          $project: {
+            title: 1,
+            revenue: 1,
+            enrollmentCount: { $size: "$enrollments" },
+          },
+        },
+        { $sort: { revenue: -1 } },
+        { $limit: 10 },
+      ]);
+
+      // Revenue by instructor
+      const instructorRevenue = await Course.aggregate([
+        {
+          $lookup: {
+            from: "enrollments",
+            localField: "_id",
+            foreignField: "course",
+            as: "enrollments",
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "instructor",
+            foreignField: "_id",
+            as: "instructorInfo",
+          },
+        },
+        {
+          $addFields: {
+            revenue: {
+              $multiply: [
+                { $size: "$enrollments" },
+                { $ifNull: ["$price", 0] },
+              ],
+            },
+            instructorName: {
+              $concat: [
+                { $arrayElemAt: ["$instructorInfo.firstName", 0] },
+                " ",
+                { $arrayElemAt: ["$instructorInfo.lastName", 0] },
+              ],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$instructor",
+            instructorName: { $first: "$instructorName" },
+            totalRevenue: { $sum: "$revenue" },
+            courseCount: { $sum: 1 },
+            totalEnrollments: { $sum: { $size: "$enrollments" } },
+          },
+        },
+        { $sort: { totalRevenue: -1 } },
+        { $limit: 10 },
+      ]);
+
+      // Financial summary
+      const totalRevenue = await this.calculateTotalRevenue();
+      const avgCoursePrice = await Course.aggregate([
+        {
+          $group: {
+            _id: null,
+            averagePrice: { $avg: "$price" },
+          },
+        },
+      ]);
+
+      return {
+        monthlyRevenue,
+        courseRevenue,
+        instructorRevenue,
+        summary: {
+          ...totalRevenue,
+          averageCoursePrice: avgCoursePrice[0]?.averagePrice || 0,
+        },
+      };
+    } catch (error) {
+      throw new Error(`Error fetching financial analytics: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get instructor performance analytics for admin dashboard
+   * Purpose: Evaluate instructor effectiveness and course management
+   * Business Value: Support instructor development and performance reviews
+   */
+  static async getInstructorPerformanceAnalytics() {
+    try {
+      return await User.aggregate([
+        { $match: { role: "instructor" } },
+        {
+          $lookup: {
+            from: "courses",
+            localField: "_id",
+            foreignField: "instructor",
+            as: "courses",
+          },
+        },
+        {
+          $lookup: {
+            from: "enrollments",
+            localField: "courses._id",
+            foreignField: "course",
+            as: "enrollments",
+          },
+        },
+        {
+          $addFields: {
+            totalCourses: { $size: "$courses" },
+            totalStudents: { $size: "$enrollments" },
+            totalRevenue: {
+              $sum: {
+                $map: {
+                  input: "$courses",
+                  as: "course",
+                  in: {
+                    $multiply: [
+                      {
+                        $size: {
+                          $filter: {
+                            input: "$enrollments",
+                            cond: { $eq: ["$$this.course", "$$course._id"] },
+                          },
+                        },
+                      },
+                      { $ifNull: ["$$course.price", 0] },
+                    ],
+                  },
+                },
+              },
+            },
+            avgCompletionRate: {
+              $cond: [
+                { $gt: [{ $size: "$enrollments" }, 0] },
+                {
+                  $multiply: [
+                    {
+                      $divide: [
+                        {
+                          $size: {
+                            $filter: {
+                              input: "$enrollments",
+                              cond: { $eq: ["$$this.status", "completed"] },
+                            },
+                          },
+                        },
+                        { $size: "$enrollments" },
+                      ],
+                    },
+                    100,
+                  ],
+                },
+                0,
+              ],
+            },
+          },
+        },
+        {
+          $project: {
+            instructorName: { $concat: ["$firstName", " ", "$lastName"] },
+            email: 1,
+            totalCourses: 1,
+            totalStudents: 1,
+            totalRevenue: 1,
+            avgCompletionRate: 1,
+            rating: { $literal: 4.5 }, // Placeholder - would be calculated from actual ratings
+          },
+        },
+        { $sort: { totalRevenue: -1 } },
+        { $limit: 20 },
+      ]);
+    } catch (error) {
+      throw new Error(
+        `Error fetching instructor performance analytics: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Calculate total platform revenue
+   * Purpose: Compute comprehensive revenue metrics
+   * Business Value: Financial reporting and growth tracking
+   */
+  static async calculateTotalRevenue() {
+    try {
+      const revenueData = await Enrollment.aggregate([
+        {
+          $lookup: {
+            from: "courses",
+            localField: "course",
+            foreignField: "_id",
+            as: "courseInfo",
+          },
+        },
+        { $unwind: "$courseInfo" },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: { $ifNull: ["$courseInfo.price", 0] } },
+            totalTransactions: { $sum: 1 },
+          },
+        },
+      ]);
+
+      const thirtyDaysAgo = new Date(
+        new Date().getTime() - 30 * 24 * 60 * 60 * 1000
+      );
+      const monthlyRevenueData = await Enrollment.aggregate([
+        {
+          $match: { enrollmentDate: { $gte: thirtyDaysAgo } },
+        },
+        {
+          $lookup: {
+            from: "courses",
+            localField: "course",
+            foreignField: "_id",
+            as: "courseInfo",
+          },
+        },
+        { $unwind: "$courseInfo" },
+        {
+          $group: {
+            _id: null,
+            monthlyRevenue: { $sum: { $ifNull: ["$courseInfo.price", 0] } },
+          },
+        },
+      ]);
+
+      const totalUsers = await User.countDocuments({ role: "student" });
+
+      const total = revenueData[0]?.totalRevenue || 0;
+      const monthly = monthlyRevenueData[0]?.monthlyRevenue || 0;
+      const transactions = revenueData[0]?.totalTransactions || 0;
+
+      return {
+        total,
+        monthly,
+        transactions,
+        revenuePerUser: totalUsers > 0 ? total / totalUsers : 0,
+        monthlyGrowthRate: 12, // Placeholder - would need historical data
+      };
+    } catch (error) {
+      throw new Error(`Error calculating total revenue: ${error.message}`);
+    }
   }
 
   /**

@@ -1,6 +1,6 @@
 const express = require("express");
 const AnalyticsController = require("../controllers/AnalyticsController");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -12,6 +12,7 @@ const router = express.Router();
 router.get(
   "/top-courses",
   protect,
+  authorize("admin", "instructor"),
   AnalyticsController.getTopPerformingCourses
 );
 
@@ -23,6 +24,7 @@ router.get(
 router.get(
   "/student-progress",
   protect,
+  authorize("admin", "instructor"),
   AnalyticsController.getStudentProgressAnalytics
 );
 
@@ -34,6 +36,7 @@ router.get(
 router.get(
   "/instructor-analytics",
   protect,
+  authorize("admin"),
   AnalyticsController.getInstructorAnalytics
 );
 
@@ -45,6 +48,7 @@ router.get(
 router.get(
   "/completion-trends",
   protect,
+  authorize("admin", "instructor"),
   AnalyticsController.getCourseCompletionTrends
 );
 
@@ -56,6 +60,7 @@ router.get(
 router.get(
   "/exam-performance",
   protect,
+  authorize("admin", "instructor"),
   AnalyticsController.getExamPerformanceAnalysis
 );
 
@@ -67,6 +72,7 @@ router.get(
 router.get(
   "/platform-overview",
   protect,
+  authorize("admin"),
   AnalyticsController.getPlatformOverview
 );
 
@@ -76,7 +82,12 @@ router.get(
  * @access  Private (Admin/Instructor)
  * @query   startDate, endDate, category, level, type
  */
-router.get("/filtered", protect, AnalyticsController.getFilteredAnalytics);
+router.get(
+  "/filtered",
+  protect,
+  authorize("admin", "instructor"),
+  AnalyticsController.getFilteredAnalytics
+);
 
 /**
  * @route   GET /api/analytics/instructor/enrollments
@@ -86,6 +97,7 @@ router.get("/filtered", protect, AnalyticsController.getFilteredAnalytics);
 router.get(
   "/instructor/enrollments",
   protect,
+  authorize("instructor"),
   AnalyticsController.getInstructorEnrollments
 );
 
@@ -97,6 +109,7 @@ router.get(
 router.get(
   "/instructor/overview",
   protect,
+  authorize("instructor"),
   AnalyticsController.getInstructorDashboardOverview
 );
 
@@ -108,7 +121,68 @@ router.get(
 router.get(
   "/instructor/student-progress",
   protect,
+  authorize("instructor"),
   AnalyticsController.getInstructorStudentProgress
+);
+
+/**
+ * @route   GET /api/analytics/admin/overview
+ * @desc    Get comprehensive admin dashboard overview
+ * @access  Private (Admin)
+ */
+router.get(
+  "/admin/overview",
+  protect,
+  authorize("admin"),
+  AnalyticsController.getAdminDashboardOverview
+);
+
+/**
+ * @route   GET /api/analytics/admin/users
+ * @desc    Get user analytics for admin dashboard
+ * @access  Private (Admin)
+ */
+router.get(
+  "/admin/users",
+  protect,
+  authorize("admin"),
+  AnalyticsController.getUserAnalytics
+);
+
+/**
+ * @route   GET /api/analytics/admin/courses
+ * @desc    Get course analytics for admin dashboard
+ * @access  Private (Admin)
+ */
+router.get(
+  "/admin/courses",
+  protect,
+  authorize("admin"),
+  AnalyticsController.getCourseAnalytics
+);
+
+/**
+ * @route   GET /api/analytics/admin/financial
+ * @desc    Get financial analytics for admin dashboard
+ * @access  Private (Admin)
+ */
+router.get(
+  "/admin/financial",
+  protect,
+  authorize("admin"),
+  AnalyticsController.getFinancialAnalytics
+);
+
+/**
+ * @route   GET /api/analytics/admin/instructor-performance
+ * @desc    Get instructor performance analytics for admin dashboard
+ * @access  Private (Admin)
+ */
+router.get(
+  "/admin/instructor-performance",
+  protect,
+  authorize("admin"),
+  AnalyticsController.getInstructorPerformanceAnalytics
 );
 
 module.exports = router;

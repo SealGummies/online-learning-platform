@@ -254,6 +254,123 @@ class AnalyticsController {
       });
     }
   }
+
+  /**
+   * Get admin dashboard overview with comprehensive platform statistics
+   * @route GET /api/analytics/admin/overview
+   * @access Private (Admin)
+   */
+  static async getAdminDashboardOverview(req, res) {
+    try {
+      const overviewData = await AnalyticsService.getAdminDashboardOverview();
+      res.status(200).json({
+        success: true,
+        message: "Admin dashboard overview retrieved successfully",
+        data: overviewData,
+      });
+    } catch (error) {
+      console.error("Error in getAdminDashboardOverview:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve admin dashboard overview",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Get user analytics for charts and demographics
+   * @route GET /api/analytics/admin/users
+   * @access Private (Admin)
+   */
+  static async getUserAnalytics(req, res) {
+    try {
+      const userAnalytics = await AnalyticsService.getUserAnalytics();
+      res.status(200).json({
+        success: true,
+        message: "User analytics retrieved successfully",
+        data: userAnalytics,
+      });
+    } catch (error) {
+      console.error("Error in getUserAnalytics:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve user analytics",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Get course analytics for admin dashboard
+   * @route GET /api/analytics/admin/courses
+   * @access Private (Admin)
+   */
+  static async getCourseAnalytics(req, res) {
+    try {
+      const courseAnalytics = await AnalyticsService.getCourseAnalytics();
+      res.status(200).json({
+        success: true,
+        message: "Course analytics retrieved successfully",
+        data: courseAnalytics,
+      });
+    } catch (error) {
+      console.error("Error in getCourseAnalytics:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve course analytics",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Get financial analytics for admin dashboard
+   * @route GET /api/analytics/admin/financial
+   * @access Private (Admin)
+   */
+  static async getFinancialAnalytics(req, res) {
+    try {
+      const financialAnalytics = await AnalyticsService.getFinancialAnalytics();
+      res.status(200).json({
+        success: true,
+        message: "Financial analytics retrieved successfully",
+        data: financialAnalytics,
+      });
+    } catch (error) {
+      console.error("Error in getFinancialAnalytics:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve financial analytics",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Get instructor performance analytics for admin dashboard
+   * @route GET /api/analytics/admin/instructor-performance
+   * @access Private (Admin)
+   */
+  static async getInstructorPerformanceAnalytics(req, res) {
+    try {
+      const performanceData =
+        await AnalyticsService.getInstructorPerformanceAnalytics();
+      res.status(200).json({
+        success: true,
+        message: "Instructor performance analytics retrieved successfully",
+        data: performanceData,
+        total: performanceData.length,
+      });
+    } catch (error) {
+      console.error("Error in getInstructorPerformanceAnalytics:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve instructor performance analytics",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = AnalyticsController;
