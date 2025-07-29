@@ -32,12 +32,44 @@ class AnalyticsService {
         {
           $addFields: {
             enrollmentCount: { $size: "$enrollments" },
+            completedCount: {
+              $size: {
+                $filter: {
+                  input: "$enrollments",
+                  cond: { $eq: ["$$this.status", "completed"] },
+                },
+              },
+            },
+            averageCompletionPercentage: {
+              $avg: "$enrollments.completionPercentage",
+            },
             instructorName: {
               $concat: [
                 { $arrayElemAt: ["$instructorInfo.firstName", 0] },
                 " ",
                 { $arrayElemAt: ["$instructorInfo.lastName", 0] },
               ],
+            },
+          },
+        },
+        {
+          $addFields: {
+            completionRate: {
+              $cond: {
+                if: { $gt: ["$enrollmentCount", 0] },
+                then: {
+                  $round: [
+                    {
+                      $multiply: [
+                        { $divide: ["$completedCount", "$enrollmentCount"] },
+                        100,
+                      ],
+                    },
+                    2,
+                  ],
+                },
+                else: 0,
+              },
             },
           },
         },
@@ -49,6 +81,9 @@ class AnalyticsService {
             level: 1,
             price: 1,
             enrollmentCount: 1,
+            completedCount: 1,
+            completionRate: 1,
+            averageCompletionPercentage: 1,
             instructorName: 1,
             createdAt: 1,
           },
@@ -147,6 +182,17 @@ class AnalyticsService {
           $addFields: {
             totalCourses: { $size: "$courses" },
             totalEnrollments: { $size: "$enrollments" },
+            completedEnrollments: {
+              $size: {
+                $filter: {
+                  input: "$enrollments",
+                  cond: { $eq: ["$$this.status", "completed"] },
+                },
+              },
+            },
+            averageCompletionPercentage: {
+              $avg: "$enrollments.completionPercentage",
+            },
             averageEnrollmentsPerCourse: {
               $cond: {
                 if: { $gt: [{ $size: "$courses" }, 0] },
@@ -159,11 +205,35 @@ class AnalyticsService {
           },
         },
         {
+          $addFields: {
+            avgCompletionRate: {
+              $cond: {
+                if: { $gt: ["$totalEnrollments", 0] },
+                then: {
+                  $round: [
+                    {
+                      $multiply: [
+                        { $divide: ["$completedEnrollments", "$totalEnrollments"] },
+                        100,
+                      ],
+                    },
+                    2,
+                  ],
+                },
+                else: 0,
+              },
+            },
+          },
+        },
+        {
           $project: {
             instructorName: { $concat: ["$firstName", " ", "$lastName"] },
             email: 1,
             totalCourses: 1,
             totalEnrollments: 1,
+            completedEnrollments: 1,
+            avgCompletionRate: 1,
+            averageCompletionPercentage: 1,
             averageEnrollmentsPerCourse: 1,
             createdAt: 1,
           },

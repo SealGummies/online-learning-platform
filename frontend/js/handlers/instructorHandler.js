@@ -101,24 +101,24 @@ export class InstructorHandler {
       <!-- Simple Course Form -->
       <div id="courseForm" class="course-form" style="display: none;">
         <h3 id="formTitle">Add Course</h3>
-        <form id="courseFormElement">
-          <div class="form-group">
+          <form id="courseFormElement">
+              <div class="form-group">
             <label for="courseTitle">Title *</label>
             <input type="text" id="courseTitle" name="title" required>
-          </div>
-          <div class="form-group">
+              </div>
+              <div class="form-group">
             <label for="courseDescription">Description *</label>
             <textarea id="courseDescription" name="description" required rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label for="coursePrice">Price ($) *</label>
+              </div>
+              <div class="form-group">
+                <label for="coursePrice">Price ($) *</label>
             <input type="number" id="coursePrice" name="price" min="0" value="0" required>
-          </div>
-          <div class="form-actions">
-            <button type="button" id="cancelForm" class="btn-secondary">Cancel</button>
+              </div>
+            <div class="form-actions">
+              <button type="button" id="cancelForm" class="btn-secondary">Cancel</button>
             <button type="submit" id="saveForm" class="btn-primary">Save</button>
-          </div>
-        </form>
+            </div>
+          </form>
       </div>
 
       <!-- Simple Courses List -->
@@ -258,16 +258,14 @@ export class InstructorHandler {
               ${course.isActive ? "Active" : "Inactive"}
             </span>
           </div>
-          <div class="course-actions">
-            <button class="btn-edit" onclick="window.instructorHandler.editCourse('${
-              course._id
-            }')">Edit</button>
-            <button class="btn-delete" onclick="window.instructorHandler.deleteCourse('${
-              course._id
-            }', '${course.title}')">Delete</button>
-          </div>
+        <div class="course-actions">
+          <button class="btn-edit" onclick="window.instructorHandler.editCourse('${course._id
+          }')">Edit</button>
+          <button class="btn-delete" onclick="window.instructorHandler.deleteCourse('${course._id
+          }', '${course.title}')">Delete</button>
         </div>
-        `
+      </div>
+    `
       )
       .join("");
   }
@@ -449,24 +447,24 @@ export class InstructorHandler {
       <!-- Simple Lesson Form -->
       <div id="lessonForm" class="lesson-form" style="display: none;">
         <h3 id="lessonFormTitle">Add Lesson</h3>
-        <form id="lessonFormElement">
-          <div class="form-group">
+          <form id="lessonFormElement">
+              <div class="form-group">
             <label for="lessonTitle">Title *</label>
             <input type="text" id="lessonTitle" name="title" required>
-          </div>
-          <div class="form-group">
-            <label for="lessonContent">Content *</label>
+              </div>
+            <div class="form-group">
+              <label for="lessonContent">Content *</label>
             <textarea id="lessonContent" name="content" required rows="5"></textarea>
-          </div>
-          <div class="form-group">
+            </div>
+            <div class="form-group">
             <label for="lessonOrder">Order</label>
             <input type="number" id="lessonOrder" name="order" min="1" value="1">
-          </div>
-          <div class="form-actions">
-            <button type="button" id="cancelLessonForm" class="btn-secondary">Cancel</button>
+            </div>
+            <div class="form-actions">
+              <button type="button" id="cancelLessonForm" class="btn-secondary">Cancel</button>
             <button type="submit" id="saveLessonForm" class="btn-primary">Save</button>
-          </div>
-        </form>
+            </div>
+          </form>
       </div>
 
       <!-- Simple Lessons List -->
@@ -635,20 +633,18 @@ export class InstructorHandler {
           <div class="lesson-header">
             <span class="lesson-number">${lesson.order || 1}</span>
             <h3>${lesson.title}</h3>
-          </div>
+            </div>
           <div class="lesson-content">
             <p>${this.truncateText(lesson.content || "No content", 100)}</p>
           </div>
           <div class="lesson-actions">
-            <button class="btn-edit" onclick="window.instructorHandler.editLesson('${
-              lesson._id
-            }', '${courseId}')">Edit</button>
-            <button class="btn-delete" onclick="window.instructorHandler.deleteLesson('${
-              lesson._id
-            }', '${lesson.title}', '${courseId}')">Delete</button>
+            <button class="btn-edit" onclick="window.instructorHandler.editLesson('${lesson._id
+          }', '${courseId}')">Edit</button>
+            <button class="btn-delete" onclick="window.instructorHandler.deleteLesson('${lesson._id
+          }', '${lesson.title}', '${courseId}')">Delete</button>
           </div>
         </div>
-        `
+      `
       )
       .join("");
   }
@@ -1126,12 +1122,10 @@ export class InstructorHandler {
             <span class="exam-type">${this.formatExamType(exam.type)}</span>
           </div>
           <div class="exam-actions">
-            <button class="btn-edit" onclick="window.instructorHandler.editExam('${
-              exam._id
-            }', '${courseId}')">Edit</button>
-            <button class="btn-delete" onclick="window.instructorHandler.deleteExam('${
-              exam._id
-            }', '${exam.title}', '${courseId}')">Delete</button>
+            <button class="btn-edit" onclick="window.instructorHandler.editExam('${exam._id
+          }', '${courseId}')">Edit</button>
+            <button class="btn-delete" onclick="window.instructorHandler.deleteExam('${exam._id
+          }', '${exam.title}', '${courseId}')">Delete</button>
           </div>
         </div>
         `
@@ -1177,7 +1171,7 @@ export class InstructorHandler {
       document.getElementById("examType").value = "quiz";
       delete formElement.dataset.examId;
       formElement.dataset.courseId = courseId;
-      
+
       // Clear questions container and add initial question
       document.getElementById("questionsContainer").innerHTML = "";
       this.addQuestion();
@@ -1195,7 +1189,7 @@ export class InstructorHandler {
   static addQuestion() {
     const questionsContainer = document.getElementById("questionsContainer");
     const questionIndex = questionsContainer.children.length;
-    
+
     const questionHTML = `
       <div class="question-item" data-question-index="${questionIndex}">
         <div class="question-header">
@@ -1240,7 +1234,7 @@ export class InstructorHandler {
         </div>
       </div>
     `;
-    
+
     questionsContainer.insertAdjacentHTML('beforeend', questionHTML);
   }
 
@@ -1265,22 +1259,22 @@ export class InstructorHandler {
     // Collect questions from the form
     const questions = [];
     const questionElements = document.querySelectorAll('.question-item');
-    
+
     questionElements.forEach((questionElement, index) => {
       const questionText = questionElement.querySelector('.question-text').value.trim();
       const options = [];
       const optionElements = questionElement.querySelectorAll('.option-input');
-      
+
       optionElements.forEach(optionElement => {
         const optionText = optionElement.value.trim();
         if (optionText) {
           options.push(optionText);
         }
       });
-      
+
       const correctAnswer = parseInt(questionElement.querySelector('.correct-answer').value);
       const points = parseInt(questionElement.querySelector('.question-points').value) || 1;
-      
+
       if (questionText && options.length >= 2) {
         questions.push({
           text: questionText,
@@ -1715,9 +1709,8 @@ export class InstructorHandler {
         overviewData.students?.total || 0;
       document.getElementById("activeStudents").textContent =
         overviewData.students?.active || 0;
-      document.getElementById("avgCompletionRate").textContent = `${
-        overviewData.performance?.avgCompletion || 0
-      }%`;
+      document.getElementById("avgCompletionRate").textContent = `${overviewData.performance?.avgCompletion || 0
+        }%`;
       document.getElementById("totalRevenue").textContent = `$${(
         overviewData.revenue?.actual || 0
       ).toFixed(2)}`;
@@ -1736,9 +1729,9 @@ export class InstructorHandler {
       const avgCompletionRate =
         completionRates.length > 0
           ? Math.round(
-              completionRates.reduce((a, b) => a + b, 0) /
-                completionRates.length
-            )
+            completionRates.reduce((a, b) => a + b, 0) /
+            completionRates.length
+          )
           : 0;
 
       const totalRevenue = courses.reduce((sum, course) => {
@@ -1818,7 +1811,7 @@ export class InstructorHandler {
       const avgProgress =
         courseEnrolls.length > 0
           ? courseEnrolls.reduce((sum, e) => sum + (e.progress || 0), 0) /
-            courseEnrolls.length
+          courseEnrolls.length
           : 0;
       console.log(
         `Course ${course.title}: ${courseEnrolls.length} enrollments, ${avgProgress}% avg progress`
@@ -1862,16 +1855,16 @@ export class InstructorHandler {
       const avgProgress =
         courseEnrolls.length > 0
           ? Math.round(
-              courseEnrolls.reduce((sum, e) => sum + (e.progress || 0), 0) /
-                courseEnrolls.length
-            )
+            courseEnrolls.reduce((sum, e) => sum + (e.progress || 0), 0) /
+            courseEnrolls.length
+          )
           : 0;
       const avgGrade =
         courseEnrolls.length > 0
           ? Math.round(
-              courseEnrolls.reduce((sum, e) => sum + (e.grade || 0), 0) /
-                courseEnrolls.length
-            )
+            courseEnrolls.reduce((sum, e) => sum + (e.grade || 0), 0) /
+            courseEnrolls.length
+          )
           : 0;
       const revenue = (course.price || 0) * enrollmentCount;
 
@@ -1886,9 +1879,8 @@ export class InstructorHandler {
           <td>${avgProgress}%</td>
           <td>${avgGrade}%</td>
           <td>$${revenue.toFixed(2)}</td>
-          <td><span class="status-badge ${
-            course.isActive ? "active" : "inactive"
-          }">${course.isActive ? "Active" : "Inactive"}</span></td>
+          <td><span class="status-badge ${course.isActive ? "active" : "inactive"
+        }">${course.isActive ? "Active" : "Inactive"}</span></td>
         </tr>
       `;
       tbody.innerHTML += row;

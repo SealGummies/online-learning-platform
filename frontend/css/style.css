@@ -2584,6 +2584,7 @@ button:disabled {
 }
 
 @media (max-width: 480px) {
+
     .quiz-card,
     .quiz-item,
     .result-item {
@@ -2712,4 +2713,456 @@ button:disabled {
 
 #addQuestionBtn:hover {
     background: #006000;
+}
+
+/* User Management Styles */
+.user-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f0f0f0;
+    border: 2px inset #c0c0c0;
+}
+
+.user-management-header h2 {
+    color: #000080;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.user-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.user-form {
+    background: #f0f0f0;
+    border: 3px outset #c0c0c0;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.user-form h3 {
+    color: #000080;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-decoration: underline;
+}
+
+.users-list {
+    margin-top: 20px;
+}
+
+.user-card {
+    background: #f0f0f0;
+    border: 2px outset #c0c0c0;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.2s;
+}
+
+.user-card.inactive {
+    opacity: 0.6;
+    background: #e8e8e8;
+}
+
+.user-card:hover {
+    background: #f8f8f8;
+}
+
+.user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.user-header h3 {
+    color: #000080;
+    font-size: 13px;
+    font-weight: bold;
+    margin: 0;
+    flex: 1;
+}
+
+.user-status {
+    margin-left: 15px;
+}
+
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-name-email {
+    flex: 1;
+}
+
+.user-info .status,
+.user-info .role {
+    display: inline-block;
+    padding: 3px 8px;
+    margin-right: 8px;
+    font-size: 10px;
+    font-weight: bold;
+    border: 2px outset #c0c0c0;
+    border-radius: 0;
+}
+
+.user-description {
+    color: #000000;
+    font-size: 11px;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.user-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 8px;
+}
+
+.user-meta span {
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border: 1px solid #808080;
+    background: #e0e0e0;
+}
+
+.user-meta .role {
+    color: #000080;
+}
+
+.user-meta .email {
+    color: #008000;
+}
+
+.user-meta .status {
+    color: #cc0000;
+}
+
+.user-stats {
+    font-size: 9px;
+    color: #808080;
+}
+
+.user-stats small {
+    margin-right: 15px;
+}
+
+.user-actions {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid #c0c0c0;
+}
+
+.user-actions button {
+    padding: 6px 12px;
+    font-size: 10px;
+    font-weight: bold;
+    border: 2px outset #c0c0c0;
+    cursor: pointer;
+    background: #c0c0c0;
+    color: #000000;
+}
+
+.user-actions button:hover {
+    background: #b0b0b0;
+    border: 2px inset #c0c0c0;
+}
+
+.user-actions button:active {
+    border: 2px inset #c0c0c0;
+}
+
+.btn-edit-user {
+    background: #ccffcc !important;
+    color: #008000 !important;
+}
+
+.btn-toggle-user {
+    background: #ffffcc !important;
+    color: #cc6600 !important;
+}
+
+.btn-delete-user {
+    background: #ffcccc !important;
+    color: #cc0000 !important;
+}
+
+.btn-reset-password {
+    background: #ccffff !important;
+    color: #0066cc !important;
+}
+
+.no-users {
+    text-align: center;
+    padding: 40px 20px;
+    color: #808080;
+}
+
+.no-users h3 {
+    color: #000080;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.no-users p {
+    font-size: 11px;
+    margin: 0;
+}
+
+/* Role-specific badges */
+.status-badge.student {
+    background: #ccffcc;
+    color: #008000;
+    border: 1px solid #008000;
+}
+
+.status-badge.instructor {
+    background: #ffffcc;
+    color: #cc6600;
+    border: 1px solid #cc6600;
+}
+
+.status-badge.admin {
+    background: #ffccff;
+    color: #cc00cc;
+    border: 1px solid #cc00cc;
+}
+
+.status-badge.active {
+    background: #ccffcc;
+    color: #008000;
+    border: 1px solid #008000;
+}
+
+.status-badge.inactive {
+    background: #ffcccc;
+    color: #cc0000;
+    border: 1px solid #cc0000;
+}
+
+/* User info spans with borders */
+.user-info .status,
+.user-info .role {
+    display: inline-block;
+    padding: 3px 8px;
+    margin-right: 8px;
+    font-size: 10px;
+    font-weight: bold;
+    border: 2px outset #c0c0c0;
+    border-radius: 0;
+}
+
+.user-info .status.active {
+    background: #ccffcc;
+    color: #008000;
+    border-color: #008000;
+}
+
+.user-info .status.inactive {
+    background: #ffcccc;
+    color: #cc0000;
+    border-color: #cc0000;
+}
+
+.user-info .role.student {
+    background: #ccffcc;
+    color: #008000;
+    border-color: #008000;
+}
+
+.user-info .role.instructor {
+    background: #ffffcc;
+    color: #cc6600;
+    border-color: #cc6600;
+}
+
+.user-info .role.admin {
+    background: #ffccff;
+    color: #cc00cc;
+    border-color: #cc00cc;
+}
+
+/* User search and filter */
+.user-filters {
+    background: #f0f0f0;
+    border: 2px inset #c0c0c0;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.user-filters h3 {
+    color: #000080;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.filter-group label {
+    color: #000000;
+    font-size: 11px;
+    font-weight: bold;
+    /* min-width: 80px; */
+}
+
+.filter-select {
+    padding: 4px 6px;
+    border: 2px inset #c0c0c0;
+    background: #ffffff;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 11px;
+    /* min-width: 120px; */
+}
+
+.filter-select:focus {
+    outline: none;
+    border: 2px inset #000080;
+}
+
+.filter-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 200px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+/* Horizontal filter layout */
+.user-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+}
+
+.user-filters .filter-group {
+    margin-bottom: 0;
+    flex: 0 0 auto;
+}
+
+.user-filters .filter-group:last-child {
+    margin-left: auto;
+}
+
+/* Responsive user management */
+@media (max-width: 600px) {
+    .user-management-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .user-actions {
+        justify-content: center;
+    }
+
+    .filter-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .filter-row .form-group {
+        margin-bottom: 10px;
+    }
+
+    /* Horizontal filters responsive */
+    .user-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .user-filters .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+
+    .user-filters .filter-group:last-child {
+        margin-left: 0;
+        align-self: center;
+    }
+
+    .filter-group label {
+        min-width: auto;
+    }
+
+    .filter-select {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .user-meta {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .user-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .filter-actions {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-management-header {
+        padding: 10px;
+    }
+
+    .user-management-header h2 {
+        font-size: 14px;
+    }
+
+    .user-card {
+        padding: 10px;
+    }
+
+    .user-header {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .user-status {
+        margin-left: 0;
+        align-self: flex-start;
+    }
+
+    .user-actions {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .user-actions button {
+        width: 100%;
+    }
 }
