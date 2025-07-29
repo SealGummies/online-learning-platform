@@ -1888,7 +1888,7 @@ button:disabled {
 
 /* Syllabus Modal Styles */
 .syllabus-modal .modal-content {
-    max-width: 900px;
+    max-width: 800px;
 }
 
 .course-overview {
@@ -2149,7 +2149,7 @@ button:disabled {
 
 /* Quiz Modal Styles */
 .quiz-modal .modal-content {
-    max-width: 900px;
+    max-width: 800px;
     max-height: 90vh;
 }
 
@@ -3069,6 +3069,212 @@ button:disabled {
 
 .user-filters .filter-group:last-child {
     margin-left: auto;
+}
+
+/* Financial Summary Styles */
+.financial-summary {
+    margin: 20px 0;
+    padding: 15px;
+    background: #ffffff;
+    border: 2px outset #c0c0c0;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.financial-summary h4 {
+    margin: 0 0 15px 0;
+    color: #000080;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: underline;
+    text-align: center;
+}
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #f8f8f8, #f0f0f0);
+    border: 2px outset #c0c0c0;
+    padding: 15px;
+    text-align: center;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Add a subtle pattern overlay */
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        repeating-linear-gradient(45deg,
+            transparent,
+            transparent 10px,
+            rgba(255, 255, 255, 0.1) 10px,
+            rgba(255, 255, 255, 0.1) 20px);
+    pointer-events: none;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, #ffffff, #f8f8f8);
+}
+
+.summary-card:active {
+    border: 2px inset #c0c0c0;
+    transform: translateY(0);
+}
+
+.summary-card h4 {
+    margin: 0 0 10px 0;
+    color: #000080;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+}
+
+.summary-card p {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: bold;
+    color: #000000;
+    text-shadow: 1px 1px 0 #ffffff;
+    position: relative;
+}
+
+/* Different color schemes for different metrics */
+.summary-card.revenue p {
+    color: #008000;
+}
+
+.summary-card.price p {
+    color: #000080;
+}
+
+.summary-card.users p {
+    color: #800080;
+}
+
+.summary-card.transactions p {
+    color: #cc6600;
+}
+
+.summary-card small {
+    display: block;
+    font-size: 10px;
+    color: #666666;
+    margin-top: 5px;
+    font-weight: normal;
+    position: relative;
+}
+
+/* Growth indicators */
+.summary-card small.positive {
+    color: #008000;
+    font-weight: bold;
+}
+
+.summary-card small.negative {
+    color: #cc0000;
+    font-weight: bold;
+}
+
+/* Icons for cards */
+.summary-card .card-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    opacity: 0.3;
+}
+
+/* Animation on load */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.summary-card {
+    animation: fadeInUp 0.5s ease-out;
+    animation-fill-mode: both;
+}
+
+.summary-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.summary-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.summary-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.summary-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+/* Responsive design for financial summary */
+@media (max-width: 768px) {
+    .summary-cards {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+    }
+
+    .summary-card {
+        padding: 12px;
+    }
+
+    .summary-card p {
+        font-size: 20px;
+    }
+
+    .summary-card h4 {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .summary-cards {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .summary-card {
+        padding: 10px;
+    }
+
+    .summary-card p {
+        font-size: 18px;
+    }
+
+    .summary-card small {
+        font-size: 9px;
+    }
+
+    .summary-card .card-icon {
+        font-size: 16px;
+        top: 5px;
+        right: 5px;
+    }
 }
 
 /* Responsive user management */

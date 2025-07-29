@@ -1,4 +1,4 @@
-// Admin Action Handler Module
+// Admin Action Handler Module - Fixed Version
 export class AdminHandler {
   static handleAction(action) {
     switch (action) {
@@ -373,9 +373,11 @@ export class AdminHandler {
             </div>
           </div>
           <div class="user-actions">
-            <button class="btn-edit" onclick="window.adminHandler.editUser('${user._id
+            <button class="btn-edit" onclick="window.adminHandler.editUser('${
+              user._id
             }')">Edit</button>
-            <button class="btn-delete" onclick="window.adminHandler.deleteUser('${user._id
+            <button class="btn-delete" onclick="window.adminHandler.deleteUser('${
+              user._id
             }', '${user.firstName} ${user.lastName}')">Delete</button>
           </div>
         </div>
@@ -695,22 +697,23 @@ export class AdminHandler {
           
           <!-- Financial Summary -->
           <div class="financial-summary">
+            <h4>💰 Financial Summary</h4>
             <div class="summary-cards">
-              <div class="summary-card">
+              <div class="summary-card revenue">
                 <h4>Monthly Revenue</h4>
                 <p id="monthlyRevenue">$0</p>
                 <small id="monthlyGrowth">-</small>
               </div>
-              <div class="summary-card">
+              <div class="summary-card price">
                 <h4>Average Course Price</h4>
                 <p id="avgCoursePrice">$0</p>
                 <small id="priceGrowth">-</small>
               </div>
-              <div class="summary-card">
+              <div class="summary-card users">
                 <h4>Revenue per User</h4>
                 <p id="revenuePerUser">$0</p>
               </div>
-              <div class="summary-card">
+              <div class="summary-card transactions">
                 <h4>Total Transactions</h4>
                 <p id="totalTransactions">0</p>
               </div>
@@ -863,7 +866,7 @@ export class AdminHandler {
     examPerformance
   ) {
     // 1. Populate System Overview
-    this.populateSystemOverview(overviewData);
+    this.populateSystemOverview(overviewData, topCourses);
 
     // 2. Create User Management Charts (using actual user data)
     this.createUserAnalyticsCharts(overviewData.users, instructorAnalytics);
@@ -871,14 +874,14 @@ export class AdminHandler {
     // 3. Create Course Analytics Charts and Tables
     this.createCourseAnalyticsCharts(topCourses);
 
-    // 4. Create Financial Analytics (using completion trends as proxy)
-    this.createFinancialAnalytics(completionTrends, topCourses);
+    // 4. Create Financial Analytics (using actual enrollment data)
+    this.createFinancialAnalytics(completionTrends, topCourses, overviewData);
 
     // 5. Populate instructor performance table
     this.populateInstructorPerformanceTable(instructorAnalytics);
   }
 
-  static populateSystemOverview(overviewData) {
+  static populateSystemOverview(overviewData, topCourses) {
     // Update overview cards with actual platform overview data
     document.getElementById("totalUsers").textContent =
       overviewData.users.total;
@@ -890,15 +893,21 @@ export class AdminHandler {
       overviewData.enrollments.active;
     document.getElementById("totalCourses").textContent =
       overviewData.courses.total;
+
+    // Calculate total revenue from top courses and their enrollments
+    const totalRevenue = topCourses.reduce((sum, course) => {
+      return sum + (course.price || 0) * (course.enrollmentCount || 0);
+    }, 0);
+
     document.getElementById(
       "totalRevenue"
-    ).textContent = `$${overviewData.revenue?.total || 0}`;
+    ).textContent = `$${totalRevenue.toFixed(2)}`;
 
     // Growth indicators (using completion rate as proxy for growth)
     const completionRate = overviewData.enrollments.completionRate;
     document.getElementById(
       "userGrowth"
-    ).textContent = `📈 ${completionRate}% completion rate`;
+    ).textContent = `📈 ${completionRate}% completed`;
     document.getElementById(
       "courseGrowth"
     ).textContent = `📈 ${overviewData.courses.total} total courses`;
@@ -908,36 +917,37 @@ export class AdminHandler {
   }
 
   static createUserAnalyticsCharts(userData, instructorAnalytics) {
-    console.log("Creating user analytics charts with data:", { userData, instructorAnalytics });
+    console.log("Creating user analytics charts with data:", {
+      userData,
+      instructorAnalytics,
+    });
 
     // User Role Distribution (Pie Chart)
     const roleCtx = document.getElementById("userRoleChart").getContext("2d");
 
-    // Create role distribution from actual user data
+    // Create role distribution from actual user data - FIX: Format the data correctly
     const roleData = [
-      { _id: "instructor", count: userData.instructors || 0 },
-      { _id: "student", count: userData.students || 0 },
-      { _id: "admin", count: userData.admins || 0 }
+      { _id: "students", count: userData.students || 0 },
+      { _id: "instructors", count: userData.instructors || 0 },
+      { _id: "admins", count: userData.admins || 0 },
     ];
 
     console.log("Role data for pie chart:", roleData);
 
     // Only create chart if we have data
-    if (roleData.some(item => item.count > 0)) {
+    if (roleData.some((item) => item.count > 0)) {
       this.createSimplePieChart(roleCtx, {
         labels: roleData.map(
-          (item) => item._id.charAt(0).toUpperCase() + item._id.slice(1) + "s"
+          (item) => item._id.charAt(0).toUpperCase() + item._id.slice(1)
         ),
         data: roleData.map((item) => item.count),
-        colors: ["#FF6384", "#36A2EB", "#FFCE56"],
+        colors: ["#36A2EB", "#FF6384", "#FFCE56"],
         title: "User Roles",
       });
     } else {
       // Draw "No Data" message
       this.drawNoDataMessage(roleCtx, "No user data available");
     }
-
-
 
     // Instructor Enrollment Trend (Line Chart)
     const registrationCtx = document
@@ -947,7 +957,7 @@ export class AdminHandler {
     // Create trend data from instructor analytics
     const trendData = instructorAnalytics.slice(0, 10).map((inst, index) => ({
       _id: { year: 2024, month: index + 1 },
-      count: inst.totalEnrollments || 0
+      count: inst.totalEnrollments || 0,
     }));
 
     this.createSimpleLineChart(registrationCtx, {
@@ -957,9 +967,6 @@ export class AdminHandler {
       data: trendData.map((item) => item.count),
       title: "Instructor Enrollments",
     });
-
-    // Update user counts in overview (these are already set in populateSystemOverview)
-    // No need to update here as they're already correct from overviewData
   }
 
   static createCourseAnalyticsCharts(topCourses) {
@@ -972,16 +979,23 @@ export class AdminHandler {
 
     // Create category distribution from top courses based on enrollment count
     const categoryEnrollments = {};
-    topCourses.forEach(course => {
-      const category = course.category && course.category.trim() ? course.category : 'Other';
-      categoryEnrollments[category] = (categoryEnrollments[category] || 0) + (course.enrollmentCount || 0);
+    topCourses.forEach((course) => {
+      // FIX: Handle empty or undefined categories
+      const category =
+        course.category && course.category.trim() ? course.category : "Other";
+      categoryEnrollments[category] =
+        (categoryEnrollments[category] || 0) + (course.enrollmentCount || 0);
     });
-    let categoryData = Object.entries(categoryEnrollments).map(([category, enrollments]) => ({
-      _id: category,
-      count: enrollments
-    }));
+
+    let categoryData = Object.entries(categoryEnrollments).map(
+      ([category, enrollments]) => ({
+        _id: category,
+        count: enrollments,
+      })
+    );
+
     // filter out items with count 0
-    categoryData = categoryData.filter(item => item.count > 0);
+    categoryData = categoryData.filter((item) => item.count > 0);
 
     console.log("Category data for pie chart:", categoryData);
 
@@ -989,120 +1003,137 @@ export class AdminHandler {
       this.createSimplePieChart(categoryCtx, {
         labels: categoryData.map((item) => item._id),
         data: categoryData.map((item) => item.count),
-        colors: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"],
+        colors: [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56",
+          "#4BC0C0",
+          "#9966FF",
+          "#FF9F40",
+        ],
         title: "Course Categories by Enrollment",
       });
     } else {
       this.drawNoDataMessage(categoryCtx, "No course data available");
     }
 
-    // Course Enrollment Distribution
+    // Course Completion Rates
     const completionCtx = document
       .getElementById("courseCompletionChart")
       .getContext("2d");
 
-    // Create enrollment distribution from top courses
-    const enrollmentData = topCourses.slice(0, 10).map((course, index) => ({
-      _id: course.title.substring(0, 15) + "...",
-      count: course.enrollmentCount || 0
-    }));
+    // Create completion rate data from top courses and sort by rate from high to low
+    const completionData = topCourses
+      .map((course) => ({
+        title: course.title,
+        rate: course.completionRate || 0,
+      }))
+      .sort((a, b) => b.rate - a.rate)
+      .slice(0, 10)
+      .map((course) => ({
+        _id: course.title.substring(0, 15) + "...",
+        rate: course.rate,
+      }));
 
     this.createSimpleBarChart(completionCtx, {
-      labels: enrollmentData.map((item) => item._id || "Other"),
-      data: enrollmentData.map((item) => item.count),
-      title: "Top Course Enrollments",
+      labels: completionData.map((item) => item._id || "Other"),
+      data: completionData.map((item) => item.rate),
+      title: "Course Completion Rates (%)",
     });
 
     // Popular Courses Table
     this.populatePopularCoursesTable(topCourses);
   }
 
-  static createFinancialAnalytics(completionTrends, topCourses = []) {
-    // Course Completion Distribution
+  static createFinancialAnalytics(
+    completionTrends,
+    topCourses = [],
+    overviewData
+  ) {
+    // Course Revenue Distribution
     const courseRevenueCtx = document
       .getElementById("courseRevenueChart")
       .getContext("2d");
 
-    // 构建课程名到课程对象的映射
-    const courseMap = {};
-    topCourses.forEach(course => {
-      courseMap[course.title] = course;
-    });
-
-    // 统计每门课程的 completions
-    const courseCompletions = {};
-    completionTrends.forEach(trend => {
-      courseCompletions[trend._id.course] = (courseCompletions[trend._id.course] || 0) + trend.completions;
-    });
-
-    // 计算每门课程的 revenue
-    const allCoursesRevenue = Object.entries(courseCompletions)
-      .map(([courseTitle, completions]) => {
-        const courseObj = courseMap[courseTitle];
-        const price = courseObj && courseObj.price ? courseObj.price : 0;
-        return {
-          title: courseTitle,
-          revenue: price * completions
-        };
-      });
-
-    // 取 revenue 最高的10个
-    const topCoursesRevenue = allCoursesRevenue
+    // Calculate revenue and sort by revenue from high to low
+    const courseRevenues = topCourses
+      .map((course) => ({
+        title: course.title,
+        revenue: (course.price || 0) * (course.enrollmentCount || 0),
+      }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
 
     this.createSimpleBarChart(courseRevenueCtx, {
-      labels: topCoursesRevenue.map((course) =>
+      labels: courseRevenues.map((course) =>
         course.title.length > 20
           ? course.title.substring(0, 20) + "..."
           : course.title
       ),
-      data: topCoursesRevenue.map((course) => course.revenue),
+      data: courseRevenues.map((course) => course.revenue),
       title: "Top Course Revenue ($)",
     });
 
-    // Category Completion Distribution
+    // Instructor Revenue Distribution
     const instructorRevenueCtx = document
       .getElementById("instructorRevenueChart")
       .getContext("2d");
 
-    // Get completions by category
-    const categoryCompletions = {};
-    completionTrends.forEach(trend => {
-      categoryCompletions[trend.category] = (categoryCompletions[trend.category] || 0) + trend.completions;
+    // Group revenue by instructor
+    const instructorRevenues = {};
+    topCourses.forEach((course) => {
+      const instructor = course.instructorName || "Unknown";
+      const revenue = (course.price || 0) * (course.enrollmentCount || 0);
+      instructorRevenues[instructor] =
+        (instructorRevenues[instructor] || 0) + revenue;
     });
 
-    const topCategories = Object.entries(categoryCompletions)
+    const topInstructors = Object.entries(instructorRevenues)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10)
-      .map(([category, completions]) => ({
-        category: category,
-        completions: completions
+      .map(([instructor, revenue]) => ({
+        instructor: instructor,
+        revenue: revenue,
       }));
 
     this.createSimpleBarChart(instructorRevenueCtx, {
-      labels: topCategories.map((cat) =>
-        cat.category.length > 15
-          ? cat.category.substring(0, 15) + "..."
-          : cat.category
+      labels: topInstructors.map((inst) =>
+        inst.instructor.length > 15
+          ? inst.instructor.substring(0, 15) + "..."
+          : inst.instructor
       ),
-      data: topCategories.map((cat) => cat.completions),
-      title: "Completions by Category",
+      data: topInstructors.map((inst) => inst.revenue),
+      title: "Revenue by Instructor ($)",
     });
 
-    // Financial Summary (using completion data as proxy)
-    const totalCompletions = completionTrends.reduce((sum, trend) => sum + trend.completions, 0);
-    const avgCompletions = totalCompletions / completionTrends.length || 0;
+    // Financial Summary
+    const totalRevenue = topCourses.reduce(
+      (sum, course) =>
+        sum + (course.price || 0) * (course.enrollmentCount || 0),
+      0
+    );
+    const avgPrice =
+      topCourses.reduce((sum, course) => sum + (course.price || 0), 0) /
+        topCourses.length || 0;
+    const totalEnrollments = topCourses.reduce(
+      (sum, course) => sum + (course.enrollmentCount || 0),
+      0
+    );
+    const revenuePerUser =
+      overviewData.users.students > 0
+        ? totalRevenue / overviewData.users.students
+        : 0;
+
     this.populateFinancialSummary({
-      monthly: totalCompletions,
-      averageCoursePrice: avgCompletions,
-      revenuePerUser: avgCompletions,
-      transactions: completionTrends.length,
-      monthlyGrowthRate: 15 // Placeholder
+      monthly: totalRevenue / 12, // Assuming annual revenue divided by 12
+      averageCoursePrice: avgPrice,
+      revenuePerUser: revenuePerUser,
+      transactions: totalEnrollments,
+      monthlyGrowthRate: 15, // Placeholder
     });
   }
 
-  // Chart Creation Functions
+  // Chart Creation Functions (remain the same)
 
   static populatePopularCoursesTable(topCourses) {
     const tbody = document.querySelector("#popularCoursesTable tbody");
@@ -1114,8 +1145,12 @@ export class AdminHandler {
         <td>${course.title}</td>
         <td>${course.instructorName || "Unknown"}</td>
         <td>${course.enrollmentCount || 0}</td>
-        <td>${course.completionRate ? course.completionRate.toFixed(1) + '%' : 'N/A'}</td>
-        <td>$${(course.price || 0) * (course.enrollmentCount || 0)}</td>
+        <td>${
+          course.completionRate ? course.completionRate.toFixed(1) + "%" : "N/A"
+        }</td>
+        <td>$${((course.price || 0) * (course.enrollmentCount || 0)).toFixed(
+          2
+        )}</td>
       `;
     });
   }
@@ -1126,12 +1161,18 @@ export class AdminHandler {
 
     instructorAnalytics.forEach((instructor) => {
       const row = tbody.insertRow();
+      // FIX: Calculate revenue based on average enrollment and course price
+      const estimatedRevenue = (instructor.totalEnrollments || 0) * 50; // Assuming avg price of $50
       row.innerHTML = `
         <td>${instructor.instructorName}</td>
         <td>${instructor.totalCourses || 0}</td>
         <td>${instructor.totalEnrollments || 0}</td>
-        <td>${instructor.avgCompletionRate ? instructor.avgCompletionRate.toFixed(1) + '%' : 'N/A'}</td>
-        <td>$${((instructor.averageEnrollmentsPerCourse || 0) * 50).toFixed(2)}</td>
+        <td>${
+          instructor.avgCompletionRate
+            ? instructor.avgCompletionRate.toFixed(1) + "%"
+            : "N/A"
+        }</td>
+        <td>$${estimatedRevenue.toFixed(2)}</td>
       `;
     });
   }
@@ -1149,10 +1190,14 @@ export class AdminHandler {
     document.getElementById("totalTransactions").textContent =
       financialSummary.transactions;
 
-    document.getElementById(
-      "monthlyGrowth"
-    ).textContent = `📈 +${financialSummary.monthlyGrowthRate}% vs last month`;
-    document.getElementById("priceGrowth").textContent = "📈 +5% vs last month";
+    // Add positive/negative class to growth indicators
+    const monthlyGrowthEl = document.getElementById("monthlyGrowth");
+    monthlyGrowthEl.textContent = `📈 +${financialSummary.monthlyGrowthRate}% vs last month`;
+    monthlyGrowthEl.className = "positive";
+
+    const priceGrowthEl = document.getElementById("priceGrowth");
+    priceGrowthEl.textContent = "📈 +5% vs last month";
+    priceGrowthEl.className = "positive";
   }
 
   // Improved Chart Creation Functions
@@ -1170,7 +1215,7 @@ export class AdminHandler {
     const indexedData = data.map((value, index) => ({
       value,
       label: labels[index],
-      index
+      index,
     }));
 
     // sort by value from high to low
@@ -1242,14 +1287,15 @@ export class AdminHandler {
     ctx.font = "12px Arial";
 
     // first measure the actual width of each legend item
-    const legendItems = indexedData.map(item => {
-      const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+    const legendItems = indexedData.map((item) => {
+      const percentage =
+        total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
       const text = `${item.label} (${percentage}%)`;
       const textWidth = ctx.measureText(text).width;
       return {
         text,
         width: textWidth + 30, // 15px color block + 7px spacing + text width + 8px right margin
-        item
+        item,
       };
     });
 
@@ -1261,7 +1307,10 @@ export class AdminHandler {
     let currentRowWidth = 0;
 
     legendItems.forEach((legendItem, index) => {
-      if (currentRowWidth + legendItem.width > maxWidth && currentRow.length > 0) {
+      if (
+        currentRowWidth + legendItem.width > maxWidth &&
+        currentRow.length > 0
+      ) {
         // current row is full, start new row
         legendLayout.push(currentRow);
         currentRow = [legendItem];
@@ -1337,7 +1386,21 @@ export class AdminHandler {
       ctx.fillStyle = "#333";
       ctx.font = "12px Arial";
       ctx.textAlign = "center";
-      ctx.fillText(value.toString(), x + barWidth / 2, y - 5);
+
+      // Format value based on chart title
+      let displayValue;
+      if (title && title.includes("(%)")) {
+        // For percentage charts, show 1 decimal place with % symbol
+        displayValue = value.toFixed(1) + "%";
+      } else if (title && title.includes("($)")) {
+        // For revenue charts, show with $ symbol
+        displayValue = "$" + value.toFixed(0);
+      } else {
+        // Default formatting
+        displayValue = value < 100 ? value.toFixed(1) : value.toFixed(0);
+      }
+
+      ctx.fillText(displayValue.toString(), x + barWidth / 2, y - 5);
 
       // Draw label horizontally
       ctx.save();
@@ -1348,9 +1411,10 @@ export class AdminHandler {
 
       // Truncate long labels
       const maxLabelLength = 12;
-      const displayLabel = labels[index].length > maxLabelLength
-        ? labels[index].substring(0, maxLabelLength) + "..."
-        : labels[index];
+      const displayLabel =
+        labels[index].length > maxLabelLength
+          ? labels[index].substring(0, maxLabelLength) + "..."
+          : labels[index];
 
       ctx.fillText(displayLabel, 0, 0);
       ctx.restore();
@@ -1435,9 +1499,10 @@ export class AdminHandler {
 
       // Truncate long labels
       const maxLabelLength = 10;
-      const displayLabel = label.length > maxLabelLength
-        ? label.substring(0, maxLabelLength) + "..."
-        : label;
+      const displayLabel =
+        label.length > maxLabelLength
+          ? label.substring(0, maxLabelLength) + "..."
+          : label;
 
       ctx.fillText(displayLabel, x, height - padding + 20);
     });
