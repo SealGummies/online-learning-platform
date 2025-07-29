@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>返回Student Dashboard指南</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .method {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .method h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 8px;
+            background: white;
+            border-left: 3px solid #007bff;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 3px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 3px;
+            margin: 10px 0;
+        }
+        .original-dashboard {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 返回Student Dashboard指南</h1>
+    
+    <div class="warning">
+        <strong>注意：</strong> 如果您当前在某个功能界面中，需要返回到最开始的student界面，请按照以下方法操作。
+    </div>
+
+    <div class="original-dashboard">
+        <h2>📋 原始Student Dashboard界面</h2>
+        <p>最开始的student界面包含以下三个主要功能：</p>
+        <ul>
+            <li><strong>My Courses</strong> - 查看已报名课程和进度</li>
+            <li><strong>Quizzes & Exams</strong> - 参加课程测验和考试</li>
+            <li><strong>Exam Results</strong> - 查看测验和考试结果</li>
+        </ul>
+    </div>
+
+    <div class="method">
+        <h3>方法1：使用"Back to Dashboard"按钮</h3>
+        <div class="step">
+            <strong>步骤1：</strong> 如果您当前在某个功能界面中（如课程列表、测验列表等），寻找页面上的"← Back to Dashboard"按钮
+        </div>
+        <div class="step">
+            <strong>步骤2：</strong> 点击该按钮，系统会自动返回到student dashboard
+        </div>
+        <div class="step">
+            <strong>步骤3：</strong> 如果按钮不可见或无法点击，请尝试方法2
+        </div>
+    </div>
+
+    <div class="method">
+        <h3>方法2：刷新页面</h3>
+        <div class="step">
+            <strong>步骤1：</strong> 在浏览器中按 F5 键或点击刷新按钮
+        </div>
+        <div class="step">
+            <strong>步骤2：</strong> 页面刷新后，系统会自动显示student dashboard
+        </div>
+        <div class="step">
+            <strong>步骤3：</strong> 如果仍然不是student界面，请重新登录
+        </div>
+    </div>
+
+    <div class="method">
+        <h3>方法3：重新登录</h3>
+        <div class="step">
+            <strong>步骤1：</strong> 点击浏览器地址栏，输入：<code>http://localhost:8000</code>
+        </div>
+        <div class="step">
+            <strong>步骤2：</strong> 使用学生账户登录：<code>student1@test.com</code> / <code>password123</code>
+        </div>
+        <div class="step">
+            <strong>步骤3：</strong> 登录后会自动显示student dashboard
+        </div>
+    </div>
+
+    <div class="method">
+        <h3>方法4：直接访问Dashboard页面</h3>
+        <div class="step">
+            <strong>步骤1：</strong> 在浏览器地址栏输入：<code>http://localhost:8000/dashboard.html</code>
+        </div>
+        <div class="step">
+            <strong>步骤2：</strong> 如果已登录，会直接显示student dashboard
+        </div>
+        <div class="step">
+            <strong>步骤3：</strong> 如果未登录，会跳转到登录页面
+        </div>
+    </div>
+
+    <div class="success">
+        <h3>✅ 验证是否成功返回</h3>
+        <p>成功返回到student dashboard后，您应该看到：</p>
+        <ul>
+            <li>页面标题显示"Student Dashboard"</li>
+            <li>三个功能卡片：My Courses、Quizzes & Exams、Exam Results</li>
+            <li>每个卡片都有对应的"View"按钮</li>
+            <li>页面顶部有导航栏</li>
+        </ul>
+    </div>
+
+    <div class="method">
+        <h3>🔧 如果遇到问题</h3>
+        <div class="step">
+            <strong>问题1：</strong> 按钮不响应 → 尝试刷新页面或重新登录
+        </div>
+        <div class="step">
+            <strong>问题2：</strong> 显示错误信息 → 检查后端服务器是否运行在端口3761
+        </div>
+        <div class="step">
+            <strong>问题3：</strong> 显示其他角色界面 → 确保使用正确的学生账户登录
+        </div>
+        <div class="step">
+            <strong>问题4：</strong> 页面空白 → 检查浏览器控制台是否有JavaScript错误
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="http://localhost:8000" class="button">访问主页</a>
+        <a href="http://localhost:8000/dashboard.html" class="button">直接访问Dashboard</a>
+        <button onclick="window.history.back()" class="button">返回上一页</button>
+    </div>
+
+    <script>
+        function checkServerStatus() {
+            fetch('http://localhost:3761/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: 'student1@test.com',
+                    password: 'password123'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ 后端服务器正常运行');
+                } else {
+                    console.log('❌ 后端服务器可能有问题');
+                }
+            })
+            .catch(error => {
+                console.log('❌ 无法连接到后端服务器');
+            });
+        }
+
+        // 页面加载时检查服务器状态
+        window.onload = function() {
+            checkServerStatus();
+        };
+    </script>
+</body>
+</html> 
