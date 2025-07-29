@@ -429,6 +429,34 @@ class AnalyticsService {
         status: "completed",
       });
       const totalExams = await Exam.countDocuments();
+      
+      // Calculate revenue
+      const revenueData = await Course.aggregate([
+        {
+          $lookup: {
+            from: "enrollments",
+            localField: "_id",
+            foreignField: "course",
+            as: "enrollments",
+          },
+        },
+        {
+          $project: {
+            revenue: {
+              $multiply: ["$price", { $size: "$enrollments" }],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$revenue" },
+          },
+        },
+      ]);
+      
+      const totalRevenue = revenueData.length > 0 ? revenueData[0].total : 0;
+      
       return {
         users: {
           total: totalUsers,
@@ -447,6 +475,9 @@ class AnalyticsService {
               : 0,
         },
         exams: { total: totalExams },
+        revenue: {
+          total: totalRevenue,
+        },
       };
     } catch (error) {
       throw new Error(`Error fetching platform overview: ${error.message}`);
