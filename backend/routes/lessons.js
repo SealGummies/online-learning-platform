@@ -1,374 +1,73 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
-const Lesson = require("../models/Lesson");
-const Course = require("../models/Course");
+const LessonController = require("../controllers/LessonController");
 const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-// @desc    Get lessons for a course
-// @route   GET /api/lessons?course=:courseId
-// @access  Public (for published courses)
-router.get("/", async (req, res) => {
-  try {
-    const { course } = req.query;
-
-    if (!course) {
+// Validation middleware for lesson creation (simplified fields only)
+const validateLesson = [
+  body("title")
+    .notEmpty()
+    .withMessage("Title is required")
+    .isLength({ min: 5, max: 200 })
+    .withMessage("Title must be between 5 and 200 characters"),
+  body("content")
+    .notEmpty()
+    .withMessage("Content is required")
+    .isLength({ min: 50 })
+    .withMessage("Content must be at least 50 characters"),
+  body("course")
+    .notEmpty()
+    .withMessage("Course ID is required")
+    .isMongoId()
+    .withMessage("Invalid course ID"),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: "Course ID is required",
+        message: "Validation failed",
+        errors: errors.array(),
       });
     }
+    next();
+  },
+];
 
-    // Check if course exists and is published
-    const courseDoc = await Course.findById(course);
-    if (!courseDoc) {
-      return res.status(404).json({
-        success: false,
-        message: "Course not found",
-      });
-    }
+// Public routes
+router.get("/", LessonController.getLessons); // Query param: course
+router.get("/:id", LessonController.getLessonById);
 
-    if (
-      !courseDoc.settings.isPublished &&
-      (!req.user ||
-        (req.user._id.toString() !== courseDoc.instructor.toString() &&
-          req.user.role !== "admin"))
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Course not available",
-      });
-    }
-
-    const lessons = await Lesson.find({
-      course: course,
-      "settings.isPublished": true,
-    })
-      .sort({ order: 1 })
-      .populate("instructor", "firstName lastName");
-
-    res.json({
-      success: true,
-      data: {
-        lessons,
-      },
-    });
-  } catch (error) {
-    console.error("Get lessons error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-});
-
-// @desc    Get lesson by ID
-// @route   GET /api/lessons/:id
-// @access  Public (for published lessons)
-router.get("/:id", async (req, res) => {
-  try {
-    const lesson = await Lesson.findById(req.params.id)
-      .populate("instructor", "firstName lastName profile")
-      .populate("course", "title settings");
-
-    if (!lesson) {
-      return res.status(404).json({
-        success: false,
-        message: "Lesson not found",
-      });
-    }
-
-    // Check if lesson is published or user has access
-    if (
-      !lesson.settings.isPublished &&
-      (!req.user ||
-        (req.user._id.toString() !== lesson.instructor._id.toString() &&
-          req.user.role !== "admin"))
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Lesson not available",
-      });
-    }
-
-    // Increment view count
-    await Lesson.findByIdAndUpdate(req.params.id, {
-      $inc: { "stats.views": 1 },
-    });
-
-    res.json({
-      success: true,
-      data: {
-        lesson,
-      },
-    });
-  } catch (error) {
-    console.error("Get lesson error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-});
-
-// @desc    Create lesson
-// @route   POST /api/lessons
-// @access  Private/Instructor
+// Instructor routes
 router.post(
   "/",
   protect,
-  authorize("instructor", "admin"),
-  [
-    body("title")
-      .trim()
-      .isLength({ min: 5 })
-      .withMessage("Title must be at least 5 characters"),
-    body("description")
-      .trim()
-      .isLength({ min: 10 })
-      .withMessage("Description must be at least 10 characters"),
-    body("course").isMongoId().withMessage("Valid course ID is required"),
-    body("type")
-      .isIn(["video", "text", "quiz", "assignment", "interactive", "live"])
-      .withMessage("Invalid lesson type"),
-    body("order")
-      .isInt({ min: 1 })
-      .withMessage("Order must be a positive integer"),
-    body("estimatedTime")
-      .isInt({ min: 1 })
-      .withMessage("Estimated time must be a positive integer"),
-  ],
-  async (req, res) => {
-    try {
-      // Check for validation errors
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          success: false,
-          message: "Validation failed",
-          errors: errors.array(),
-        });
-      }
-
-      const { course } = req.body;
-
-      // Check if course exists and user can create lessons for it
-      const courseDoc = await Course.findById(course);
-      if (!courseDoc) {
-        return res.status(404).json({
-          success: false,
-          message: "Course not found",
-        });
-      }
-
-      if (
-        courseDoc.instructor.toString() !== req.user._id.toString() &&
-        req.user.role !== "admin"
-      ) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to create lessons for this course",
-        });
-      }
-
-      const lessonData = {
-        ...req.body,
-        instructor: req.user._id,
-      };
-
-      const lesson = await Lesson.create(lessonData);
-
-      const populatedLesson = await Lesson.findById(lesson._id)
-        .populate("instructor", "firstName lastName profile")
-        .populate("course", "title");
-
-      res.status(201).json({
-        success: true,
-        message: "Lesson created successfully",
-        data: {
-          lesson: populatedLesson,
-        },
-      });
-    } catch (error) {
-      console.error("Create lesson error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Server error during lesson creation",
-      });
-    }
-  }
+  authorize("instructor"),
+  validateLesson,
+  LessonController.createLesson
 );
 
-// @desc    Update lesson
-// @route   PUT /api/lessons/:id
-// @access  Private/Instructor/Admin
 router.put(
   "/:id",
   protect,
-  [
-    body("title")
-      .optional()
-      .trim()
-      .isLength({ min: 5 })
-      .withMessage("Title must be at least 5 characters"),
-    body("description")
-      .optional()
-      .trim()
-      .isLength({ min: 10 })
-      .withMessage("Description must be at least 10 characters"),
-    body("type")
-      .optional()
-      .isIn(["video", "text", "quiz", "assignment", "interactive", "live"])
-      .withMessage("Invalid lesson type"),
-    body("order")
-      .optional()
-      .isInt({ min: 1 })
-      .withMessage("Order must be a positive integer"),
-    body("estimatedTime")
-      .optional()
-      .isInt({ min: 1 })
-      .withMessage("Estimated time must be a positive integer"),
-  ],
-  async (req, res) => {
-    try {
-      // Check for validation errors
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          success: false,
-          message: "Validation failed",
-          errors: errors.array(),
-        });
-      }
-
-      const lesson = await Lesson.findById(req.params.id);
-
-      if (!lesson) {
-        return res.status(404).json({
-          success: false,
-          message: "Lesson not found",
-        });
-      }
-
-      // Check if user can update this lesson
-      if (
-        lesson.instructor.toString() !== req.user._id.toString() &&
-        req.user.role !== "admin"
-      ) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to update this lesson",
-        });
-      }
-
-      const updatedLesson = await Lesson.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        { new: true, runValidators: true }
-      )
-        .populate("instructor", "firstName lastName profile")
-        .populate("course", "title");
-
-      res.json({
-        success: true,
-        message: "Lesson updated successfully",
-        data: {
-          lesson: updatedLesson,
-        },
-      });
-    } catch (error) {
-      console.error("Update lesson error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Server error during lesson update",
-      });
-    }
-  }
+  authorize("instructor"),
+  validateLesson,
+  LessonController.updateLesson
 );
 
-// @desc    Delete lesson
-// @route   DELETE /api/lessons/:id
-// @access  Private/Instructor/Admin
-router.delete("/:id", protect, async (req, res) => {
-  try {
-    const lesson = await Lesson.findById(req.params.id);
-
-    if (!lesson) {
-      return res.status(404).json({
-        success: false,
-        message: "Lesson not found",
-      });
-    }
-
-    // Check if user can delete this lesson
-    if (
-      lesson.instructor.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to delete this lesson",
-      });
-    }
-
-    await Lesson.findByIdAndDelete(req.params.id);
-
-    res.json({
-      success: true,
-      message: "Lesson deleted successfully",
-    });
-  } catch (error) {
-    console.error("Delete lesson error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error during lesson deletion",
-    });
-  }
-});
-
-// @desc    Mark lesson as completed
-// @route   POST /api/lessons/:id/complete
-// @access  Private/Student
-router.post(
-  "/:id/complete",
+router.delete(
+  "/:id",
   protect,
-  authorize("student"),
-  async (req, res) => {
-    try {
-      const lesson = await Lesson.findById(req.params.id);
+  authorize("instructor"),
+  LessonController.deleteLesson
+);
 
-      if (!lesson) {
-        return res.status(404).json({
-          success: false,
-          message: "Lesson not found",
-        });
-      }
-
-      const { timeSpent } = req.body;
-
-      // Update lesson stats
-      await Lesson.findByIdAndUpdate(req.params.id, {
-        $inc: { "stats.completions": 1 },
-        $set: { "stats.averageTimeSpent": timeSpent || lesson.estimatedTime },
-      });
-
-      res.json({
-        success: true,
-        message: "Lesson marked as completed",
-        data: {
-          lessonId: req.params.id,
-          timeSpent: timeSpent || lesson.estimatedTime,
-        },
-      });
-    } catch (error) {
-      console.error("Complete lesson error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Server error during lesson completion",
-      });
-    }
-  }
+router.get(
+  "/:id/stats",
+  protect,
+  authorize("instructor"),
+  LessonController.getLessonStats
 );
 
 module.exports = router;

@@ -8,16 +8,8 @@ console.log("Version: 1.2 - Modularized Action Handlers");
 // Handler modules will be loaded dynamically
 let StudentHandler, InstructorHandler, AdminHandler;
 
-// Expose utility functions for handlers
-window.dashboardUtils = {
-  getToken,
-  getUser,
-  removeToken,
-  removeUser,
-  redirectToLogin,
-  isLoggedIn,
-  showRoleDashboard,
-};
+// Expose utility functions for handlers (will be set after function definitions)
+let dashboardUtils = null;
 
 // Load handler modules
 async function loadHandlers() {
@@ -218,6 +210,17 @@ function updateUserRoleDisplay(user) {
 
 // Initialize dashboard
 async function initializeDashboard() {
+  // Set up dashboardUtils after all functions are defined
+  window.dashboardUtils = {
+    getToken,
+    getUser,
+    removeToken,
+    removeUser,
+    redirectToLogin,
+    isLoggedIn,
+    showRoleDashboard,
+  };
+
   // Debug: Log initialization
   console.log("Initializing dashboard...");
   console.log("isLoggedIn():", isLoggedIn());
@@ -307,6 +310,9 @@ function addDashboardEventListeners() {
     });
   });
 }
+
+// Expose the function globally for use by handlers
+window.addDashboardEventListeners = addDashboardEventListeners;
 
 // Handle student actions
 function handleStudentAction(action) {

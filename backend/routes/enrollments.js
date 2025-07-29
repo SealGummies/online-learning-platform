@@ -1,357 +1,76 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
-const Enrollment = require("../models/Enrollment");
-const Course = require("../models/Course");
+const EnrollmentController = require("../controllers/EnrollmentController");
 const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-// @desc    Get user's enrollments
-// @route   GET /api/enrollments
-// @access  Private/Student
-router.get("/", protect, authorize("student"), async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const query = { student: req.user._id };
-    if (req.query.status) query.status = req.query.status;
-
-    const enrollments = await Enrollment.find(query)
-      .populate("course", "title description thumbnail instructor stats")
-      .populate("course.instructor", "firstName lastName")
-      .sort({ enrollmentDate: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    const total = await Enrollment.countDocuments(query);
-
-    res.json({
-      success: true,
-      data: {
-        enrollments,
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit),
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Get enrollments error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-});
-
-// @desc    Get enrollment by ID
-// @route   GET /api/enrollments/:id
-// @access  Private
-router.get("/:id", protect, async (req, res) => {
-  try {
-    const enrollment = await Enrollment.findById(req.params.id)
-      .populate("student", "firstName lastName email")
-      .populate("course", "title description instructor");
-
-    if (!enrollment) {
-      return res.status(404).json({
-        success: false,
-        message: "Enrollment not found",
-      });
-    }
-
-    // Check if user can access this enrollment
-    if (
-      enrollment.student._id.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to access this enrollment",
-      });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        enrollment,
-      },
-    });
-  } catch (error) {
-    console.error("Get enrollment error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-});
-
-// @desc    Update enrollment progress
-// @route   PUT /api/enrollments/:id/progress
-// @access  Private/Student
-router.put("/:id/progress", protect, authorize("student"), async (req, res) => {
-  try {
-    const enrollment = await Enrollment.findById(req.params.id);
-
-    if (!enrollment) {
-      return res.status(404).json({
-        success: false,
-        message: "Enrollment not found",
-      });
-    }
-
-    // Check if user owns this enrollment
-    if (enrollment.student.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to update this enrollment",
-      });
-    }
-
-    const { lessonCompleted, examCompleted, timeSpent } = req.body;
-
-    if (lessonCompleted) {
-      // Add lesson completion
-      const lessonExists = enrollment.progress.lessonsCompleted.some(
-        (lesson) => lesson.lesson.toString() === lessonCompleted.lesson
-      );
-
-      if (!lessonExists) {
-        enrollment.progress.lessonsCompleted.push({
-          lesson: lessonCompleted.lesson,
-          completedAt: new Date(),
-          timeSpent: lessonCompleted.timeSpent || 0,
-        });
-      }
-    }
-
-    if (examCompleted) {
-      // Add exam completion
-      const examExists = enrollment.progress.examsCompleted.some(
-        (exam) => exam.exam.toString() === examCompleted.exam
-      );
-
-      if (!examExists) {
-        enrollment.progress.examsCompleted.push({
-          exam: examCompleted.exam,
-          score: examCompleted.score,
-          totalQuestions: examCompleted.totalQuestions,
-          correctAnswers: examCompleted.correctAnswers,
-          completedAt: new Date(),
-          timeSpent: examCompleted.timeSpent || 0,
-        });
-      }
-    }
-
-    if (timeSpent) {
-      enrollment.progress.totalTimeSpent += timeSpent;
-    }
-
-    enrollment.progress.lastActivityDate = new Date();
-
-    // Update completion percentage based on lessons and exams completed
-    // This is a simplified calculation - in production, you'd have more complex logic
-    const totalLessons = enrollment.progress.lessonsCompleted.length;
-    const totalExams = enrollment.progress.examsCompleted.length;
-    const estimatedTotalContent = Math.max(totalLessons + totalExams, 1);
-    enrollment.progress.completionPercentage = Math.min(
-      Math.round(((totalLessons + totalExams) / estimatedTotalContent) * 100),
-      100
-    );
-
-    // Update status based on completion
-    if (enrollment.progress.completionPercentage >= 100) {
-      enrollment.status = "completed";
-      // Issue certificate if course offers one
-      const course = await Course.findById(enrollment.course);
-      if (course && course.settings.certificate) {
-        enrollment.certificate = {
-          issued: true,
-          issuedAt: new Date(),
-          certificateId: `CERT_${Date.now()}_${enrollment._id}`,
-          certificateUrl: `https://example.com/certificates/${enrollment._id}`,
-        };
-      }
-    } else if (enrollment.progress.completionPercentage > 0) {
-      enrollment.status = "in-progress";
-    }
-
-    await enrollment.save();
-
-    res.json({
-      success: true,
-      message: "Progress updated successfully",
-      data: {
-        enrollment,
-      },
-    });
-  } catch (error) {
-    console.error("Update enrollment progress error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error during progress update",
-    });
-  }
-});
-
-// @desc    Add review to enrollment
-// @route   PUT /api/enrollments/:id/review
-// @access  Private/Student
-router.put(
-  "/:id/review",
-  protect,
-  authorize("student"),
-  [
-    body("rating")
-      .isInt({ min: 1, max: 5 })
-      .withMessage("Rating must be between 1 and 5"),
-    body("comment")
-      .optional()
-      .trim()
-      .isLength({ min: 10 })
-      .withMessage("Comment must be at least 10 characters"),
-  ],
-  async (req, res) => {
-    try {
-      // Check for validation errors
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          success: false,
-          message: "Validation failed",
-          errors: errors.array(),
-        });
-      }
-
-      const enrollment = await Enrollment.findById(req.params.id);
-
-      if (!enrollment) {
-        return res.status(404).json({
-          success: false,
-          message: "Enrollment not found",
-        });
-      }
-
-      // Check if user owns this enrollment
-      if (enrollment.student.toString() !== req.user._id.toString()) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to review this enrollment",
-        });
-      }
-
-      // Check if course is completed
-      if (enrollment.status !== "completed") {
-        return res.status(400).json({
-          success: false,
-          message: "Can only review completed courses",
-        });
-      }
-
-      const { rating, comment } = req.body;
-
-      enrollment.rating = rating;
-      enrollment.review = {
-        comment: comment || "",
-        reviewDate: new Date(),
-        helpful: 0,
-      };
-
-      await enrollment.save();
-
-      // Update course rating
-      const course = await Course.findById(enrollment.course);
-      if (course) {
-        // Recalculate course average rating
-        const allRatings = await Enrollment.find({
-          course: enrollment.course,
-          rating: { $exists: true },
-        }).select("rating");
-
-        const totalRatings = allRatings.length;
-        const sumRatings = allRatings.reduce((sum, e) => sum + e.rating, 0);
-        const averageRating =
-          totalRatings > 0
-            ? Math.round((sumRatings / totalRatings) * 10) / 10
-            : 0;
-
-        await Course.findByIdAndUpdate(enrollment.course, {
-          "stats.averageRating": averageRating,
-          "stats.totalReviews": totalRatings,
-        });
-      }
-
-      res.json({
-        success: true,
-        message: "Review added successfully",
-        data: {
-          enrollment,
-        },
-      });
-    } catch (error) {
-      console.error("Add review error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Server error during review submission",
-      });
-    }
-  }
-);
-
-// @desc    Unenroll from course
-// @route   DELETE /api/enrollments/:id
-// @access  Private/Student
-router.delete("/:id", protect, authorize("student"), async (req, res) => {
-  try {
-    const enrollment = await Enrollment.findById(req.params.id);
-
-    if (!enrollment) {
-      return res.status(404).json({
-        success: false,
-        message: "Enrollment not found",
-      });
-    }
-
-    // Check if user owns this enrollment
-    if (enrollment.student.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to unenroll from this course",
-      });
-    }
-
-    // Check if course is already completed
-    if (enrollment.status === "completed") {
+// Progress validation middleware (only simplified model fields)
+const validateProgress = [
+  body("completionPercentage")
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage("Completion percentage must be between 0 and 100"),
+  body("finalGrade")
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage("Final grade must be between 0 and 100"),
+  body("status")
+    .optional()
+    .isIn(["enrolled", "in-progress", "completed", "dropped"])
+    .withMessage("Invalid status value"),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: "Cannot unenroll from completed course",
+        errors: errors.array(),
       });
     }
+    next();
+  },
+];
 
-    // Update enrollment status instead of deleting
-    enrollment.status = "dropped";
-    await enrollment.save();
+// All routes require authentication
+router.use(protect);
 
-    // Update course stats
-    await Course.findByIdAndUpdate(enrollment.course, {
-      $inc: { "stats.enrollments": -1 },
-    });
+// Instructor-specific enrollment routes (must come before other routes to avoid pattern conflicts)
+router.get(
+  "/instructor",
+  authorize("instructor"),
+  EnrollmentController.getInstructorEnrollments
+);
 
-    res.json({
-      success: true,
-      message: "Successfully unenrolled from course",
-    });
-  } catch (error) {
-    console.error("Unenroll error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error during unenrollment",
-    });
-  }
-});
+// Student-specific routes
+router.get(
+  "/",
+  authorize("student"),
+  EnrollmentController.getStudentEnrollments
+);
+router.get(
+  "/stats",
+  authorize("student"),
+  EnrollmentController.getStudentStats
+);
+
+// Progress management (student only)
+router.put(
+  "/:id/progress",
+  authorize("student"),
+  validateProgress,
+  EnrollmentController.updateProgress
+);
+router.post(
+  "/:id/withdraw",
+  authorize("student"),
+  EnrollmentController.withdrawEnrollment
+);
+
+// Individual enrollment by ID (must come last to avoid conflicts)
+router.get(
+  "/:id",
+  authorize("student"),
+  EnrollmentController.getEnrollmentById
+);
 
 module.exports = router;

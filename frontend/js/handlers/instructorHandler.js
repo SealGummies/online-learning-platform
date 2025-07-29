@@ -84,7 +84,7 @@ export class InstructorHandler {
   static async createCourseManagementInterface() {
     const main = document.querySelector("main.dashboard-content");
 
-    // Create course management container
+    // Create simplified course management container
     const courseManagementDiv = document.createElement("div");
     courseManagementDiv.id = "courseManagement";
     courseManagementDiv.className = "role-dashboard";
@@ -94,96 +94,53 @@ export class InstructorHandler {
         <h2>Course Management</h2>
         <div class="course-actions">
           <button id="backToDashboard" class="btn-secondary">← Back</button>
-          <button id="createCourseBtn" class="btn-primary">+ Create New Course</button>
+          <button id="createCourseBtn" class="btn-primary">+ Add Course</button>
         </div>
       </div>
 
-      <!-- Course Creation/Edit Form -->
+      <!-- Simple Course Form -->
       <div id="courseForm" class="course-form" style="display: none;">
-        <div class="form-container">
-          <h3 id="formTitle">Create New Course</h3>
-          <form id="courseFormElement">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="courseTitle">Course Title *</label>
-                <input type="text" id="courseTitle" name="title" required maxlength="100">
-              </div>
-              <div class="form-group">
-                <label for="courseCategory">Category *</label>
-                <select id="courseCategory" name="category" required>
-                  <option value="">Select Category</option>
-                  <option value="Programming">Programming</option>
-                  <option value="Data Science">Data Science</option>
-                  <option value="Web Development">Web Development</option>
-                  <option value="AI/ML">AI/ML</option>
-                  <option value="Database">Database</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-            
-            <div class="form-row">
-              <div class="form-group">
-                <label for="courseLevel">Level *</label>
-                <select id="courseLevel" name="level" required>
-                  <option value="">Select Level</option>
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="coursePrice">Price ($) *</label>
-                <input type="number" id="coursePrice" name="price" min="0" step="0.01" required>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="courseDescription">Description *</label>
-              <textarea id="courseDescription" name="description" required maxlength="1000" rows="4"></textarea>
-            </div>
-
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="courseActive" name="isActive" checked>
-                Course is active and visible to students
-              </label>
-            </div>
-
-            <div class="form-actions">
-              <button type="button" id="cancelForm" class="btn-secondary">Cancel</button>
-              <button type="submit" id="saveForm" class="btn-primary">Save Course</button>
-            </div>
-          </form>
-        </div>
+        <h3 id="formTitle">Add Course</h3>
+        <form id="courseFormElement">
+          <div class="form-group">
+            <label for="courseTitle">Title *</label>
+            <input type="text" id="courseTitle" name="title" required>
+          </div>
+          <div class="form-group">
+            <label for="courseDescription">Description *</label>
+            <textarea id="courseDescription" name="description" required rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="coursePrice">Price ($) *</label>
+            <input type="number" id="coursePrice" name="price" min="0" value="0" required>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="cancelForm" class="btn-secondary">Cancel</button>
+            <button type="submit" id="saveForm" class="btn-primary">Save</button>
+          </div>
+        </form>
       </div>
 
-      <!-- Courses List -->
-      <div id="coursesList" class="courses-list">
-        <div class="loading" id="coursesLoading">Loading courses...</div>
+      <!-- Simple Courses List -->
+      <div id="coursesList">
+        <div id="coursesLoading" style="display: none;">Loading...</div>
         <div id="coursesContainer"></div>
       </div>
     `;
 
     main.appendChild(courseManagementDiv);
-
-    // Add event listeners
     this.setupCourseManagementEventListeners();
-
-    // Load instructor's courses
     await this.loadInstructorCourses();
   }
 
   static setupCourseManagementEventListeners() {
-    // Get helper functions from global scope
     const { getUser, showRoleDashboard } = window.dashboardUtils || {};
 
-    // Back to dashboard button
+    // Back button
     document.getElementById("backToDashboard").addEventListener("click", () => {
       document.getElementById("courseManagement").remove();
       if (getUser && showRoleDashboard) {
-        const user = getUser();
-        showRoleDashboard(user);
+        showRoleDashboard(getUser());
       }
     });
 
@@ -192,12 +149,12 @@ export class InstructorHandler {
       this.showCourseForm();
     });
 
-    // Cancel form button
+    // Cancel button
     document.getElementById("cancelForm").addEventListener("click", () => {
       this.hideCourseForm();
     });
 
-    // Course form submission
+    // Form submission
     document
       .getElementById("courseFormElement")
       .addEventListener("submit", async (e) => {
@@ -213,23 +170,19 @@ export class InstructorHandler {
 
     if (course) {
       formTitle.textContent = "Edit Course";
-      // Populate form with course data
-      document.getElementById("courseTitle").value = course.title;
-      document.getElementById("courseCategory").value = course.category;
-      document.getElementById("courseLevel").value = course.level;
-      document.getElementById("coursePrice").value = course.price;
-      document.getElementById("courseDescription").value = course.description;
-      document.getElementById("courseActive").checked = course.isActive;
+      document.getElementById("courseTitle").value = course.title || "";
+      document.getElementById("courseDescription").value =
+        course.description || "";
+      document.getElementById("coursePrice").value = course.price || 0;
       formElement.dataset.courseId = course._id;
     } else {
-      formTitle.textContent = "Create New Course";
+      formTitle.textContent = "Add Course";
       formElement.reset();
-      document.getElementById("courseActive").checked = true;
+      document.getElementById("coursePrice").value = "0";
       delete formElement.dataset.courseId;
     }
 
     form.style.display = "block";
-    form.scrollIntoView({ behavior: "smooth" });
   }
 
   static hideCourseForm() {
@@ -245,47 +198,18 @@ export class InstructorHandler {
       loading.style.display = "block";
       container.innerHTML = "";
 
-      const { getToken, getUser } = window.dashboardUtils || {};
-      if (!getToken || !getUser) {
-        throw new Error("Dashboard utilities not available");
+      const { getToken } = window.dashboardUtils || {};
+      if (!getToken) {
+        throw new Error("Authentication not available");
       }
 
       const token = getToken();
-      const user = getUser();
-
-      // Debug: Log authentication info
-      console.log("Loading instructor courses...");
-      console.log("Token exists:", !!token);
-      console.log("User exists:", !!user);
-      console.log("User role:", user?.role);
-
-      if (
-        !token ||
-        token === "undefined" ||
-        token === "null" ||
-        token.trim() === ""
-      ) {
-        throw new Error(
-          "No valid authentication token found. Please log in again."
-        );
+      if (!token) {
+        throw new Error("Please log in again");
       }
-
-      if (!user) {
-        throw new Error("No user data found. Please log in again.");
-      }
-
-      if (user.role !== "instructor") {
-        throw new Error("Access denied. Only instructors can manage courses.");
-      }
-
-      const API_BASE_URL = "http://localhost:3761/api";
-      console.log(
-        "Making API request to:",
-        `${API_BASE_URL}/courses/instructor/my-courses`
-      );
 
       const response = await fetch(
-        `${API_BASE_URL}/courses/instructor/my-courses`,
+        "http://localhost:3761/api/courses/instructor/my-courses",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -294,43 +218,16 @@ export class InstructorHandler {
         }
       );
 
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
-
       const data = await response.json();
-      console.log("Response data:", data);
 
       if (data.success) {
         this.displayCourses(data.data || []);
       } else {
-        throw new Error(data.error || data.message || "Failed to load courses");
+        throw new Error(data.error || "Failed to load courses");
       }
     } catch (error) {
       console.error("Error loading courses:", error);
-
-      // Check if it's an authentication error
-      if (
-        error.message.includes("401") ||
-        error.message.includes("Unauthorized") ||
-        error.message.includes("token failed") ||
-        error.message.includes("No valid authentication token")
-      ) {
-        // Clear invalid auth data
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("user");
-
-        container.innerHTML = `
-          <div class="error-message">
-            <strong>Authentication Error</strong><br>
-            Your session has expired or is invalid. <br>
-            <button onclick="window.location.href='index.html'" class="btn-secondary" style="margin-top: 10px;">
-              Login Again
-            </button>
-          </div>
-        `;
-      } else {
-        container.innerHTML = `<div class="error-message">Error loading courses: ${error.message}</div>`;
-      }
+      container.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
     } finally {
       loading.style.display = "none";
     }
@@ -343,7 +240,7 @@ export class InstructorHandler {
       container.innerHTML = `
         <div class="no-courses">
           <h3>No courses yet</h3>
-          <p>Create your first course to get started!</p>
+          <p>Create your first course!</p>
         </div>
       `;
       return;
@@ -352,57 +249,25 @@ export class InstructorHandler {
     container.innerHTML = courses
       .map(
         (course) => `
-      <div class="course-card ${
-        !course.isActive ? "inactive" : ""
-      }" data-course-id="${course._id}">
-        <div class="course-header">
+        <div class="course-card" data-course-id="${course._id}">
           <h3>${course.title}</h3>
-          <div class="course-status">
-            <span class="status-badge ${
-              course.isActive ? "active" : "inactive"
-            }">
+          <p>${course.description}</p>
+          <div class="course-info">
+            <span>$${course.price || 0}</span>
+            <span class="status ${course.isActive ? "active" : "inactive"}">
               ${course.isActive ? "Active" : "Inactive"}
             </span>
           </div>
-        </div>
-        
-        <div class="course-info">
-          <p class="course-description">${course.description}</p>
-          <div class="course-meta">
-            <span class="category">${course.category}</span>
-            <span class="level">${course.level}</span>
-            <span class="price">$${course.price}</span>
-          </div>
-          
-          <div class="course-stats">
-            <small>Created: ${new Date(
-              course.createdAt
-            ).toLocaleDateString()}</small>
-            ${
-              course.updatedAt !== course.createdAt
-                ? `<small>Updated: ${new Date(
-                    course.updatedAt
-                  ).toLocaleDateString()}</small>`
-                : ""
-            }
+          <div class="course-actions">
+            <button class="btn-edit" onclick="window.instructorHandler.editCourse('${
+              course._id
+            }')">Edit</button>
+            <button class="btn-delete" onclick="window.instructorHandler.deleteCourse('${
+              course._id
+            }', '${course.title}')">Delete</button>
           </div>
         </div>
-        
-        <div class="course-actions">
-          <button class="btn-edit" onclick="window.instructorHandler.editCourse('${
-            course._id
-          }')">Edit</button>
-          <button class="btn-toggle" onclick="window.instructorHandler.toggleCourseStatus('${
-            course._id
-          }', ${course.isActive})">
-            ${course.isActive ? "Deactivate" : "Activate"}
-          </button>
-          <button class="btn-delete" onclick="window.instructorHandler.deleteCourse('${
-            course._id
-          }', '${course.title}')">Delete</button>
-        </div>
-      </div>
-    `
+        `
       )
       .join("");
   }
@@ -412,14 +277,13 @@ export class InstructorHandler {
     const formData = new FormData(form);
     const courseId = form.dataset.courseId;
 
-    // Prepare course data
     const courseData = {
       title: formData.get("title").trim(),
       description: formData.get("description").trim(),
-      category: formData.get("category"),
-      level: formData.get("level"),
-      price: parseFloat(formData.get("price")),
-      isActive: formData.get("isActive") === "on",
+      price: parseFloat(formData.get("price")) || 0,
+      category: "Other", // Default category
+      level: "Beginner", // Default level
+      isActive: true, // Default active
     };
 
     try {
@@ -428,15 +292,11 @@ export class InstructorHandler {
       saveBtn.textContent = "Saving...";
 
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
+
       const url = courseId
-        ? `${API_BASE_URL}/courses/${courseId}`
-        : `${API_BASE_URL}/courses`;
+        ? `http://localhost:3761/api/courses/${courseId}`
+        : "http://localhost:3761/api/courses";
 
       const method = courseId ? "PUT" : "POST";
 
@@ -454,68 +314,27 @@ export class InstructorHandler {
       if (data.success) {
         this.hideCourseForm();
         await this.loadInstructorCourses();
-        alert(
-          courseId
-            ? "Course updated successfully!"
-            : "Course created successfully!"
-        );
+        alert(courseId ? "Course updated!" : "Course created!");
       } else {
-        throw new Error(
-          data.error || data.errors?.[0]?.msg || "Failed to save course"
-        );
+        throw new Error(data.error || "Failed to save course");
       }
     } catch (error) {
       console.error("Error saving course:", error);
-      alert(`Error saving course: ${error.message}`);
+      alert(`Error: ${error.message}`);
     } finally {
       const saveBtn = document.getElementById("saveForm");
       saveBtn.disabled = false;
-      saveBtn.textContent = "Save Course";
+      saveBtn.textContent = "Save";
     }
   }
 
   static async editCourse(courseId) {
     try {
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
-      const response = await fetch(`${API_BASE_URL}/courses/${courseId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
 
-      const data = await response.json();
-
-      if (data.success) {
-        this.showCourseForm(data.data);
-      } else {
-        throw new Error(data.error || "Failed to load course details");
-      }
-    } catch (error) {
-      console.error("Error loading course for edit:", error);
-      alert(`Error loading course: ${error.message}`);
-    }
-  }
-
-  static async toggleCourseStatus(courseId, currentStatus) {
-    try {
-      const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
-      const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
-
-      // First, get the full course data
-      const courseResponse = await fetch(
-        `${API_BASE_URL}/courses/${courseId}`,
+      const response = await fetch(
+        `http://localhost:3761/api/courses/${courseId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -524,95 +343,56 @@ export class InstructorHandler {
         }
       );
 
-      const courseData = await courseResponse.json();
-      if (!courseData.success) {
-        throw new Error(courseData.error || "Failed to load course data");
-      }
-
-      const course = courseData.data;
-
-      // Update the course with the new status and all required fields
-      const updateData = {
-        title: course.title,
-        description: course.description,
-        category: course.category,
-        level: course.level,
-        price: course.price,
-        isActive: !currentStatus,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/courses/${courseId}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updateData),
-      });
-
       const data = await response.json();
 
       if (data.success) {
-        await this.loadInstructorCourses();
-        console.log(
-          `Course ${!currentStatus ? "activated" : "deactivated"} successfully!`
-        );
+        this.showCourseForm(data.data);
       } else {
-        throw new Error(
-          data.error ||
-            data.errors?.[0]?.msg ||
-            "Failed to update course status"
-        );
+        throw new Error(data.error || "Failed to load course");
       }
     } catch (error) {
-      console.error("Error toggling course status:", error);
-      alert(`Error updating course: ${error.message}`);
+      console.error("Error loading course:", error);
+      alert(`Error: ${error.message}`);
     }
   }
 
   static async deleteCourse(courseId, courseTitle) {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`
-      )
-    ) {
+    if (!confirm(`Delete "${courseTitle}"? This cannot be undone.`)) {
       return;
     }
 
     try {
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
-      const response = await fetch(`${API_BASE_URL}/courses/${courseId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+
+      const response = await fetch(
+        `http://localhost:3761/api/courses/${courseId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = await response.json();
 
       if (data.success) {
         await this.loadInstructorCourses();
-        alert("Course deleted successfully!");
+        alert("Course deleted!");
       } else {
         throw new Error(data.error || "Failed to delete course");
       }
     } catch (error) {
       console.error("Error deleting course:", error);
-      alert(`Error deleting course: ${error.message}`);
+      alert(`Error: ${error.message}`);
     }
   }
 
   // Lesson Management Functions
   static async showLessonManagement() {
     try {
-      // Get helper functions from global scope
       const { getToken, getUser, redirectToLogin } =
         window.dashboardUtils || {};
 
@@ -621,7 +401,6 @@ export class InstructorHandler {
         return;
       }
 
-      // Check authentication first
       const token = getToken();
       const user = getUser();
 
@@ -636,13 +415,11 @@ export class InstructorHandler {
         return;
       }
 
-      // Hide all role dashboards
       const roleDashboards = document.querySelectorAll(".role-dashboard");
       roleDashboards.forEach((dashboard) => {
         dashboard.style.display = "none";
       });
 
-      // Create and show lesson management interface
       await this.createLessonManagementInterface();
     } catch (error) {
       console.error("Error showing lesson management:", error);
@@ -653,7 +430,6 @@ export class InstructorHandler {
   static async createLessonManagementInterface() {
     const main = document.querySelector("main.dashboard-content");
 
-    // Create lesson management container
     const lessonManagementDiv = document.createElement("div");
     lessonManagementDiv.id = "lessonManagement";
     lessonManagementDiv.className = "role-dashboard";
@@ -666,98 +442,64 @@ export class InstructorHandler {
           <select id="courseSelector" class="course-selector">
             <option value="">Select a course...</option>
           </select>
-          <button id="createLessonBtn" class="btn-primary" disabled>+ Create New Lesson</button>
+          <button id="createLessonBtn" class="btn-primary" disabled>+ Add Lesson</button>
         </div>
       </div>
 
-      <!-- Lesson Creation/Edit Form -->
+      <!-- Simple Lesson Form -->
       <div id="lessonForm" class="lesson-form" style="display: none;">
-        <div class="form-container">
-          <h3 id="lessonFormTitle">Create New Lesson</h3>
-          <form id="lessonFormElement">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="lessonTitle">Lesson Title *</label>
-                <input type="text" id="lessonTitle" name="title" required maxlength="100">
-              </div>
-              <div class="form-group">
-                <label for="lessonOrder">Order *</label>
-                <input type="number" id="lessonOrder" name="order" min="1" required>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="lessonContent">Content *</label>
-              <textarea id="lessonContent" name="content" required rows="10" placeholder="Enter lesson content in Markdown or plain text..."></textarea>
-            </div>
-
-            <div class="form-group">
-              <label for="lessonType">Content Type *</label>
-              <select id="lessonType" name="type" required>
-                <option value="">Select Type</option>
-                <option value="text">Text/Reading</option>
-                <option value="video">Video</option>
-                <option value="assignment">Assignment</option>
-                <option value="quiz">Quiz</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="lessonActive" name="isActive" checked>
-                Lesson is published and visible to students
-              </label>
-            </div>
-
-            <div class="form-actions">
-              <button type="button" id="cancelLessonForm" class="btn-secondary">Cancel</button>
-              <button type="submit" id="saveLessonForm" class="btn-primary">Save Lesson</button>
-            </div>
-          </form>
-        </div>
+        <h3 id="lessonFormTitle">Add Lesson</h3>
+        <form id="lessonFormElement">
+          <div class="form-group">
+            <label for="lessonTitle">Title *</label>
+            <input type="text" id="lessonTitle" name="title" required>
+          </div>
+          <div class="form-group">
+            <label for="lessonContent">Content *</label>
+            <textarea id="lessonContent" name="content" required rows="5"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="lessonOrder">Order</label>
+            <input type="number" id="lessonOrder" name="order" min="1" value="1">
+          </div>
+          <div class="form-actions">
+            <button type="button" id="cancelLessonForm" class="btn-secondary">Cancel</button>
+            <button type="submit" id="saveLessonForm" class="btn-primary">Save</button>
+          </div>
+        </form>
       </div>
 
-      <!-- Lessons List -->
-      <div id="lessonsList" class="lessons-list">
-        <div class="course-info-display" id="courseInfoDisplay" style="display: none;">
-          <h3 id="selectedCourseTitle"></h3>
-          <p id="selectedCourseDescription"></p>
-        </div>
-        <div class="loading" id="lessonsLoading" style="display: none;">Loading lessons...</div>
+      <!-- Simple Lessons List -->
+      <div id="lessonsList">
+        <div id="lessonsLoading" style="display: none;">Loading...</div>
         <div id="lessonsContainer">
           <div class="no-course-selected">
             <h3>Select a Course</h3>
-            <p>Choose a course from the dropdown above to manage its lessons.</p>
+            <p>Choose a course to manage its lessons.</p>
           </div>
         </div>
       </div>
     `;
 
     main.appendChild(lessonManagementDiv);
-
-    // Add event listeners
     this.setupLessonManagementEventListeners();
-
-    // Load instructor's courses for selection
     await this.loadCoursesForLessonManagement();
   }
 
   static setupLessonManagementEventListeners() {
-    // Get helper functions from global scope
     const { getUser, showRoleDashboard } = window.dashboardUtils || {};
 
-    // Back to dashboard button
+    // Back button
     document
       .getElementById("backToDashboardFromLessons")
       .addEventListener("click", () => {
         document.getElementById("lessonManagement").remove();
         if (getUser && showRoleDashboard) {
-          const user = getUser();
-          showRoleDashboard(user);
+          showRoleDashboard(getUser());
         }
       });
 
-    // Course selector change
+    // Course selector
     document
       .getElementById("courseSelector")
       .addEventListener("change", async (e) => {
@@ -781,14 +523,14 @@ export class InstructorHandler {
       }
     });
 
-    // Cancel form button
+    // Cancel button
     document
       .getElementById("cancelLessonForm")
       .addEventListener("click", () => {
         this.hideLessonForm();
       });
 
-    // Lesson form submission
+    // Form submission
     document
       .getElementById("lessonFormElement")
       .addEventListener("submit", async (e) => {
@@ -800,15 +542,10 @@ export class InstructorHandler {
   static async loadCoursesForLessonManagement() {
     try {
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
 
       const response = await fetch(
-        `${API_BASE_URL}/courses/instructor/my-courses`,
+        "http://localhost:3761/api/courses/instructor/my-courses",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -826,9 +563,7 @@ export class InstructorHandler {
         data.data.forEach((course) => {
           const option = document.createElement("option");
           option.value = course._id;
-          option.textContent = `${course.title} (${
-            course.isActive ? "Active" : "Inactive"
-          })`;
+          option.textContent = course.title;
           courseSelector.appendChild(option);
         });
       } else {
@@ -836,65 +571,41 @@ export class InstructorHandler {
       }
     } catch (error) {
       console.error("Error loading courses:", error);
-      alert(`Error loading courses: ${error.message}`);
+      alert(`Error: ${error.message}`);
     }
   }
 
   static async loadLessonsForCourse(courseId) {
     const loading = document.getElementById("lessonsLoading");
     const container = document.getElementById("lessonsContainer");
-    const courseInfoDisplay = document.getElementById("courseInfoDisplay");
 
     try {
       loading.style.display = "block";
       container.innerHTML = "";
-      courseInfoDisplay.style.display = "none";
 
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
 
-      // Load course info and lessons
-      const [courseResponse, lessonsResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/courses/${courseId}`, {
+      const response = await fetch(
+        `http://localhost:3761/api/lessons?course=${courseId}`,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }),
-        fetch(`${API_BASE_URL}/lessons?course=${courseId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }),
-      ]);
+        }
+      );
 
-      const courseData = await courseResponse.json();
-      const lessonsData = await lessonsResponse.json();
+      const data = await response.json();
 
-      if (courseData.success) {
-        // Display course info
-        document.getElementById("selectedCourseTitle").textContent =
-          courseData.data.title;
-        document.getElementById("selectedCourseDescription").textContent =
-          courseData.data.description;
-        courseInfoDisplay.style.display = "block";
-      }
-
-      if (lessonsData.success) {
-        this.displayLessons(lessonsData.data || [], courseId);
+      if (data.success) {
+        this.displayLessons(data.data || [], courseId);
       } else {
-        // If lessons endpoint doesn't exist, show placeholder
         this.displayLessons([], courseId);
       }
     } catch (error) {
       console.error("Error loading lessons:", error);
-      container.innerHTML = `<div class="error-message">Error loading lessons: ${error.message}</div>`;
+      container.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
     } finally {
       loading.style.display = "none";
     }
@@ -907,81 +618,39 @@ export class InstructorHandler {
       container.innerHTML = `
         <div class="no-lessons">
           <h3>No lessons yet</h3>
-          <p>Create your first lesson for this course!</p>
+          <p>Create your first lesson!</p>
         </div>
       `;
       return;
     }
 
-    // Sort lessons by order
     const sortedLessons = lessons.sort(
       (a, b) => (a.order || 0) - (b.order || 0)
     );
 
     container.innerHTML = sortedLessons
       .map(
-        (lesson, index) => `
-        <div class="lesson-card ${
-          !lesson.isPublished ? "inactive" : ""
-        }" data-lesson-id="${lesson._id}">
+        (lesson) => `
+        <div class="lesson-card" data-lesson-id="${lesson._id}">
           <div class="lesson-header">
-            <div class="lesson-number">${lesson.order || index + 1}</div>
+            <span class="lesson-number">${lesson.order || 1}</span>
             <h3>${lesson.title}</h3>
-            <div class="lesson-status">
-              <span class="status-badge ${
-                lesson.isPublished ? "active" : "inactive"
-              }">
-                ${lesson.isPublished ? "Published" : "Draft"}
-              </span>
-              <span class="type-badge type-${
-                lesson.type || "text"
-              }">${this.formatLessonType(lesson.type)}</span>
-            </div>
           </div>
-          
-          <div class="lesson-info">
-            <div class="lesson-meta">
-              <span class="created">Created: ${new Date(
-                lesson.createdAt || Date.now()
-              ).toLocaleDateString()}</span>
-            </div>
-            
-            <div class="lesson-content-preview">
-              <strong>Content Preview:</strong>
-              <p>${this.truncateText(
-                lesson.content || "No content yet",
-                150
-              )}</p>
-            </div>
+          <div class="lesson-content">
+            <p>${this.truncateText(lesson.content || "No content", 100)}</p>
           </div>
-          
           <div class="lesson-actions">
             <button class="btn-edit" onclick="window.instructorHandler.editLesson('${
               lesson._id
             }', '${courseId}')">Edit</button>
-            <button class="btn-toggle" onclick="window.instructorHandler.toggleLessonStatus('${
-              lesson._id
-            }', ${lesson.isPublished}, '${courseId}')">
-              ${lesson.isPublished ? "Unpublish" : "Publish"}
-            </button>
             <button class="btn-delete" onclick="window.instructorHandler.deleteLesson('${
               lesson._id
             }', '${lesson.title}', '${courseId}')">Delete</button>
           </div>
         </div>
-      `
+        `
       )
       .join("");
-  }
-
-  static formatLessonType(type) {
-    const types = {
-      text: "Reading",
-      video: "Video",
-      assignment: "Assignment",
-      quiz: "Quiz",
-    };
-    return types[type] || "Reading";
   }
 
   static truncateText(text, maxLength) {
@@ -993,13 +662,10 @@ export class InstructorHandler {
 
   static showNoCourseSelected() {
     const container = document.getElementById("lessonsContainer");
-    const courseInfoDisplay = document.getElementById("courseInfoDisplay");
-
-    courseInfoDisplay.style.display = "none";
     container.innerHTML = `
       <div class="no-course-selected">
         <h3>Select a Course</h3>
-        <p>Choose a course from the dropdown above to manage its lessons.</p>
+        <p>Choose a course to manage its lessons.</p>
       </div>
     `;
   }
@@ -1011,62 +677,20 @@ export class InstructorHandler {
 
     if (lesson) {
       formTitle.textContent = "Edit Lesson";
-      // Populate form with lesson data
       document.getElementById("lessonTitle").value = lesson.title || "";
-      document.getElementById("lessonOrder").value = lesson.order || "";
       document.getElementById("lessonContent").value = lesson.content || "";
-      document.getElementById("lessonType").value = lesson.type || "text";
-      document.getElementById("lessonActive").checked =
-        lesson.isPublished !== false;
+      document.getElementById("lessonOrder").value = lesson.order || 1;
       formElement.dataset.lessonId = lesson._id;
       formElement.dataset.courseId = courseId || lesson.course;
     } else {
-      formTitle.textContent = "Create New Lesson";
+      formTitle.textContent = "Add Lesson";
       formElement.reset();
-      document.getElementById("lessonActive").checked = true;
+      document.getElementById("lessonOrder").value = "1";
       delete formElement.dataset.lessonId;
       formElement.dataset.courseId = courseId;
-
-      // Set default order to next available
-      this.setNextLessonOrder(courseId);
     }
 
     form.style.display = "block";
-    form.scrollIntoView({ behavior: "smooth" });
-  }
-
-  static async setNextLessonOrder(courseId) {
-    try {
-      const { getToken } = window.dashboardUtils || {};
-      if (!getToken) return;
-
-      const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
-
-      const response = await fetch(
-        `${API_BASE_URL}/lessons?course=${courseId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success && data.data) {
-        const maxOrder = Math.max(
-          0,
-          ...data.data.map((lesson) => lesson.order || 0)
-        );
-        document.getElementById("lessonOrder").value = maxOrder + 1;
-      } else {
-        document.getElementById("lessonOrder").value = 1;
-      }
-    } catch (error) {
-      document.getElementById("lessonOrder").value = 1;
-    }
   }
 
   static hideLessonForm() {
@@ -1080,14 +704,13 @@ export class InstructorHandler {
     const lessonId = form.dataset.lessonId;
     const courseId = form.dataset.courseId;
 
-    // Prepare lesson data
     const lessonData = {
       title: formData.get("title").trim(),
       content: formData.get("content").trim(),
-      type: formData.get("type"),
       order: parseInt(formData.get("order")) || 1,
       course: courseId,
-      isPublished: formData.get("isActive") === "on",
+      type: "text", // Default type
+      isPublished: true, // Default published
     };
 
     try {
@@ -1096,15 +719,11 @@ export class InstructorHandler {
       saveBtn.textContent = "Saving...";
 
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
+
       const url = lessonId
-        ? `${API_BASE_URL}/lessons/${lessonId}`
-        : `${API_BASE_URL}/lessons`;
+        ? `http://localhost:3761/api/lessons/${lessonId}`
+        : "http://localhost:3761/api/lessons";
 
       const method = lessonId ? "PUT" : "POST";
 
@@ -1122,68 +741,27 @@ export class InstructorHandler {
       if (data.success) {
         this.hideLessonForm();
         await this.loadLessonsForCourse(courseId);
-        alert(
-          lessonId
-            ? "Lesson updated successfully!"
-            : "Lesson created successfully!"
-        );
+        alert(lessonId ? "Lesson updated!" : "Lesson created!");
       } else {
-        throw new Error(
-          data.error || data.errors?.[0]?.msg || "Failed to save lesson"
-        );
+        throw new Error(data.error || "Failed to save lesson");
       }
     } catch (error) {
       console.error("Error saving lesson:", error);
-      alert(`Error saving lesson: ${error.message}`);
+      alert(`Error: ${error.message}`);
     } finally {
       const saveBtn = document.getElementById("saveLessonForm");
       saveBtn.disabled = false;
-      saveBtn.textContent = "Save Lesson";
+      saveBtn.textContent = "Save";
     }
   }
 
   static async editLesson(lessonId, courseId) {
     try {
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
-      const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
 
-      const data = await response.json();
-
-      if (data.success) {
-        this.showLessonForm(data.data, courseId);
-      } else {
-        throw new Error(data.error || "Failed to load lesson details");
-      }
-    } catch (error) {
-      console.error("Error loading lesson for edit:", error);
-      alert(`Error loading lesson: ${error.message}`);
-    }
-  }
-
-  static async toggleLessonStatus(lessonId, currentStatus, courseId) {
-    try {
-      const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
-      const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
-
-      // First, get the full lesson data
-      const lessonResponse = await fetch(
-        `${API_BASE_URL}/lessons/${lessonId}`,
+      const response = await fetch(
+        `http://localhost:3761/api/lessons/${lessonId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1192,95 +770,56 @@ export class InstructorHandler {
         }
       );
 
-      const lessonData = await lessonResponse.json();
-      if (!lessonData.success) {
-        throw new Error(lessonData.error || "Failed to load lesson data");
-      }
-
-      const lesson = lessonData.data;
-
-      // Update the lesson with the new status
-      const updateData = {
-        title: lesson.title,
-        content: lesson.content,
-        type: lesson.type,
-        order: lesson.order,
-        course: lesson.course,
-        isPublished: !currentStatus,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updateData),
-      });
-
       const data = await response.json();
 
       if (data.success) {
-        await this.loadLessonsForCourse(courseId);
-        console.log(
-          `Lesson ${!currentStatus ? "activated" : "deactivated"} successfully!`
-        );
+        this.showLessonForm(data.data, courseId);
       } else {
-        throw new Error(
-          data.error ||
-            data.errors?.[0]?.msg ||
-            "Failed to update lesson status"
-        );
+        throw new Error(data.error || "Failed to load lesson");
       }
     } catch (error) {
-      console.error("Error toggling lesson status:", error);
-      alert(`Error updating lesson: ${error.message}`);
+      console.error("Error loading lesson:", error);
+      alert(`Error: ${error.message}`);
     }
   }
 
   static async deleteLesson(lessonId, lessonTitle, courseId) {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${lessonTitle}"? This action cannot be undone.`
-      )
-    ) {
+    if (!confirm(`Delete "${lessonTitle}"? This cannot be undone.`)) {
       return;
     }
 
     try {
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
-      const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+
+      const response = await fetch(
+        `http://localhost:3761/api/lessons/${lessonId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = await response.json();
 
       if (data.success) {
         await this.loadLessonsForCourse(courseId);
-        alert("Lesson deleted successfully!");
+        alert("Lesson deleted!");
       } else {
         throw new Error(data.error || "Failed to delete lesson");
       }
     } catch (error) {
       console.error("Error deleting lesson:", error);
-      alert(`Error deleting lesson: ${error.message}`);
+      alert(`Error: ${error.message}`);
     }
   }
 
   // Exam Management Functions
   static async showExamManagement() {
     try {
-      // Get helper functions from global scope
       const { getToken, getUser, redirectToLogin } =
         window.dashboardUtils || {};
 
@@ -1289,7 +828,6 @@ export class InstructorHandler {
         return;
       }
 
-      // Check authentication first
       const token = getToken();
       const user = getUser();
 
@@ -1304,13 +842,11 @@ export class InstructorHandler {
         return;
       }
 
-      // Hide all role dashboards
       const roleDashboards = document.querySelectorAll(".role-dashboard");
       roleDashboards.forEach((dashboard) => {
         dashboard.style.display = "none";
       });
 
-      // Create and show exam management interface
       await this.createExamManagementInterface();
     } catch (error) {
       console.error("Error showing exam management:", error);
@@ -1321,7 +857,6 @@ export class InstructorHandler {
   static async createExamManagementInterface() {
     const main = document.querySelector("main.dashboard-content");
 
-    // Create exam management container
     const examManagementDiv = document.createElement("div");
     examManagementDiv.id = "examManagement";
     examManagementDiv.className = "role-dashboard";
@@ -1334,93 +869,124 @@ export class InstructorHandler {
           <select id="examCourseSelector" class="course-selector">
             <option value="">Select a course...</option>
           </select>
-          <button id="createExamBtn" class="btn-primary" disabled>+ Create New Exam</button>
+          <button id="createExamBtn" class="btn-primary" disabled>+ Add Exam</button>
         </div>
       </div>
 
-      <!-- Exam Creation/Edit Form -->
+      <!-- Enhanced Exam Form -->
       <div id="examForm" class="exam-form" style="display: none;">
-        <div class="form-container">
-          <h3 id="examFormTitle">Create New Exam</h3>
-          <form id="examFormElement">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="examTitle">Exam Title *</label>
-                <input type="text" id="examTitle" name="title" required maxlength="200">
-              </div>
-              <div class="form-group">
-                <label for="examType">Exam Type *</label>
-                <select id="examType" name="type" required>
-                  <option value="">Select Type</option>
-                  <option value="quiz">Quiz</option>
-                  <option value="midterm">Midterm</option>
-                  <option value="final">Final Exam</option>
-                  <option value="assignment">Assignment</option>
-                </select>
-              </div>
-            </div>
-
+        <h3 id="examFormTitle">Add Exam</h3>
+        <form id="examFormElement">
+          <div class="form-row">
             <div class="form-group">
-              <label for="examDescription">Description *</label>
-              <textarea id="examDescription" name="description" required maxlength="1000" rows="6" placeholder="Enter exam description, instructions, or notes..."></textarea>
+              <label for="examTitle">Title *</label>
+              <input type="text" id="examTitle" name="title" required>
             </div>
-
             <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="examActive" name="isActive" checked>
-                Exam is active and visible to students
+              <label for="examType">Type</label>
+              <select id="examType" name="type">
+                <option value="quiz">Quiz</option>
+                <option value="midterm">Midterm</option>
+                <option value="final">Final Exam</option>
+                <option value="assignment">Assignment</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="examDescription">Description *</label>
+            <textarea id="examDescription" name="description" required rows="3"></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="examDuration">Duration (minutes)</label>
+              <input type="number" id="examDuration" name="duration" value="30" min="5" max="180">
+            </div>
+            <div class="form-group">
+              <label for="examMaxAttempts">Max Attempts</label>
+              <input type="number" id="examMaxAttempts" name="maxAttempts" value="1" min="1" max="5">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="examStartDate">Start Date</label>
+              <input type="datetime-local" id="examStartDate" name="startDate">
+            </div>
+            <div class="form-group">
+              <label for="examEndDate">End Date</label>
+              <input type="datetime-local" id="examEndDate" name="endDate">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="examIsPublished" name="isPublished" value="true">
+                Publish immediately
               </label>
             </div>
-
-            <div class="form-actions">
-              <button type="button" id="cancelExamForm" class="btn-secondary">Cancel</button>
-              <button type="submit" id="saveExamForm" class="btn-primary">Save Exam</button>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="examAllowRetake" name="allowRetake" value="true">
+                Allow retake
+              </label>
             </div>
-          </form>
-        </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="examInstructions">Instructions</label>
+            <textarea id="examInstructions" name="instructions" rows="2" placeholder="Please answer all questions carefully."></textarea>
+          </div>
+          
+          <!-- Questions Section -->
+          <div class="questions-section">
+            <h4>Questions</h4>
+            <div id="questionsContainer">
+              <!-- Questions will be added here dynamically -->
+            </div>
+            <button type="button" id="addQuestionBtn" class="btn-secondary">+ Add Question</button>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" id="cancelExamForm" class="btn-secondary">Cancel</button>
+            <button type="submit" id="saveExamForm" class="btn-primary">Save Exam</button>
+          </div>
+        </form>
       </div>
 
-      <!-- Exams List -->
-      <div id="examsList" class="exams-list">
-        <div class="course-info-display" id="examCourseInfoDisplay" style="display: none;">
-          <h3 id="selectedExamCourseTitle"></h3>
-          <p id="selectedExamCourseDescription"></p>
-        </div>
-        <div class="loading" id="examsLoading" style="display: none;">Loading exams...</div>
+      <!-- Simple Exams List -->
+      <div id="examsList">
+        <div id="examsLoading" style="display: none;">Loading...</div>
         <div id="examsContainer">
           <div class="no-course-selected">
             <h3>Select a Course</h3>
-            <p>Choose a course from the dropdown above to manage its exams.</p>
+            <p>Choose a course to manage its exams.</p>
           </div>
         </div>
       </div>
     `;
 
     main.appendChild(examManagementDiv);
-
-    // Add event listeners
     this.setupExamManagementEventListeners();
-
-    // Load instructor's courses for selection
     await this.loadCoursesForExamManagement();
   }
 
   static setupExamManagementEventListeners() {
-    // Get helper functions from global scope
     const { getUser, showRoleDashboard } = window.dashboardUtils || {};
 
-    // Back to dashboard button
+    // Back button
     document
       .getElementById("backToDashboardFromExams")
       .addEventListener("click", () => {
         document.getElementById("examManagement").remove();
         if (getUser && showRoleDashboard) {
-          const user = getUser();
-          showRoleDashboard(user);
+          showRoleDashboard(getUser());
         }
       });
 
-    // Course selector change
+    // Course selector
     document
       .getElementById("examCourseSelector")
       .addEventListener("change", async (e) => {
@@ -1444,12 +1010,19 @@ export class InstructorHandler {
       }
     });
 
-    // Cancel form button
+    // Add question button
+    document.addEventListener("click", (e) => {
+      if (e.target.id === "addQuestionBtn") {
+        this.addQuestion();
+      }
+    });
+
+    // Cancel button
     document.getElementById("cancelExamForm").addEventListener("click", () => {
       this.hideExamForm();
     });
 
-    // Exam form submission
+    // Form submission
     document
       .getElementById("examFormElement")
       .addEventListener("submit", async (e) => {
@@ -1461,15 +1034,10 @@ export class InstructorHandler {
   static async loadCoursesForExamManagement() {
     try {
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
 
       const response = await fetch(
-        `${API_BASE_URL}/courses/instructor/my-courses`,
+        "http://localhost:3761/api/courses/instructor/my-courses",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1487,74 +1055,49 @@ export class InstructorHandler {
         data.data.forEach((course) => {
           const option = document.createElement("option");
           option.value = course._id;
-          option.textContent = `${course.title} (${
-            course.isActive ? "Active" : "Inactive"
-          })`;
+          option.textContent = course.title;
           courseSelector.appendChild(option);
         });
       } else {
         throw new Error(data.error || "Failed to load courses");
       }
     } catch (error) {
-      console.error("Error loading courses for exam management:", error);
-      alert(`Error loading courses: ${error.message}`);
+      console.error("Error loading courses:", error);
+      alert(`Error: ${error.message}`);
     }
   }
 
   static async loadExamsForCourse(courseId) {
     const loading = document.getElementById("examsLoading");
     const container = document.getElementById("examsContainer");
-    const courseInfoDisplay = document.getElementById("examCourseInfoDisplay");
 
     try {
       loading.style.display = "block";
       container.innerHTML = "";
-      courseInfoDisplay.style.display = "none";
 
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
 
-      // Load course info and exams
-      const [courseResponse, examsResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/courses/${courseId}`, {
+      const response = await fetch(
+        `http://localhost:3761/api/exams?course=${courseId}`,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }),
-        fetch(`${API_BASE_URL}/exams?course=${courseId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }),
-      ]);
+        }
+      );
 
-      const courseData = await courseResponse.json();
-      const examsData = await examsResponse.json();
+      const data = await response.json();
 
-      if (courseData.success) {
-        // Display course info
-        document.getElementById("selectedExamCourseTitle").textContent =
-          courseData.data.title;
-        document.getElementById("selectedExamCourseDescription").textContent =
-          courseData.data.description;
-        courseInfoDisplay.style.display = "block";
-      }
-
-      if (examsData.success) {
-        this.displayExams(examsData.data || [], courseId);
+      if (data.success) {
+        this.displayExams(data.data || [], courseId);
       } else {
         this.displayExams([], courseId);
       }
     } catch (error) {
       console.error("Error loading exams:", error);
-      container.innerHTML = `<div class="error-message">Error loading exams: ${error.message}</div>`;
+      container.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
     } finally {
       loading.style.display = "none";
     }
@@ -1567,7 +1110,7 @@ export class InstructorHandler {
       container.innerHTML = `
         <div class="no-exams">
           <h3>No exams yet</h3>
-          <p>Create your first exam for this course!</p>
+          <p>Create your first exam!</p>
         </div>
       `;
       return;
@@ -1576,61 +1119,22 @@ export class InstructorHandler {
     container.innerHTML = exams
       .map(
         (exam) => `
-        <div class="exam-card ${
-          !exam.isActive ? "inactive" : ""
-        }" data-exam-id="${exam._id}">
-          <div class="exam-header">
-            <h3>${exam.title}</h3>
-            <div class="exam-status">
-              <span class="status-badge ${
-                exam.isActive ? "active" : "inactive"
-              }">
-                ${exam.isActive ? "Active" : "Inactive"}
-              </span>
-              <span class="type-badge type-${
-                exam.type || "quiz"
-              }">${this.formatExamType(exam.type)}</span>
-            </div>
-          </div>
-          
+        <div class="exam-card" data-exam-id="${exam._id}">
+          <h3>${exam.title}</h3>
+          <p>${this.truncateText(exam.description || "No description", 150)}</p>
           <div class="exam-info">
-            <div class="exam-description">
-              <strong>Description:</strong>
-              <p>${this.truncateText(
-                exam.description || "No description provided",
-                200
-              )}</p>
-            </div>
-            
-            <div class="exam-meta">
-              <span class="created">Created: ${new Date(
-                exam.createdAt || Date.now()
-              ).toLocaleDateString()}</span>
-              ${
-                exam.updatedAt !== exam.createdAt
-                  ? `<span class="updated">Updated: ${new Date(
-                      exam.updatedAt
-                    ).toLocaleDateString()}</span>`
-                  : ""
-              }
-            </div>
+            <span class="exam-type">${this.formatExamType(exam.type)}</span>
           </div>
-          
           <div class="exam-actions">
             <button class="btn-edit" onclick="window.instructorHandler.editExam('${
               exam._id
             }', '${courseId}')">Edit</button>
-            <button class="btn-toggle" onclick="window.instructorHandler.toggleExamStatus('${
-              exam._id
-            }', ${exam.isActive}, '${courseId}')">
-              ${exam.isActive ? "Deactivate" : "Activate"}
-            </button>
             <button class="btn-delete" onclick="window.instructorHandler.deleteExam('${
               exam._id
             }', '${exam.title}', '${courseId}')">Delete</button>
           </div>
         </div>
-      `
+        `
       )
       .join("");
   }
@@ -1647,13 +1151,10 @@ export class InstructorHandler {
 
   static showNoCourseSelectedForExams() {
     const container = document.getElementById("examsContainer");
-    const courseInfoDisplay = document.getElementById("examCourseInfoDisplay");
-
-    courseInfoDisplay.style.display = "none";
     container.innerHTML = `
       <div class="no-course-selected">
         <h3>Select a Course</h3>
-        <p>Choose a course from the dropdown above to manage its exams.</p>
+        <p>Choose a course to manage its exams.</p>
       </div>
     `;
   }
@@ -1665,28 +1166,94 @@ export class InstructorHandler {
 
     if (exam) {
       formTitle.textContent = "Edit Exam";
-      // Populate form with exam data
       document.getElementById("examTitle").value = exam.title || "";
       document.getElementById("examType").value = exam.type || "quiz";
       document.getElementById("examDescription").value = exam.description || "";
-      document.getElementById("examActive").checked = exam.isActive !== false;
       formElement.dataset.examId = exam._id;
       formElement.dataset.courseId = courseId || exam.course;
     } else {
-      formTitle.textContent = "Create New Exam";
+      formTitle.textContent = "Add Exam";
       formElement.reset();
-      document.getElementById("examActive").checked = true;
+      document.getElementById("examType").value = "quiz";
       delete formElement.dataset.examId;
       formElement.dataset.courseId = courseId;
+      
+      // Clear questions container and add initial question
+      document.getElementById("questionsContainer").innerHTML = "";
+      this.addQuestion();
     }
 
     form.style.display = "block";
-    form.scrollIntoView({ behavior: "smooth" });
   }
 
   static hideExamForm() {
     document.getElementById("examForm").style.display = "none";
     document.getElementById("examFormElement").reset();
+    document.getElementById("questionsContainer").innerHTML = "";
+  }
+
+  static addQuestion() {
+    const questionsContainer = document.getElementById("questionsContainer");
+    const questionIndex = questionsContainer.children.length;
+    
+    const questionHTML = `
+      <div class="question-item" data-question-index="${questionIndex}">
+        <div class="question-header">
+          <h5>Question ${questionIndex + 1}</h5>
+          <button type="button" class="btn-danger remove-question" onclick="InstructorHandler.removeQuestion(${questionIndex})">Remove</button>
+        </div>
+        
+        <div class="form-group">
+          <label>Question Text *</label>
+          <input type="text" class="question-text" placeholder="Enter your question here..." required>
+        </div>
+        
+        <div class="options-section">
+          <label>Options *</label>
+          <div class="options-container">
+            <div class="option-item">
+              <input type="text" class="option-input" placeholder="Option A" required>
+              <input type="radio" name="correct_${questionIndex}" value="0" class="correct-answer" required>
+              <label>Correct</label>
+            </div>
+            <div class="option-item">
+              <input type="text" class="option-input" placeholder="Option B" required>
+              <input type="radio" name="correct_${questionIndex}" value="1" class="correct-answer">
+              <label>Correct</label>
+            </div>
+            <div class="option-item">
+              <input type="text" class="option-input" placeholder="Option C" required>
+              <input type="radio" name="correct_${questionIndex}" value="2" class="correct-answer">
+              <label>Correct</label>
+            </div>
+            <div class="option-item">
+              <input type="text" class="option-input" placeholder="Option D" required>
+              <input type="radio" name="correct_${questionIndex}" value="3" class="correct-answer">
+              <label>Correct</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Points</label>
+          <input type="number" class="question-points" value="1" min="1" max="10">
+        </div>
+      </div>
+    `;
+    
+    questionsContainer.insertAdjacentHTML('beforeend', questionHTML);
+  }
+
+  static removeQuestion(questionIndex) {
+    const questionElement = document.querySelector(`[data-question-index="${questionIndex}"]`);
+    if (questionElement) {
+      questionElement.remove();
+      // Renumber remaining questions
+      document.querySelectorAll('.question-item').forEach((item, index) => {
+        item.dataset.questionIndex = index;
+        item.querySelector('h5').textContent = `Question ${index + 1}`;
+      });
+    }
   }
 
   static async saveExam() {
@@ -1695,13 +1262,49 @@ export class InstructorHandler {
     const examId = form.dataset.examId;
     const courseId = form.dataset.courseId;
 
-    // Prepare exam data
+    // Collect questions from the form
+    const questions = [];
+    const questionElements = document.querySelectorAll('.question-item');
+    
+    questionElements.forEach((questionElement, index) => {
+      const questionText = questionElement.querySelector('.question-text').value.trim();
+      const options = [];
+      const optionElements = questionElement.querySelectorAll('.option-input');
+      
+      optionElements.forEach(optionElement => {
+        const optionText = optionElement.value.trim();
+        if (optionText) {
+          options.push(optionText);
+        }
+      });
+      
+      const correctAnswer = parseInt(questionElement.querySelector('.correct-answer').value);
+      const points = parseInt(questionElement.querySelector('.question-points').value) || 1;
+      
+      if (questionText && options.length >= 2) {
+        questions.push({
+          text: questionText,
+          options: options,
+          correctAnswer: correctAnswer,
+          points: points
+        });
+      }
+    });
+
     const examData = {
       title: formData.get("title").trim(),
       description: formData.get("description").trim(),
-      type: formData.get("type"),
+      type: formData.get("type") || "quiz",
       course: courseId,
-      isActive: formData.get("isActive") === "on",
+      questions: questions,
+      duration: parseInt(formData.get("duration")) || 30,
+      startDate: formData.get("startDate") || new Date().toISOString(),
+      endDate: formData.get("endDate") || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      isPublished: formData.get("isPublished") === "true",
+      allowRetake: formData.get("allowRetake") === "true",
+      maxAttempts: parseInt(formData.get("maxAttempts")) || 1,
+      instructions: formData.get("instructions") || "Please answer all questions carefully.",
+      isActive: true
     };
 
     try {
@@ -1710,15 +1313,11 @@ export class InstructorHandler {
       saveBtn.textContent = "Saving...";
 
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
+
       const url = examId
-        ? `${API_BASE_URL}/exams/${examId}`
-        : `${API_BASE_URL}/exams`;
+        ? `http://localhost:3761/api/exams/${examId}`
+        : "http://localhost:3761/api/exams";
 
       const method = examId ? "PUT" : "POST";
 
@@ -1736,149 +1335,79 @@ export class InstructorHandler {
       if (data.success) {
         this.hideExamForm();
         await this.loadExamsForCourse(courseId);
-        alert(
-          examId ? "Exam updated successfully!" : "Exam created successfully!"
-        );
+        alert(examId ? "Exam updated!" : "Exam created!");
       } else {
-        throw new Error(
-          data.error || data.errors?.[0]?.msg || "Failed to save exam"
-        );
+        throw new Error(data.error || "Failed to save exam");
       }
     } catch (error) {
       console.error("Error saving exam:", error);
-      alert(`Error saving exam: ${error.message}`);
+      alert(`Error: ${error.message}`);
     } finally {
       const saveBtn = document.getElementById("saveExamForm");
       saveBtn.disabled = false;
-      saveBtn.textContent = "Save Exam";
+      saveBtn.textContent = "Save";
     }
   }
 
   static async editExam(examId, courseId) {
     try {
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
-      const response = await fetch(`${API_BASE_URL}/exams/${examId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+
+      const response = await fetch(
+        `http://localhost:3761/api/exams/${examId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = await response.json();
 
       if (data.success) {
         this.showExamForm(data.data, courseId);
       } else {
-        throw new Error(data.error || "Failed to load exam details");
+        throw new Error(data.error || "Failed to load exam");
       }
     } catch (error) {
-      console.error("Error loading exam for edit:", error);
-      alert(`Error loading exam: ${error.message}`);
-    }
-  }
-
-  static async toggleExamStatus(examId, currentStatus, courseId) {
-    try {
-      const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
-      const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
-
-      // First, get the full exam data
-      const examResponse = await fetch(`${API_BASE_URL}/exams/${examId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const examData = await examResponse.json();
-      if (!examData.success) {
-        throw new Error(examData.error || "Failed to load exam data");
-      }
-
-      const exam = examData.data;
-
-      // Update the exam with the new status
-      const updateData = {
-        title: exam.title,
-        description: exam.description,
-        type: exam.type,
-        isActive: !currentStatus,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/exams/${examId}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updateData),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        await this.loadExamsForCourse(courseId);
-        console.log(
-          `Exam ${!currentStatus ? "activated" : "deactivated"} successfully!`
-        );
-      } else {
-        throw new Error(
-          data.error || data.errors?.[0]?.msg || "Failed to update exam status"
-        );
-      }
-    } catch (error) {
-      console.error("Error toggling exam status:", error);
-      alert(`Error updating exam: ${error.message}`);
+      console.error("Error loading exam:", error);
+      alert(`Error: ${error.message}`);
     }
   }
 
   static async deleteExam(examId, examTitle, courseId) {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${examTitle}"? This action cannot be undone.`
-      )
-    ) {
+    if (!confirm(`Delete "${examTitle}"? This cannot be undone.`)) {
       return;
     }
 
     try {
       const { getToken } = window.dashboardUtils || {};
-      if (!getToken) {
-        throw new Error("Dashboard utilities not available");
-      }
-
       const token = getToken();
-      const API_BASE_URL = "http://localhost:3761/api";
-      const response = await fetch(`${API_BASE_URL}/exams/${examId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+
+      const response = await fetch(
+        `http://localhost:3761/api/exams/${examId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = await response.json();
 
       if (data.success) {
         await this.loadExamsForCourse(courseId);
-        alert("Exam deleted successfully!");
+        alert("Exam deleted!");
       } else {
         throw new Error(data.error || "Failed to delete exam");
       }
     } catch (error) {
       console.error("Error deleting exam:", error);
-      alert(`Error deleting exam: ${error.message}`);
+      alert(`Error: ${error.message}`);
     }
   }
 
@@ -1936,15 +1465,6 @@ export class InstructorHandler {
         <h2>📊 Instructor Analytics Dashboard</h2>
         <div class="analytics-actions">
           <button id="backToDashboardFromAnalytics" class="btn-secondary">← Back</button>
-          <div class="date-filter">
-            <select id="timeRangeSelector">
-              <option value="7">Last 7 days</option>
-              <option value="30" selected>Last 30 days</option>
-              <option value="90">Last 3 months</option>
-              <option value="365">Last year</option>
-            </select>
-            <button id="refreshAnalytics" class="btn-primary">🔄 Refresh</button>
-          </div>
         </div>
       </div>
 
@@ -2091,20 +1611,6 @@ export class InstructorHandler {
           showRoleDashboard(user);
         }
       });
-
-    // Time range selector
-    document
-      .getElementById("timeRangeSelector")
-      .addEventListener("change", async () => {
-        await this.loadAnalyticsData();
-      });
-
-    // Refresh button
-    document
-      .getElementById("refreshAnalytics")
-      .addEventListener("click", async () => {
-        await this.loadAnalyticsData();
-      });
   }
 
   static async loadAnalyticsData() {
@@ -2122,10 +1628,9 @@ export class InstructorHandler {
 
       const token = getToken();
       const API_BASE_URL = "http://localhost:3761/api";
-      const timeRange = document.getElementById("timeRangeSelector").value;
 
       // Load multiple analytics endpoints in parallel
-      const [coursesData, analyticsData] = await Promise.all([
+      const [coursesData, enrollmentsData, overviewData] = await Promise.all([
         // Get instructor's courses
         fetch(`${API_BASE_URL}/courses/instructor/my-courses`, {
           headers: {
@@ -2134,8 +1639,8 @@ export class InstructorHandler {
           },
         }).then((res) => res.json()),
 
-        // Get analytics data from backend
-        fetch(`${API_BASE_URL}/analytics/top-courses`, {
+        // Get instructor's enrollment data
+        fetch(`${API_BASE_URL}/enrollments/instructor`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -2143,18 +1648,31 @@ export class InstructorHandler {
         })
           .then((res) => res.json())
           .catch(() => ({ success: false, data: [] })),
+
+        // Get instructor's dashboard overview
+        fetch(`${API_BASE_URL}/analytics/instructor/overview`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+          .then((res) => res.json())
+          .catch(() => ({ success: false, data: {} })),
       ]);
 
       if (coursesData.success) {
-        // Generate enrollment data based on actual courses
-        const enrollmentData = await this.getMockEnrollmentData(
-          coursesData.data
-        );
+        // Use enrollment data if available, otherwise work with course data alone
+        const enrollmentDataToUse = enrollmentsData.success
+          ? enrollmentsData.data || []
+          : [];
+        const overviewDataToUse = overviewData.success
+          ? overviewData.data || {}
+          : {};
 
         await this.populateAnalytics(
           coursesData.data,
-          enrollmentData,
-          analyticsData.data || []
+          enrollmentDataToUse,
+          overviewDataToUse
         );
       } else {
         throw new Error("Failed to load course data");
@@ -2168,76 +1686,9 @@ export class InstructorHandler {
     }
   }
 
-  static async getMockEnrollmentData(courses = []) {
-    // Mock enrollment data for demonstration
-    // In a real app, this would come from an enrollments API
-
-    // If no courses provided, return empty data
-    if (courses.length === 0) {
-      return {
-        enrollments: [],
-        students: [],
-      };
-    }
-
-    // Generate realistic mock data based on actual course IDs
-    const students = [
-      { id: "s1", name: "Alice Johnson", email: "alice@example.com" },
-      { id: "s2", name: "Bob Smith", email: "bob@example.com" },
-      { id: "s3", name: "Charlie Brown", email: "charlie@example.com" },
-      { id: "s4", name: "Diana Wilson", email: "diana@example.com" },
-      { id: "s5", name: "Eve Davis", email: "eve@example.com" },
-      { id: "s6", name: "Frank Miller", email: "frank@example.com" },
-      { id: "s7", name: "Grace Chen", email: "grace@example.com" },
-      { id: "s8", name: "Henry Adams", email: "henry@example.com" },
-      { id: "s9", name: "Ivy Rodriguez", email: "ivy@example.com" },
-      { id: "s10", name: "Jack Thompson", email: "jack@example.com" },
-    ];
-
-    const enrollments = [];
-
-    // Generate enrollments for each course
-    courses.forEach((course, courseIndex) => {
-      // Each course gets 3-8 students
-      const numStudents = Math.floor(Math.random() * 6) + 3;
-      const selectedStudents = students.slice(0, numStudents);
-
-      selectedStudents.forEach((student, studentIndex) => {
-        // Generate realistic progress and grades
-        const baseProgress = Math.floor(Math.random() * 100);
-        const progressVariation = Math.floor(Math.random() * 20) - 10;
-        const progress = Math.max(
-          0,
-          Math.min(100, baseProgress + progressVariation)
-        );
-
-        // Grade generally correlates with progress but has some variation
-        const baseGrade = Math.max(
-          0,
-          Math.min(100, progress + Math.floor(Math.random() * 20) - 10)
-        );
-
-        enrollments.push({
-          courseId: course._id, // Use actual course ID
-          studentId: student.id,
-          progress: progress,
-          grade: baseGrade,
-          enrolledAt: new Date(
-            Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000
-          ), // Random date within last 90 days
-        });
-      });
-    });
-
-    return {
-      enrollments,
-      students,
-    };
-  }
-
-  static async populateAnalytics(courses, enrollmentData, analyticsData) {
+  static async populateAnalytics(courses, enrollmentData, overviewData) {
     // 1. Populate Overview Cards
-    this.populateOverviewCards(courses, enrollmentData);
+    this.populateOverviewCards(courses, enrollmentData, overviewData);
 
     // 2. Create Course Performance Charts
     this.createCourseCharts(courses, enrollmentData);
@@ -2252,45 +1703,85 @@ export class InstructorHandler {
     this.populateStudentInsights(enrollmentData);
   }
 
-  static populateOverviewCards(courses, enrollmentData) {
-    const totalCourses = courses.length;
-    const totalStudents = new Set(
-      enrollmentData.enrollments.map((e) => e.studentId)
-    ).size;
-    const activeStudents = enrollmentData.enrollments.filter(
-      (e) => e.progress > 10
-    ).length;
+  static populateOverviewCards(courses, enrollmentData, overviewData) {
+    // Handle real enrollment data format
+    const enrollments = Array.isArray(enrollmentData) ? enrollmentData : [];
 
-    const completionRates = enrollmentData.enrollments.map((e) => e.progress);
-    const avgCompletionRate =
-      completionRates.length > 0
-        ? Math.round(
-            completionRates.reduce((a, b) => a + b, 0) / completionRates.length
-          )
-        : 0;
+    // Use overview data if available, otherwise fallback to calculated values
+    if (overviewData && Object.keys(overviewData).length > 0) {
+      document.getElementById("totalCourses").textContent =
+        overviewData.courses?.total || courses.length;
+      document.getElementById("totalStudents").textContent =
+        overviewData.students?.total || 0;
+      document.getElementById("activeStudents").textContent =
+        overviewData.students?.active || 0;
+      document.getElementById("avgCompletionRate").textContent = `${
+        overviewData.performance?.avgCompletion || 0
+      }%`;
+      document.getElementById("totalRevenue").textContent = `$${(
+        overviewData.revenue?.actual || 0
+      ).toFixed(2)}`;
+    } else if (enrollments.length > 0) {
+      // Fallback to enrollment-based calculations
+      const totalCourses = courses.length;
+      const totalStudents = new Set(
+        enrollments.map((e) => e.student || e.studentId)
+      ).size;
 
-    const totalRevenue = courses.reduce((sum, course) => {
-      const courseEnrollments = enrollmentData.enrollments.filter(
-        (e) => e.courseId === course._id
+      const activeStudents = enrollments.filter(
+        (e) => (e.progress || 0) > 10
       ).length;
-      return sum + course.price * courseEnrollments;
-    }, 0);
 
-    document.getElementById("totalCourses").textContent = totalCourses;
-    document.getElementById("totalStudents").textContent = totalStudents;
-    document.getElementById("activeStudents").textContent = activeStudents;
-    document.getElementById(
-      "avgCompletionRate"
-    ).textContent = `${avgCompletionRate}%`;
-    document.getElementById(
-      "totalRevenue"
-    ).textContent = `$${totalRevenue.toFixed(2)}`;
+      const completionRates = enrollments.map((e) => e.progress || 0);
+      const avgCompletionRate =
+        completionRates.length > 0
+          ? Math.round(
+              completionRates.reduce((a, b) => a + b, 0) /
+                completionRates.length
+            )
+          : 0;
+
+      const totalRevenue = courses.reduce((sum, course) => {
+        const courseEnrollments = enrollments.filter(
+          (e) => (e.course || e.courseId) === course._id
+        ).length;
+        return sum + (course.price || 0) * courseEnrollments;
+      }, 0);
+
+      document.getElementById("totalCourses").textContent = totalCourses;
+      document.getElementById("totalStudents").textContent = totalStudents;
+      document.getElementById("activeStudents").textContent = activeStudents;
+      document.getElementById(
+        "avgCompletionRate"
+      ).textContent = `${avgCompletionRate}%`;
+      document.getElementById(
+        "totalRevenue"
+      ).textContent = `$${totalRevenue.toFixed(2)}`;
+    } else {
+      // Fallback when no data is available
+      const totalCourses = courses.length;
+      const totalRevenue = courses.reduce(
+        (sum, course) => sum + (course.price || 0),
+        0
+      );
+
+      document.getElementById("totalCourses").textContent = totalCourses;
+      document.getElementById("totalStudents").textContent = "No data";
+      document.getElementById("activeStudents").textContent = "No data";
+      document.getElementById("avgCompletionRate").textContent = "No data";
+      document.getElementById(
+        "totalRevenue"
+      ).textContent = `$${totalRevenue.toFixed(2)}*`;
+    }
   }
 
   static createCourseCharts(courses, enrollmentData) {
+    // Handle real enrollment data format
+    const enrollments = Array.isArray(enrollmentData) ? enrollmentData : [];
+
     console.log("Creating course charts with:", {
       courses: courses.length,
-      enrollments: enrollmentData.enrollments.length,
+      enrollments: enrollments.length,
     });
 
     // Course Enrollment Chart (Pie Chart)
@@ -2298,8 +1789,8 @@ export class InstructorHandler {
       .getElementById("courseEnrollmentChart")
       .getContext("2d");
     const courseEnrollments = courses.map((course) => {
-      const count = enrollmentData.enrollments.filter(
-        (e) => e.courseId === course._id
+      const count = enrollments.filter(
+        (e) => (e.course || e.courseId) === course._id
       ).length;
       console.log(
         `Course ${course.title} (${course._id}): ${count} enrollments`
@@ -2321,12 +1812,12 @@ export class InstructorHandler {
       .getElementById("courseCompletionChart")
       .getContext("2d");
     const courseCompletions = courses.map((course) => {
-      const courseEnrolls = enrollmentData.enrollments.filter(
-        (e) => e.courseId === course._id
+      const courseEnrolls = enrollments.filter(
+        (e) => (e.course || e.courseId) === course._id
       );
       const avgProgress =
         courseEnrolls.length > 0
-          ? courseEnrolls.reduce((sum, e) => sum + e.progress, 0) /
+          ? courseEnrolls.reduce((sum, e) => sum + (e.progress || 0), 0) /
             courseEnrolls.length
           : 0;
       console.log(
@@ -2346,9 +1837,12 @@ export class InstructorHandler {
   }
 
   static populateCourseTable(courses, enrollmentData) {
+    // Handle real enrollment data format
+    const enrollments = Array.isArray(enrollmentData) ? enrollmentData : [];
+
     console.log("Populating course table with:", {
       courses: courses.length,
-      enrollments: enrollmentData.enrollments.length,
+      enrollments: enrollments.length,
     });
 
     const tbody = document.querySelector("#coursePerformanceTable tbody");
@@ -2361,25 +1855,25 @@ export class InstructorHandler {
     }
 
     courses.forEach((course) => {
-      const courseEnrolls = enrollmentData.enrollments.filter(
-        (e) => e.courseId === course._id
+      const courseEnrolls = enrollments.filter(
+        (e) => (e.course || e.courseId) === course._id
       );
       const enrollmentCount = courseEnrolls.length;
       const avgProgress =
         courseEnrolls.length > 0
           ? Math.round(
-              courseEnrolls.reduce((sum, e) => sum + e.progress, 0) /
+              courseEnrolls.reduce((sum, e) => sum + (e.progress || 0), 0) /
                 courseEnrolls.length
             )
           : 0;
       const avgGrade =
         courseEnrolls.length > 0
           ? Math.round(
-              courseEnrolls.reduce((sum, e) => sum + e.grade, 0) /
+              courseEnrolls.reduce((sum, e) => sum + (e.grade || 0), 0) /
                 courseEnrolls.length
             )
           : 0;
-      const revenue = course.price * enrollmentCount;
+      const revenue = (course.price || 0) * enrollmentCount;
 
       console.log(
         `Course ${course.title}: ${enrollmentCount} enrollments, ${avgProgress}% progress, ${avgGrade}% grade, $${revenue} revenue`
@@ -2402,6 +1896,9 @@ export class InstructorHandler {
   }
 
   static createStudentCharts(enrollmentData) {
+    // Handle real enrollment data format
+    const enrollments = Array.isArray(enrollmentData) ? enrollmentData : [];
+
     // Student Progress Distribution (Histogram-style bar chart)
     const progressCtx = document
       .getElementById("studentProgressChart")
@@ -2413,10 +1910,11 @@ export class InstructorHandler {
       "76-100%": 0,
     };
 
-    enrollmentData.enrollments.forEach((e) => {
-      if (e.progress <= 25) progressRanges["0-25%"]++;
-      else if (e.progress <= 50) progressRanges["26-50%"]++;
-      else if (e.progress <= 75) progressRanges["51-75%"]++;
+    enrollments.forEach((e) => {
+      const progress = e.progress || 0;
+      if (progress <= 25) progressRanges["0-25%"]++;
+      else if (progress <= 50) progressRanges["26-50%"]++;
+      else if (progress <= 75) progressRanges["51-75%"]++;
       else progressRanges["76-100%"]++;
     });
 
@@ -2438,11 +1936,12 @@ export class InstructorHandler {
       "A (90-100)": 0,
     };
 
-    enrollmentData.enrollments.forEach((e) => {
-      if (e.grade < 60) gradeRanges["F (0-59)"]++;
-      else if (e.grade < 70) gradeRanges["D (60-69)"]++;
-      else if (e.grade < 80) gradeRanges["C (70-79)"]++;
-      else if (e.grade < 90) gradeRanges["B (80-89)"]++;
+    enrollments.forEach((e) => {
+      const grade = e.grade || 0;
+      if (grade < 60) gradeRanges["F (0-59)"]++;
+      else if (grade < 70) gradeRanges["D (60-69)"]++;
+      else if (grade < 80) gradeRanges["C (70-79)"]++;
+      else if (grade < 90) gradeRanges["B (80-89)"]++;
       else gradeRanges["A (90-100)"]++;
     });
 
@@ -2454,16 +1953,22 @@ export class InstructorHandler {
   }
 
   static populateStudentInsights(enrollmentData) {
+    // Handle real enrollment data format
+    const enrollments = Array.isArray(enrollmentData) ? enrollmentData : [];
+
     // Students needing attention (low progress)
     const strugglingContainer = document.getElementById("strugglingStudents");
-    const strugglingStudents = enrollmentData.enrollments
-      .filter((e) => e.progress < 50)
-      .map((e) => {
-        const student = enrollmentData.students.find(
-          (s) => s.id === e.studentId
-        );
-        return { ...e, name: student?.name, email: student?.email };
-      })
+    const strugglingStudents = enrollments
+      .filter((e) => (e.progress || 0) < 50)
+      .map((e) => ({
+        ...e,
+        name:
+          e.student?.name ||
+          e.studentName ||
+          `Student ${e.student || e.studentId}`,
+        email: e.student?.email || e.studentEmail || "",
+        progress: e.progress || 0,
+      }))
       .sort((a, b) => a.progress - b.progress);
 
     if (strugglingStudents.length === 0) {
@@ -2485,14 +1990,17 @@ export class InstructorHandler {
 
     // Top performers
     const topContainer = document.getElementById("topStudents");
-    const topStudents = enrollmentData.enrollments
-      .filter((e) => e.progress > 80)
-      .map((e) => {
-        const student = enrollmentData.students.find(
-          (s) => s.id === e.studentId
-        );
-        return { ...e, name: student?.name, email: student?.email };
-      })
+    const topStudents = enrollments
+      .filter((e) => (e.progress || 0) > 80)
+      .map((e) => ({
+        ...e,
+        name:
+          e.student?.name ||
+          e.studentName ||
+          `Student ${e.student || e.studentId}`,
+        email: e.student?.email || e.studentEmail || "",
+        progress: e.progress || 0,
+      }))
       .sort((a, b) => b.progress - a.progress);
 
     if (topStudents.length === 0) {

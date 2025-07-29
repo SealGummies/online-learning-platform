@@ -23,7 +23,10 @@ class EnrollmentController {
         sortBy: req.query.sortBy || "enrollmentDate",
         sortOrder: req.query.sortOrder || "desc",
       };
-      const enrollments = await EnrollmentService.getStudentEnrollments(studentId, options);
+      const enrollments = await EnrollmentService.getStudentEnrollments(
+        studentId,
+        options
+      );
       res.json({
         success: true,
         data: enrollments,
@@ -46,7 +49,10 @@ class EnrollmentController {
     try {
       const { id } = req.params;
       const studentId = req.user.id;
-      const enrollment = await EnrollmentService.getEnrollmentById(id, studentId);
+      const enrollment = await EnrollmentService.getEnrollmentById(
+        id,
+        studentId
+      );
       res.json({
         success: true,
         data: enrollment,
@@ -56,8 +62,8 @@ class EnrollmentController {
       const statusCode = error.message.includes("not found")
         ? 404
         : error.message.includes("Not authorized")
-          ? 403
-          : 400;
+        ? 403
+        : 400;
       res.status(statusCode).json({
         success: false,
         error: error.message,
@@ -81,7 +87,11 @@ class EnrollmentController {
           error: "Only students can update progress",
         });
       }
-      const result = await EnrollmentService.updateProgress(id, progressData, studentId);
+      const result = await EnrollmentService.updateProgress(
+        id,
+        progressData,
+        studentId
+      );
       res.json({
         success: true,
         data: result.enrollment,
@@ -91,8 +101,8 @@ class EnrollmentController {
       const statusCode = error.message.includes("not found")
         ? 404
         : error.message.includes("Not authorized")
-          ? 403
-          : 400;
+        ? 403
+        : 400;
       res.status(statusCode).json({
         success: false,
         error: error.message,
@@ -125,8 +135,8 @@ class EnrollmentController {
       const statusCode = error.message.includes("not found")
         ? 404
         : error.message.includes("Not authorized")
-          ? 403
-          : 400;
+        ? 403
+        : 400;
       res.status(statusCode).json({
         success: false,
         error: error.message,
@@ -153,6 +163,35 @@ class EnrollmentController {
         success: true,
         data: stats,
         message: "Student statistics retrieved successfully",
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Get instructor's course enrollments
+   * @route GET /api/enrollments/instructor
+   * @access Private/Instructor
+   */
+  static async getInstructorEnrollments(req, res) {
+    try {
+      const instructorId = req.user.id;
+
+      // Use the AnalyticsService method we created
+      const AnalyticsService = require("../services/AnalyticsService");
+      const enrollments = await AnalyticsService.getInstructorEnrollments(
+        instructorId
+      );
+
+      res.json({
+        success: true,
+        data: enrollments,
+        message: "Instructor enrollments retrieved successfully",
+        total: enrollments.length,
       });
     } catch (error) {
       res.status(400).json({

@@ -126,10 +126,6 @@ class LessonService {
         throw new Error("Lesson title must be at least 5 characters long");
       }
 
-      if (!lessonData.content || lessonData.content.length < 50) {
-        throw new Error("Lesson content must be at least 50 characters long");
-      }
-
       if (
         lessonData.type &&
         !["video", "text", "interactive", "quiz"].includes(lessonData.type)
@@ -180,10 +176,6 @@ class LessonService {
       // Validate update data
       if (updateData.title && updateData.title.length < 5) {
         throw new Error("Lesson title must be at least 5 characters long");
-      }
-
-      if (updateData.content && updateData.content.length < 50) {
-        throw new Error("Lesson content must be at least 50 characters long");
       }
 
       if (

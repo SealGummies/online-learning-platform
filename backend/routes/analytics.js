@@ -9,42 +9,66 @@ const router = express.Router();
  * @desc    Get top performing courses by enrollment
  * @access  Private (Admin/Instructor)
  */
-router.get("/top-courses", protect, AnalyticsController.getTopPerformingCourses);
+router.get(
+  "/top-courses",
+  protect,
+  AnalyticsController.getTopPerformingCourses
+);
 
 /**
  * @route   GET /api/analytics/student-progress
  * @desc    Get student progress analytics across all courses
  * @access  Private (Admin/Instructor)
  */
-router.get("/student-progress", protect, AnalyticsController.getStudentProgressAnalytics);
+router.get(
+  "/student-progress",
+  protect,
+  AnalyticsController.getStudentProgressAnalytics
+);
 
 /**
  * @route   GET /api/analytics/instructor-analytics
  * @desc    Get instructor teaching analytics and performance
  * @access  Private (Admin)
  */
-router.get("/instructor-analytics", protect, AnalyticsController.getInstructorAnalytics);
+router.get(
+  "/instructor-analytics",
+  protect,
+  AnalyticsController.getInstructorAnalytics
+);
 
 /**
  * @route   GET /api/analytics/completion-trends
  * @desc    Get course completion trends over time
  * @access  Private (Admin/Instructor)
  */
-router.get("/completion-trends", protect, AnalyticsController.getCourseCompletionTrends);
+router.get(
+  "/completion-trends",
+  protect,
+  AnalyticsController.getCourseCompletionTrends
+);
 
 /**
  * @route   GET /api/analytics/exam-performance
  * @desc    Get exam performance analysis with grade distribution
  * @access  Private (Admin/Instructor)
  */
-router.get("/exam-performance", protect, AnalyticsController.getExamPerformanceAnalysis);
+router.get(
+  "/exam-performance",
+  protect,
+  AnalyticsController.getExamPerformanceAnalysis
+);
 
 /**
  * @route   GET /api/analytics/platform-overview
  * @desc    Get overall platform statistics and overview
  * @access  Private (Admin)
  */
-router.get("/platform-overview", protect, AnalyticsController.getPlatformOverview);
+router.get(
+  "/platform-overview",
+  protect,
+  AnalyticsController.getPlatformOverview
+);
 
 /**
  * @route   GET /api/analytics/filtered
@@ -53,5 +77,38 @@ router.get("/platform-overview", protect, AnalyticsController.getPlatformOvervie
  * @query   startDate, endDate, category, level, type
  */
 router.get("/filtered", protect, AnalyticsController.getFilteredAnalytics);
+
+/**
+ * @route   GET /api/analytics/instructor/enrollments
+ * @desc    Get instructor-specific enrollment data for dashboard
+ * @access  Private (Instructor)
+ */
+router.get(
+  "/instructor/enrollments",
+  protect,
+  AnalyticsController.getInstructorEnrollments
+);
+
+/**
+ * @route   GET /api/analytics/instructor/overview
+ * @desc    Get instructor dashboard overview statistics
+ * @access  Private (Instructor)
+ */
+router.get(
+  "/instructor/overview",
+  protect,
+  AnalyticsController.getInstructorDashboardOverview
+);
+
+/**
+ * @route   GET /api/analytics/instructor/student-progress
+ * @desc    Get instructor's student progress analytics
+ * @access  Private (Instructor)
+ */
+router.get(
+  "/instructor/student-progress",
+  protect,
+  AnalyticsController.getInstructorStudentProgress
+);
 
 module.exports = router;

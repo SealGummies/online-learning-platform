@@ -57,7 +57,9 @@ class AnalyticsService {
         { $limit: 10 },
       ]);
     } catch (error) {
-      throw new Error(`Error fetching top performing courses: ${error.message}`);
+      throw new Error(
+        `Error fetching top performing courses: ${error.message}`
+      );
     }
   }
 
@@ -110,7 +112,9 @@ class AnalyticsService {
         { $sort: { completionPercentage: -1 } },
       ]);
     } catch (error) {
-      throw new Error(`Error fetching student progress analytics: ${error.message}`);
+      throw new Error(
+        `Error fetching student progress analytics: ${error.message}`
+      );
     }
   }
 
@@ -146,7 +150,9 @@ class AnalyticsService {
             averageEnrollmentsPerCourse: {
               $cond: {
                 if: { $gt: [{ $size: "$courses" }, 0] },
-                then: { $divide: [{ $size: "$enrollments" }, { $size: "$courses" }] },
+                then: {
+                  $divide: [{ $size: "$enrollments" }, { $size: "$courses" }],
+                },
                 else: 0,
               },
             },
@@ -209,7 +215,9 @@ class AnalyticsService {
         },
       ]);
     } catch (error) {
-      throw new Error(`Error fetching course completion trends: ${error.message}`);
+      throw new Error(
+        `Error fetching course completion trends: ${error.message}`
+      );
     }
   }
 
@@ -265,11 +273,46 @@ class AnalyticsService {
         {
           $addFields: {
             gradeDistribution: {
-              A: { $size: { $filter: { input: "$grades", cond: { $gte: ["$$this", 90] } } } },
-              B: { $size: { $filter: { input: "$grades", cond: { $and: [{ $gte: ["$$this", 80] }, { $lt: ["$$this", 90] }] } } } },
-              C: { $size: { $filter: { input: "$grades", cond: { $and: [{ $gte: ["$$this", 70] }, { $lt: ["$$this", 80] }] } } } },
-              D: { $size: { $filter: { input: "$grades", cond: { $and: [{ $gte: ["$$this", 60] }, { $lt: ["$$this", 70] }] } } } },
-              F: { $size: { $filter: { input: "$grades", cond: { $lt: ["$$this", 60] } } } },
+              A: {
+                $size: {
+                  $filter: { input: "$grades", cond: { $gte: ["$$this", 90] } },
+                },
+              },
+              B: {
+                $size: {
+                  $filter: {
+                    input: "$grades",
+                    cond: {
+                      $and: [{ $gte: ["$$this", 80] }, { $lt: ["$$this", 90] }],
+                    },
+                  },
+                },
+              },
+              C: {
+                $size: {
+                  $filter: {
+                    input: "$grades",
+                    cond: {
+                      $and: [{ $gte: ["$$this", 70] }, { $lt: ["$$this", 80] }],
+                    },
+                  },
+                },
+              },
+              D: {
+                $size: {
+                  $filter: {
+                    input: "$grades",
+                    cond: {
+                      $and: [{ $gte: ["$$this", 60] }, { $lt: ["$$this", 70] }],
+                    },
+                  },
+                },
+              },
+              F: {
+                $size: {
+                  $filter: { input: "$grades", cond: { $lt: ["$$this", 60] } },
+                },
+              },
             },
           },
         },
@@ -289,7 +332,9 @@ class AnalyticsService {
         { $sort: { averageGrade: -1 } },
       ]);
     } catch (error) {
-      throw new Error(`Error fetching exam performance analysis: ${error.message}`);
+      throw new Error(
+        `Error fetching exam performance analysis: ${error.message}`
+      );
     }
   }
 
@@ -302,11 +347,17 @@ class AnalyticsService {
     try {
       const totalUsers = await User.countDocuments();
       const totalStudents = await User.countDocuments({ role: "student" });
-      const totalInstructors = await User.countDocuments({ role: "instructor" });
+      const totalInstructors = await User.countDocuments({
+        role: "instructor",
+      });
       const totalCourses = await Course.countDocuments();
       const totalEnrollments = await Enrollment.countDocuments();
-      const activeEnrollments = await Enrollment.countDocuments({ status: { $in: ["enrolled", "in-progress"] } });
-      const completedEnrollments = await Enrollment.countDocuments({ status: "completed" });
+      const activeEnrollments = await Enrollment.countDocuments({
+        status: { $in: ["enrolled", "in-progress"] },
+      });
+      const completedEnrollments = await Enrollment.countDocuments({
+        status: "completed",
+      });
       const totalExams = await Exam.countDocuments();
       return {
         users: {
@@ -320,7 +371,10 @@ class AnalyticsService {
           total: totalEnrollments,
           active: activeEnrollments,
           completed: completedEnrollments,
-          completionRate: totalEnrollments > 0 ? ((completedEnrollments / totalEnrollments) * 100).toFixed(2) : 0,
+          completionRate:
+            totalEnrollments > 0
+              ? ((completedEnrollments / totalEnrollments) * 100).toFixed(2)
+              : 0,
         },
         exams: { total: totalExams },
       };
@@ -334,7 +388,13 @@ class AnalyticsService {
    * @param {Object} filters - { startDate, endDate, category, level, type }
    * @returns {Promise<Array>} Filtered analytics data
    */
-  static async getFilteredAnalytics({ startDate, endDate, category, level, type }) {
+  static async getFilteredAnalytics({
+    startDate,
+    endDate,
+    category,
+    level,
+    type,
+  }) {
     // Build match conditions
     const match = {};
     if (startDate || endDate) {
@@ -395,7 +455,203 @@ class AnalyticsService {
       },
     });
     pipeline.push({ $sort: { totalEnrollments: -1 } });
-    return await (this.Enrollment || require("../models/Enrollment")).aggregate(pipeline);
+    return await (this.Enrollment || require("../models/Enrollment")).aggregate(
+      pipeline
+    );
+  }
+
+  /**
+   * Get instructor-specific enrollment data for dashboard
+   * @param {string} instructorId - The instructor's user ID
+   * @returns {Promise<Array>} Enrollment data for instructor's courses
+   */
+  static async getInstructorEnrollments(instructorId) {
+    try {
+      return await Enrollment.aggregate([
+        {
+          $lookup: {
+            from: "courses",
+            localField: "course",
+            foreignField: "_id",
+            as: "courseInfo",
+          },
+        },
+        { $unwind: "$courseInfo" },
+        {
+          $match: {
+            "courseInfo.instructor": new mongoose.Types.ObjectId(instructorId),
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "student",
+            foreignField: "_id",
+            as: "studentInfo",
+          },
+        },
+        { $unwind: "$studentInfo" },
+        {
+          $project: {
+            course: "$courseInfo._id",
+            courseTitle: "$courseInfo.title",
+            coursePrice: "$courseInfo.price",
+            student: "$studentInfo._id",
+            studentName: {
+              $concat: ["$studentInfo.firstName", " ", "$studentInfo.lastName"],
+            },
+            studentEmail: "$studentInfo.email",
+            progress: "$completionPercentage",
+            grade: "$finalGrade",
+            status: 1,
+            enrollmentDate: 1,
+            updatedAt: 1,
+          },
+        },
+        { $sort: { enrollmentDate: -1 } },
+      ]);
+    } catch (error) {
+      throw new Error(
+        `Error fetching instructor enrollments: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Get instructor dashboard analytics overview
+   * @param {string} instructorId - The instructor's user ID
+   * @returns {Promise<Object>} Dashboard overview data
+   */
+  static async getInstructorDashboardOverview(instructorId) {
+    try {
+      const instructorCourses = await Course.find({
+        instructor: instructorId,
+      }).select("_id title price isActive");
+
+      const courseIds = instructorCourses.map((course) => course._id);
+
+      const [
+        totalEnrollments,
+        activeEnrollments,
+        completedEnrollments,
+        enrollmentStats,
+      ] = await Promise.all([
+        Enrollment.countDocuments({ course: { $in: courseIds } }),
+        Enrollment.countDocuments({
+          course: { $in: courseIds },
+          status: { $in: ["enrolled", "in-progress"] },
+        }),
+        Enrollment.countDocuments({
+          course: { $in: courseIds },
+          status: "completed",
+        }),
+        Enrollment.aggregate([
+          { $match: { course: { $in: courseIds } } },
+          {
+            $group: {
+              _id: null,
+              totalStudents: { $addToSet: "$student" },
+              avgCompletion: { $avg: "$completionPercentage" },
+              avgGrade: { $avg: "$finalGrade" },
+            },
+          },
+        ]),
+      ]);
+
+      const stats = enrollmentStats[0] || {
+        totalStudents: [],
+        avgCompletion: 0,
+        avgGrade: 0,
+      };
+
+      const totalRevenue = instructorCourses.reduce((sum, course) => {
+        return sum + (course.price || 0);
+      }, 0);
+
+      return {
+        courses: {
+          total: instructorCourses.length,
+          active: instructorCourses.filter((c) => c.isActive).length,
+        },
+        students: {
+          total: stats.totalStudents.length,
+          active: activeEnrollments,
+        },
+        enrollments: {
+          total: totalEnrollments,
+          active: activeEnrollments,
+          completed: completedEnrollments,
+        },
+        performance: {
+          avgCompletion: Math.round(stats.avgCompletion || 0),
+          avgGrade: Math.round(stats.avgGrade || 0),
+        },
+        revenue: {
+          potential: totalRevenue,
+          actual: totalRevenue * (totalEnrollments || 0),
+        },
+      };
+    } catch (error) {
+      throw new Error(
+        `Error fetching instructor dashboard overview: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Get instructor's student progress analytics
+   * @param {string} instructorId - The instructor's user ID
+   * @returns {Promise<Array>} Student progress data for instructor's courses
+   */
+  static async getInstructorStudentProgress(instructorId) {
+    try {
+      return await Enrollment.aggregate([
+        {
+          $lookup: {
+            from: "courses",
+            localField: "course",
+            foreignField: "_id",
+            as: "courseInfo",
+          },
+        },
+        { $unwind: "$courseInfo" },
+        {
+          $match: {
+            "courseInfo.instructor": new mongoose.Types.ObjectId(instructorId),
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "student",
+            foreignField: "_id",
+            as: "studentInfo",
+          },
+        },
+        { $unwind: "$studentInfo" },
+        {
+          $project: {
+            studentId: "$studentInfo._id",
+            studentName: {
+              $concat: ["$studentInfo.firstName", " ", "$studentInfo.lastName"],
+            },
+            studentEmail: "$studentInfo.email",
+            courseId: "$courseInfo._id",
+            courseName: "$courseInfo.title",
+            progress: "$completionPercentage",
+            grade: "$finalGrade",
+            status: 1,
+            enrollmentDate: 1,
+            lastActivity: "$updatedAt",
+          },
+        },
+        { $sort: { progress: -1, lastActivity: -1 } },
+      ]);
+    } catch (error) {
+      throw new Error(
+        `Error fetching instructor student progress: ${error.message}`
+      );
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 const ExamService = require("../services/ExamService");
 
 /**
- * Exam Controller - Handles HTTP requests for exam operations (aligned with simplified models)
+ * Exam Controller - Handles HTTP requests for exam operations
  */
 class ExamController {
   /**
@@ -14,7 +14,18 @@ class ExamController {
       const { course } = req.query;
       const userId = req.user.id;
       const userRole = req.user.role;
-      const exams = await ExamService.getExams(course, userId, userRole);
+      
+      let exams;
+      if (course) {
+        // Get exams for specific course
+        exams = await ExamService.getExams(course, userId, userRole);
+      } else if (userRole === "student") {
+        // Get all exams for student across all enrolled courses
+        exams = await ExamService.getAllExamsForStudent(userId);
+      } else {
+        throw new Error("Course parameter is required for non-student users");
+      }
+      
       res.json({
         success: true,
         data: exams,
@@ -54,6 +65,84 @@ class ExamController {
   }
 
   /**
+   * Submit exam answers
+   * @route POST /api/exams/:id/submit
+   * @access Private/Student
+   */
+  static async submitExam(req, res) {
+    try {
+      const examId = req.params.id;
+      const userId = req.user.id;
+      const { answers } = req.body;
+      
+      if (!answers || typeof answers !== 'object') {
+        return res.status(400).json({
+          success: false,
+          message: "Answers are required"
+        });
+      }
+
+      const result = await ExamService.submitExam(examId, answers, userId);
+      res.json({
+        success: true,
+        data: result,
+        message: "Exam submitted successfully",
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message || "Failed to submit exam",
+      });
+    }
+  }
+
+  /**
+   * Get exam results for a student
+   * @route GET /api/exams/:id/results
+   * @access Private/Student
+   */
+  static async getExamResults(req, res) {
+    try {
+      const examId = req.params.id;
+      const userId = req.user.id;
+      const result = await ExamService.getExamResults(examId, userId);
+      res.json({
+        success: true,
+        data: result,
+        message: "Exam results retrieved successfully",
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message || "Failed to retrieve exam results",
+      });
+    }
+  }
+
+  /**
+   * Get all exam results for a student
+   * @route GET /api/exams/results
+   * @access Private/Student
+   */
+  static async getAllExamResults(req, res) {
+    try {
+      const userId = req.user.id;
+      const results = await ExamService.getAllExamResults(userId);
+      res.json({
+        success: true,
+        data: results,
+        count: results.length,
+        message: "Exam results retrieved successfully",
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message || "Failed to retrieve exam results",
+      });
+    }
+  }
+
+  /**
    * Create a new exam
    * @route POST /api/exams
    * @access Private/Instructor
@@ -61,9 +150,8 @@ class ExamController {
   static async createExam(req, res) {
     try {
       const instructorId = req.user.id;
-      // Only allow fields in simplified model
-      const { title, description, course, type, isActive } = req.body;
-      const exam = await ExamService.createExam({ title, description, course, type, isActive }, instructorId);
+      const examData = req.body;
+      const exam = await ExamService.createExam(examData, instructorId);
       res.status(201).json({
         success: true,
         data: exam,
@@ -86,9 +174,7 @@ class ExamController {
     try {
       const examId = req.params.id;
       const instructorId = req.user.id;
-      // Only allow fields in simplified model
-      const { title, description, type, isActive } = req.body;
-      const updateData = { title, description, type, isActive };
+      const updateData = req.body;
       const exam = await ExamService.updateExam(examId, updateData, instructorId);
       res.json({
         success: true,
@@ -126,7 +212,7 @@ class ExamController {
   }
 
   /**
-   * Get exam statistics (if supported)
+   * Get exam statistics
    * @route GET /api/exams/:id/stats
    * @access Private/Instructor
    */

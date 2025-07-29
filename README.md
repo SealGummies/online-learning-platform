@@ -1,325 +1,342 @@
-# Online Learning Platform - CS 5200 Practicum 2
+# Online Learning Platform
 
-## Project Overview
+A comprehensive online learning platform demonstrating advanced MongoDB usage with document-oriented design, CRUD operations, ACID transactions, role-based access control, advanced aggregation, and query optimization. Built with Node.js, Express, and MongoDB.
 
-This is an **Online Learning Platform** built for CS 5200 Practicum 2, implementing advanced NoSQL data management with MongoDB. The platform supports instructors creating courses and students enrolling in them, with comprehensive CRUD operations, JWT authentication, and role-based access control.
+## 🚀 Features
 
-## Features Implemented
+### Core Functionality
+- **📚 Course Management**: Create, update, and manage courses with lessons and exams
+- **👥 User Management**: Multi-role system (Student, Instructor, Admin)
+- **🎓 Enrollment System**: Student enrollment with progress tracking
+- **📊 Analytics Dashboard**: Advanced MongoDB aggregation queries
+- **🔒 Security**: JWT authentication with role-based access control
+- **⚡ Performance**: Optimized queries with strategic indexing
 
-### ✅ Requirement 1: MongoDB Schema Design and Data Population (10 pts)
+### Technical Highlights
+- **🗄️ MongoDB Integration**: Document-oriented design with 5+ collections
+- **🔄 ACID Transactions**: Data consistency for critical operations
+- **📈 Query Optimization**: 22.4% average performance improvement with indexing
+- **🧪 Comprehensive Testing**: 85%+ test coverage with Jest
+- **🏗️ MVC Architecture**: Clean separation of concerns
 
-- **5 distinct collections** with clear relationships:
-  - `Users` - Students, instructors, and admins with nested profile data
-  - `Courses` - Course information with instructor relationships
-  - `Enrollments` - Student-course relationships with progress tracking
-  - `Lessons` - Course content with multiple types (video, text, quiz, assignment)
-  - `Exams` - Assessments with various question types
-- **20+ sample documents** per collection with realistic data
-- **Nested JSON data** for complex structures (profiles, settings, content)
-- **Proper indexing** for optimized MongoDB queries
+## 📊 Project Status
 
-### ✅ Requirement 2: CRUD Operations & API Development (20 pts)
+| Milestone | Description | Status |
+|-----------|-------------|--------|
+| 1 | MongoDB Schema Design & Data Population | ✅ Completed |
+| 2 | CRUD Operations & API Development | ✅ Completed |
+| 3 | ACID Transactions in MongoDB | ✅ Completed |
+| 4 | Role-Based Access Control (RBAC) & Security | ✅ Completed |
+| 5 | Advanced MongoDB Queries & Aggregation | ✅ Completed |
+| 6 | Query Optimization & Indexing Strategy | ✅ Completed |
+| 7 | Data Replication & Sharding | ⏳ Planned |
+| 8 | Interactive Dashboard & Data Visualization | ⏳ Planned |
+| 9 | In-class Demo & Presentation | ⏳ Planned |
 
-- **REST API** built with Node.js and Express
-- **Full CRUD operations** for all collections
-- **JWT Authentication** with secure token management
-- **Role-Based Access Control (RBAC)** with three roles:
-  - **Students**: Enroll in courses, track progress, submit exams
-  - **Instructors**: Create and manage courses, lessons, and exams
-  - **Admins**: Full system access and user management
-- **Input validation** and error handling
-- **Pagination, search, and filtering** capabilities
+## 🏗️ Architecture
 
-## Project Structure
-
+### Backend (Node.js + Express + MongoDB)
 ```
-online-learning-platform/
-├── backend/                 # Node.js API server
-│   ├── config/             # Database configuration
-│   ├── middleware/         # Authentication middleware
-│   ├── models/             # MongoDB schemas
-│   ├── routes/             # API endpoints
-│   ├── scripts/            # Database seeding
-│   └── server.js           # Main server file
-├── frontend/               # React frontend (future)
-└── README.md               # Project documentation
+backend/
+├── controllers/          # HTTP request handlers
+├── services/            # Business logic & ACID transactions
+├── routes/              # API route definitions
+├── models/              # MongoDB schemas (5 collections)
+├── middleware/          # Authentication & validation
+├── tests/               # Jest test suite (85%+ coverage)
+├── scripts/             # Database seeding & benchmarking
+└── utils/               # Development tools
 ```
 
-## Quick Start
+### Frontend (HTML/CSS/JavaScript)
+```
+frontend/
+├── pages/               # Main application pages
+├── components/          # Reusable UI components
+├── js/                  # Frontend logic
+├── css/                 # Styling
+└── assets/              # Static resources
+```
+
+## 🗄️ Database Schema
+
+### Collections
+- **Users**: Student, Instructor, Admin accounts
+- **Courses**: Course information and settings
+- **Enrollments**: Student enrollments and progress tracking
+- **Lessons**: Course content structure
+- **Exams**: Assessments and submissions
+
+### Key Features
+- Document-oriented design with nested JSON data
+- ObjectId references for relationships
+- Strategic indexing for query optimization
+- ACID transactions for data consistency
+
+## 🚀 Quick Start
 
 ### Prerequisites
-
 - Node.js (v14 or higher)
-- MongoDB (v4.4 or higher) **OR** MongoDB Atlas (cloud database)
+- MongoDB (local or Atlas)
 - npm or yarn
 
-### Installation
-
-1. **Clone the repository:**
-
+### Option 1: Automated Setup
 ```bash
 git clone <repository-url>
-cd online-learning-platform
+cd online-learning-platform-1
+./setup.sh
 ```
 
-2. **Install backend dependencies:**
+### Option 2: Manual Setup
 
+#### Backend Setup
 ```bash
 cd backend
 npm install
-```
 
-3. **Set up environment variables:**
-
-```bash
-# Copy .env file and update with your settings
+# Configure environment
 cp .env.example .env
-```
+# Edit .env with your MongoDB connection
 
-4. **Choose your database option:**
-
-**Option A: Local MongoDB**
-
-```bash
-# Make sure MongoDB is running locally
-mongod
-```
-
-**Option B: Cloud MongoDB Atlas**
-
-```bash
-# Update .env with your Atlas connection string
-# See backend/MONGODB_ATLAS_GUIDE.md for detailed instructions
-MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/online-learning-platform?retryWrites=true&w=majority&appName=Cluster0
-```
-
-5. **Test database connection:**
-
-```bash
-# Test local MongoDB
-npm run test-db
-
-# Test MongoDB Atlas
-npm run test-atlas
-```
-
-6. **Seed the database with sample data:**
-
-```bash
+# Initialize database
 npm run seed
-```
 
-7. **Start the development server:**
-
-```bash
+# Start development server
 npm run dev
 ```
 
-The API will be available at `http://localhost:5000`
+#### Frontend Setup
+```bash
+cd frontend
+# Start local server
+python3 -m http.server 8000
+```
 
-## API Overview
+### Access URLs
+- **Backend API**: `http://localhost:3761/api`
+- **Frontend**: `http://localhost:8000`
+
+## 🔐 Authentication
+
+### Sample Users (after seeding)
+- **Admin**: `admin@example.com` / `password123`
+- **Instructor**: `john.smith@example.com` / `password123`
+- **Student**: `alice.johnson@example.com` / `password123`
+
+## 📚 API Endpoints
 
 ### Authentication
-
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user
-- `PUT /api/auth/profile` - Update profile
-- `PUT /api/auth/password` - Change password
-
-### Courses
-
-- `GET /api/courses` - Get all courses (with search/filter)
-- `GET /api/courses/:id` - Get course by ID
-- `POST /api/courses` - Create course (Instructor/Admin)
-- `PUT /api/courses/:id` - Update course
-- `DELETE /api/courses/:id` - Delete course
-- `POST /api/courses/:id/enroll` - Enroll in course (Student)
-
-### Users
-
-- `GET /api/users` - Get all users (Admin)
-- `GET /api/users/:id` - Get user by ID
-- `POST /api/users` - Create user (Admin)
-- `PUT /api/users/:id` - Update user
-- `DELETE /api/users/:id` - Delete user (Admin)
-
-### Enrollments
-
-- `GET /api/enrollments` - Get user enrollments (Student)
-- `PUT /api/enrollments/:id/progress` - Update progress
-- `PUT /api/enrollments/:id/review` - Add review
-- `DELETE /api/enrollments/:id` - Unenroll
-
-### Lessons
-
-- `GET /api/lessons?course=:id` - Get lessons for course
-- `POST /api/lessons` - Create lesson (Instructor)
-- `PUT /api/lessons/:id` - Update lesson
-- `DELETE /api/lessons/:id` - Delete lesson
-- `POST /api/lessons/:id/complete` - Mark complete (Student)
-
-### Exams
-
-- `GET /api/exams?course=:id` - Get exams for course
-- `POST /api/exams` - Create exam (Instructor)
-- `PUT /api/exams/:id` - Update exam
-- `DELETE /api/exams/:id` - Delete exam
-- `POST /api/exams/:id/submit` - Submit exam (Student)
-
-## Sample Data
-
-The database is populated with realistic sample data:
-
-- **1 Admin user** with full system access
-- **3 Instructor users** with different specializations
-- **20+ Student users** with various enrollment patterns
-- **20+ Courses** across different categories (Programming, Data Science, Web Development, etc.)
-- **100+ Lessons** with various content types (video, text, quiz, assignment)
-- **50+ Exams** with different question types (multiple-choice, true-false, short-answer)
-- **Multiple Enrollments** with realistic progress tracking
-
-## Authentication & Authorization
-
-The platform uses JWT tokens for authentication with role-based access control:
-
-### Student Role
-
-- View published courses and lessons
-- Enroll in courses and track progress
-- Submit exams and receive grades
-- Manage own profile and enrollments
-
-### Instructor Role
-
-- All student permissions
-- Create and manage own courses
-- Create lessons and exams for own courses
-- View enrollment statistics for own courses
-
-### Admin Role
-
-- Full system access
-- Manage all users, courses, and content
-- Access system-wide statistics
-- User management capabilities
-
-## Testing the API
-
-You can test the API using tools like Postman or curl:
-
-### 1. Register a new user
-
-```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "firstName": "Test",
-    "lastName": "User",
-    "email": "test@example.com",
-    "password": "password123",
-    "role": "student"
-  }'
+```
+POST   /api/auth/register    # Register new user
+POST   /api/auth/login       # User login
+GET    /api/auth/me          # Get current user profile
 ```
 
-### 2. Login and get token
-
-```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123"
-  }'
+### Course Management
+```
+GET    /api/courses          # List all courses
+POST   /api/courses          # Create course (instructor only)
+GET    /api/courses/:id      # Get course details
+PUT    /api/courses/:id      # Update course
+DELETE /api/courses/:id      # Delete course
+POST   /api/courses/:id/enroll # Enroll in course
 ```
 
-### 3. Get all courses
-
-```bash
-curl -X GET http://localhost:5000/api/courses
+### Enrollment Management
+```
+GET    /api/enrollments      # Get student enrollments
+PUT    /api/enrollments/:id/progress # Update progress
+POST   /api/enrollments/:id/withdraw # Withdraw from course
 ```
 
-### 4. Get user profile (requires auth token)
-
-```bash
-curl -X GET http://localhost:5000/api/auth/me \
-  -H "Authorization: Bearer <your-jwt-token>"
+### Analytics
+```
+GET    /api/analytics/courses/top-performing
+GET    /api/analytics/students/progress
+GET    /api/analytics/instructors/dashboard
 ```
 
-## MongoDB Schema Highlights
+## ⚡ Performance Features
 
-### Advanced Features
+### Query Optimization
+- **22.4% average performance improvement** with strategic indexing
+- **49% improvement** on analytics queries
+- **Indexed fields**: email, role, category, instructor, isActive
+- **Text search indexes** for course and user search
 
-- **Nested Documents**: User profiles, course settings, lesson content
-- **References**: Instructor-course, student-enrollment relationships
-- **Indexing**: Optimized queries for email, role, ratings, dates
-- **Validation**: Schema-level validation for data integrity
-- **Aggregation**: Statistics calculation for users and courses
+### ACID Transactions
+- Enrollment operations with rollback on failure
+- Progress updates with data consistency
+- Exam submissions with atomic operations
 
-### Sample Document Structure
+## 🧪 Testing
 
+```bash
+# Run all tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run integration tests
+npm run test:integration
+
+# Run unit tests
+npm run test:unit
+```
+
+**Test Coverage**: 85%+ on core services
+
+## 📊 Analytics & Reporting
+
+### Advanced MongoDB Aggregation Queries
+- Top performing courses by enrollment and completion rates
+- Student progress analytics with time-based tracking
+- Instructor performance metrics
+- Course completion trends and patterns
+- Revenue analytics and financial reporting
+
+### Sample Analytics Queries
 ```javascript
-// User document example
-{
-  "_id": ObjectId("..."),
-  "firstName": "John",
-  "lastName": "Smith",
-  "email": "john.smith@example.com",
-  "role": "instructor",
-  "profile": {
-    "bio": "Full-stack developer with 10+ years experience",
-    "avatar": "https://example.com/avatar.jpg",
-    "address": {
-      "city": "San Francisco",
-      "state": "CA",
-      "country": "USA"
-    },
-    "socialLinks": {
-      "linkedin": "https://linkedin.com/in/johnsmith",
-      "github": "https://github.com/johnsmith"
-    }
-  },
-  "stats": {
-    "coursesCreated": 5,
-    "averageRating": 4.8,
-    "totalPoints": 2450
-  },
-  "preferences": {
-    "notifications": {
-      "email": true,
-      "push": true
-    },
-    "language": "en",
-    "timezone": "UTC"
-  },
-  "createdAt": ISODate("..."),
-  "updatedAt": ISODate("...")
-}
+// Top performing courses
+db.courses.aggregate([
+  { $lookup: { from: "enrollments", localField: "_id", foreignField: "course" } },
+  { $group: { _id: "$_id", enrollmentCount: { $sum: 1 } } },
+  { $sort: { enrollmentCount: -1 } }
+])
 ```
 
-## Next Steps
+## 🔧 Development
 
-This implementation covers the first two requirements of the practicum:
+### Available Scripts
+```bash
+# Development
+npm run dev                 # Start with auto-reload
+npm start                   # Production server
 
-1. ✅ MongoDB Schema Design and Data Population
-2. ✅ CRUD Operations & API Development
+# Database
+npm run seed               # Populate with sample data
+npm run test-db            # Test database connection
 
-Future enhancements could include:
+# Testing
+npm test                   # Run test suite
+npm run test:coverage      # Generate coverage report
 
-- ACID transaction implementation for enrollment conflicts
-- Advanced MongoDB aggregation for analytics
-- Data replication and sharding strategies
-- Frontend React application
-- Real-time features with WebSockets
+# Utilities
+npm run validate-env       # Validate configuration
+npm run config-db          # Database configuration
+```
 
-## Documentation
+### Environment Variables
+```env
+NODE_ENV=development
+PORT=3761
+MONGODB_URI=your-mongodb-connection-string
+JWT_SECRET=your-jwt-secret
+JWT_EXPIRE=30d
+```
 
-For detailed API documentation, see [`backend/README.md`](backend/README.md).
+## 📁 Project Structure
 
-## Contributors
+```
+online-learning-platform-1/
+├── backend/                    # Node.js API Server
+│   ├── controllers/           # HTTP request handlers
+│   ├── services/              # Business logic & transactions
+│   ├── routes/                # API endpoints
+│   ├── models/                # MongoDB schemas
+│   ├── middleware/            # Auth & validation
+│   ├── tests/                 # Jest test suite
+│   ├── scripts/               # Database utilities
+│   └── utils/                 # Development tools
+├── frontend/                   # Web Interface
+│   ├── pages/                 # Application pages
+│   ├── components/            # Reusable components
+│   ├── js/                    # Frontend logic
+│   └── css/                   # Styling
+├── performance_comparison_table.md # Query optimization report
+└── setup.sh                    # Automated setup script
+```
 
-Built for CS 5200 Practicum 2 - Advanced NoSQL Data Management with MongoDB.
+## 🔒 Security Features
+
+- **JWT Authentication**: Secure token-based authentication
+- **Role-Based Access Control (RBAC)**: Student, Instructor, Admin roles
+- **Input Validation**: Express-validator for request validation
+- **Password Hashing**: bcryptjs for secure password storage
+- **CORS Protection**: Configurable cross-origin resource sharing
+
+## 🚀 Performance Highlights
+
+### Query Optimization Results
+| Query Type | Performance Improvement |
+|------------|----------------------|
+| Analytics Queries | 49.0% |
+| Instructor Dashboard | 36.3% |
+| Text Search | 33.8% |
+| Course Search | 24.3% |
+| **Average Improvement** | **22.4%** |
+
+### Indexing Strategy
+- **Essential Indexes**: email, role, category, instructor, isActive
+- **Text Indexes**: Course and user search functionality
+- **Compound Indexes**: Multi-field query optimization
+- **Performance Monitoring**: Regular query analysis
+
+## 📚 Documentation
+
+- [`backend/README.md`](backend/README.md) - Backend API documentation
+- [`frontend/README.md`](frontend/README.md) - Frontend setup guide
+- [`performance_comparison_table.md`](performance_comparison_table.md) - Query optimization report
+- [`Milestone 1 Documentation.pdf`](Milestone%201%20Documentation.pdf) - Milestone 1 details
+- [`Milestone 2 Documentation.pdf`](Milestone%202%20Documentation.pdf) - Milestone 2 details
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Database Connection**
+   ```bash
+   npm run test-db          # Test local MongoDB
+   npm run test-atlas       # Test Atlas connection
+   npm run validate-env     # Validate environment
+   ```
+
+2. **Port Conflicts**
+   - Change `PORT` in `.env` file
+   - Ensure no other services using port 3761
+
+3. **JWT Errors**
+   - Ensure `JWT_SECRET` is set in `.env`
+   - Check token expiration settings
+
+### Development Tips
+- Use `npm run dev` for auto-reload during development
+- Run `npm test` before commits
+- Check test coverage with `npm run test:coverage`
+- Use `npm run seed` to reset database with sample data
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## 📞 Support
+
+For issues and questions:
+1. Check existing documentation
+2. Review test files for usage examples
+3. Check environment configuration
+4. Run validation scripts
 
 ---
 
-**Note**: This project demonstrates advanced MongoDB usage with document-oriented design, comprehensive CRUD operations, and role-based access control suitable for a production learning platform.
+**Built with ❤️ using Node.js, Express, and MongoDB**
