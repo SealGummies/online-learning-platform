@@ -5,9 +5,7 @@ const { protect } = require("../middleware/auth");
 
 const router = express.Router();
 
-/**
- * Validation middleware for user registration
- */
+// Validation middleware for user registration
 const validateRegister = [
   body("firstName")
     .trim()
@@ -41,9 +39,7 @@ const validateRegister = [
   },
 ];
 
-/**
- * Validation middleware for user login
- */
+// Validation middleware for user login
 const validateLogin = [
   body("email")
     .isEmail()
@@ -63,9 +59,7 @@ const validateLogin = [
   },
 ];
 
-/**
- * Validation middleware for profile update
- */
+// Validation middleware for profile update (only firstName, lastName)
 const validateProfile = [
   body("firstName")
     .optional()
@@ -77,11 +71,6 @@ const validateProfile = [
     .trim()
     .isLength({ min: 2 })
     .withMessage("Last name must be at least 2 characters"),
-  body("email")
-    .optional()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage("Please provide a valid email"),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -95,9 +84,7 @@ const validateProfile = [
   },
 ];
 
-/**
- * Validation middleware for password change
- */
+// Validation middleware for password change
 const validatePasswordChange = [
   body("currentPassword").exists().withMessage("Current password is required"),
   body("newPassword")
@@ -116,9 +103,7 @@ const validatePasswordChange = [
   },
 ];
 
-/**
- * Validation middleware for forgot password
- */
+// Validation middleware for forgot password
 const validateForgotPassword = [
   body("email")
     .isEmail()
@@ -137,9 +122,7 @@ const validateForgotPassword = [
   },
 ];
 
-/**
- * Validation middleware for password reset
- */
+// Validation middleware for password reset
 const validatePasswordReset = [
   body("password")
     .isLength({ min: 6 })
@@ -160,25 +143,12 @@ const validatePasswordReset = [
 // Public routes
 router.post("/register", validateRegister, AuthController.register);
 router.post("/login", validateLogin, AuthController.login);
-router.post(
-  "/forgot-password",
-  validateForgotPassword,
-  AuthController.forgotPassword
-);
-router.post(
-  "/reset-password/:token",
-  validatePasswordReset,
-  AuthController.resetPassword
-);
+router.post("/forgot-password", validateForgotPassword, AuthController.forgotPassword);
+router.post("/reset-password/:token", validatePasswordReset, AuthController.resetPassword);
 
 // Protected routes
 router.get("/me", protect, AuthController.getMe);
 router.put("/me", protect, validateProfile, AuthController.updateProfile);
-router.put(
-  "/change-password",
-  protect,
-  validatePasswordChange,
-  AuthController.changePassword
-);
+router.put("/change-password", protect, validatePasswordChange, AuthController.changePassword);
 
 module.exports = router;

@@ -1,11 +1,13 @@
 const CourseService = require("../services/CourseService");
 
 /**
- * Course Controller - Handles HTTP requests for course operations
+ * Course Controller - Handles HTTP requests for course operations (aligned with simplified models)
  */
 class CourseController {
   /**
    * Get all courses with filtering and pagination
+   * @route GET /api/courses
+   * @access Public
    */
   static async getCourses(req, res) {
     try {
@@ -19,9 +21,7 @@ class CourseController {
         sortBy: req.query.sortBy || "createdAt",
         sortOrder: req.query.sortOrder || "desc",
       };
-
       const result = await CourseService.getCourses(options);
-
       res.json({
         success: true,
         data: result.courses,
@@ -38,14 +38,14 @@ class CourseController {
 
   /**
    * Get course by ID
+   * @route GET /api/courses/:id
+   * @access Public
    */
   static async getCourseById(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user?.id; // Optional for enrollment status
-
+      const userId = req.user?.id;
       const course = await CourseService.getCourseById(id, userId);
-
       res.json({
         success: true,
         data: course,
@@ -62,22 +62,21 @@ class CourseController {
 
   /**
    * Create new course
+   * @route POST /api/courses
+   * @access Private/Instructor
    */
   static async createCourse(req, res) {
     try {
       const instructorId = req.user.id;
-      const courseData = req.body;
-
-      // Validate instructor role
+      // Only allow fields in simplified model
+      const { title, description, category, level, price } = req.body;
       if (req.user.role !== "instructor") {
         return res.status(403).json({
           success: false,
           error: "Only instructors can create courses",
         });
       }
-
-      const course = await CourseService.createCourse(courseData, instructorId);
-
+      const course = await CourseService.createCourse({ title, description, category, level, price }, instructorId);
       res.status(201).json({
         success: true,
         data: course,
@@ -93,19 +92,17 @@ class CourseController {
 
   /**
    * Update course
+   * @route PUT /api/courses/:id
+   * @access Private/Instructor
    */
   static async updateCourse(req, res) {
     try {
       const { id } = req.params;
-      const updateData = req.body;
+      // Only allow fields in simplified model
+      const { title, description, category, level, price, isActive } = req.body;
       const instructorId = req.user.id;
-
-      const course = await CourseService.updateCourse(
-        id,
-        updateData,
-        instructorId
-      );
-
+      const updateData = { title, description, category, level, price, isActive };
+      const course = await CourseService.updateCourse(id, updateData, instructorId);
       res.json({
         success: true,
         data: course,
@@ -115,8 +112,8 @@ class CourseController {
       const statusCode = error.message.includes("not found")
         ? 404
         : error.message.includes("Not authorized")
-        ? 403
-        : 400;
+          ? 403
+          : 400;
       res.status(statusCode).json({
         success: false,
         error: error.message,
@@ -126,14 +123,14 @@ class CourseController {
 
   /**
    * Delete course
+   * @route DELETE /api/courses/:id
+   * @access Private/Instructor
    */
   static async deleteCourse(req, res) {
     try {
       const { id } = req.params;
       const instructorId = req.user.id;
-
       const result = await CourseService.deleteCourse(id, instructorId);
-
       res.json({
         success: true,
         data: result,
@@ -143,8 +140,8 @@ class CourseController {
       const statusCode = error.message.includes("not found")
         ? 404
         : error.message.includes("Not authorized")
-        ? 403
-        : 400;
+          ? 403
+          : 400;
       res.status(statusCode).json({
         success: false,
         error: error.message,
@@ -154,22 +151,20 @@ class CourseController {
 
   /**
    * Enroll student in course
+   * @route POST /api/courses/:id/enroll
+   * @access Private/Student
    */
   static async enrollStudent(req, res) {
     try {
-      const { id } = req.params; // course ID
+      const { id } = req.params;
       const userId = req.user.id;
-
-      // Validate student role
       if (req.user.role !== "student") {
         return res.status(403).json({
           success: false,
           error: "Only students can enroll in courses",
         });
       }
-
       const result = await CourseService.enrollStudent(id, userId);
-
       res.status(201).json({
         success: true,
         data: result.enrollment,
@@ -179,10 +174,10 @@ class CourseController {
       const statusCode = error.message.includes("not found")
         ? 404
         : error.message.includes("full")
-        ? 409
-        : error.message.includes("Already enrolled")
-        ? 409
-        : 400;
+          ? 409
+          : error.message.includes("Already enrolled")
+            ? 409
+            : 400;
       res.status(statusCode).json({
         success: false,
         error: error.message,
@@ -192,13 +187,13 @@ class CourseController {
 
   /**
    * Get course statistics
+   * @route GET /api/courses/:id/stats
+   * @access Public
    */
   static async getCourseStats(req, res) {
     try {
       const { id } = req.params;
-
       const stats = await CourseService.getCourseStats(id);
-
       res.json({
         success: true,
         data: stats,
@@ -215,26 +210,23 @@ class CourseController {
 
   /**
    * Get courses by instructor
+   * @route GET /api/courses/instructor/my-courses
+   * @access Private/Instructor
    */
   static async getInstructorCourses(req, res) {
     try {
       const instructorId = req.user.id;
-
-      // Validate instructor role
       if (req.user.role !== "instructor") {
         return res.status(403).json({
           success: false,
           error: "Only instructors can view their courses",
         });
       }
-
       const options = {
         ...req.query,
         instructor: instructorId,
       };
-
       const result = await CourseService.getCourses(options);
-
       res.json({
         success: true,
         data: result.courses,

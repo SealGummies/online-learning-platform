@@ -35,16 +35,6 @@ class UserService {
         password: hashedPassword,
         role,
         isActive: true,
-        profile: {
-          bio: "",
-          profilePicture: "",
-          socialLinks: {},
-          preferences: {
-            emailNotifications: true,
-            pushNotifications: true,
-            language: "en",
-          },
-        },
       });
 
       await user.save({ session });
@@ -121,16 +111,12 @@ class UserService {
         "lastName",
         "role",
         "isActive",
-        "profile.bio",
-        "profile.profilePicture",
-        "profile.socialLinks",
-        "profile.preferences",
       ];
 
       // Filter out non-allowed updates
       const filteredData = {};
       Object.keys(updateData).forEach((key) => {
-        if (allowedUpdates.includes(key) || key.startsWith("profile.")) {
+        if (allowedUpdates.includes(key)) {
           filteredData[key] = updateData[key];
         }
       });
@@ -195,7 +181,7 @@ class UserService {
       if (user.role === "instructor") {
         const activeCourses = await Course.countDocuments({
           instructor: userId,
-          status: "published",
+          isActive: true,
         }).session(session);
 
         if (activeCourses > 0) {
@@ -226,39 +212,41 @@ class UserService {
     const stats = {};
 
     if (user.role === "student") {
-      // Get enrollment statistics
-      const enrollments = await Enrollment.find({ student: userId });
-      const completedCourses = enrollments.filter(
-        (e) => e.status === "completed"
-      ).length;
-      const activeCourses = enrollments.filter(
-        (e) => e.status === "active"
-      ).length;
-      const averageProgress =
-        enrollments.length > 0
-          ? enrollments.reduce((sum, e) => sum + e.progress, 0) /
-            enrollments.length
-          : 0;
-
+      // Get enrollment statistics (use aggregation for performance)
+      const statsAgg = await Enrollment.aggregate([
+        { $match: { student: user._id } },
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 },
+            avgCompletion: { $avg: "$completionPercentage" },
+          },
+        },
+      ]);
+      let totalEnrollments = 0, completedCourses = 0, inProgressCourses = 0, avgCompletion = 0;
+      statsAgg.forEach((s) => {
+        totalEnrollments += s.count;
+        if (s._id === "completed") completedCourses = s.count;
+        if (s._id === "in-progress" || s._id === "enrolled") inProgressCourses += s.count;
+        avgCompletion += (s.avgCompletion || 0) * s.count;
+      });
+      avgCompletion = totalEnrollments > 0 ? Math.round(avgCompletion / totalEnrollments) : 0;
       stats.student = {
-        totalEnrollments: enrollments.length,
-        activeCourses,
+        totalEnrollments,
+        inProgressCourses,
         completedCourses,
-        averageProgress: Math.round(averageProgress),
+        averageCompletion: avgCompletion,
       };
     } else if (user.role === "instructor") {
       // Get course statistics
       const courses = await Course.find({ instructor: userId });
-      const publishedCourses = courses.filter(
-        (c) => c.status === "published"
-      ).length;
+      const activeCourses = courses.filter((c) => c.isActive).length;
       const totalEnrollments = await Enrollment.countDocuments({
         course: { $in: courses.map((c) => c._id) },
       });
-
       stats.instructor = {
         totalCourses: courses.length,
-        publishedCourses,
+        activeCourses,
         totalStudents: totalEnrollments,
       };
     }
@@ -302,8 +290,8 @@ class UserService {
     }
 
     const enrollments = await Enrollment.find(query)
-      .populate("course", "title description instructor category level")
-      .sort({ enrolledAt: -1 });
+      .populate("course", "title category level instructor")
+      .sort({ enrollmentDate: -1 });
 
     return enrollments;
   }
@@ -375,8 +363,8 @@ class UserService {
     if (user.role === "student") {
       // Get recent enrollments
       dashboard.recentEnrollments = await Enrollment.find({ student: userId })
-        .populate("course", "title description instructor category level")
-        .sort({ enrolledAt: -1 })
+        .populate("course", "title category level instructor")
+        .sort({ enrollmentDate: -1 })
         .limit(5);
     } else if (user.role === "instructor") {
       // Get recent courses

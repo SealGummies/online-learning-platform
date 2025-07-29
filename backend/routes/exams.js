@@ -1,13 +1,11 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const ExamController = require("../controllers/ExamController");
-const { protect, authorize } = require("../middleware/auth");
+const { protect, authorize, validateObjectId } = require("../middleware/auth");
 
 const router = express.Router();
 
-/**
- * Validation middleware for exam creation
- */
+// Validation middleware for exam creation
 const validateExam = [
   body("title")
     .notEmpty()
@@ -23,32 +21,21 @@ const validateExam = [
     .withMessage("Course ID is required")
     .isMongoId()
     .withMessage("Invalid course ID"),
+  body("type")
+    .isIn(["quiz", "midterm", "final", "assignment"])
+    .withMessage("Invalid exam type"),
   body("questions")
     .isArray({ min: 1 })
     .withMessage("Exam must have at least one question"),
   body("questions.*.text")
     .notEmpty()
-    .withMessage("Question text is required")
-    .isLength({ min: 10 })
-    .withMessage("Question text must be at least 10 characters"),
-  body("questions.*.type")
-    .isIn(["multiple-choice", "true-false", "short-answer"])
-    .withMessage("Invalid question type"),
-  body("questions.*.points")
-    .isFloat({ min: 0.1 })
-    .withMessage("Question points must be greater than 0"),
-  body("timeLimit")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Time limit must be a positive integer"),
-  body("maxAttempts")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Max attempts must be a positive integer"),
-  body("passingScore")
-    .optional()
-    .isFloat({ min: 0, max: 100 })
-    .withMessage("Passing score must be between 0 and 100"),
+    .withMessage("Question text is required"),
+  body("questions.*.options")
+    .isArray({ min: 2 })
+    .withMessage("Question must have at least 2 options"),
+  body("questions.*.correctAnswer")
+    .isInt({ min: 0 })
+    .withMessage("Correct answer must be a valid option index"),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -62,58 +49,20 @@ const validateExam = [
   },
 ];
 
-/**
- * Validation middleware for exam submission
- */
-const validateExamSubmission = [
-  body("answers")
-    .isArray()
-    .withMessage("Answers must be an array"),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: errors.array(),
-      });
-    }
-    next();
-  },
-];
-
-/**
- * Validation middleware for exam grading
- */
-const validateExamGrading = [
-  body("grades")
-    .isArray()
-    .withMessage("Grades must be an array"),
-  body("feedback")
-    .optional()
-    .isString()
-    .withMessage("Feedback must be a string"),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: errors.array(),
-      });
-    }
-    next();
-  },
-];
-
-// Get exams for a course (students and instructors)
+// Get exams for a course or all exams for student
 router.get("/", protect, ExamController.getExams);
 
-// Get specific exam details
-router.get("/:id", protect, ExamController.getExamById);
+// Get all exam results for student
+router.get("/results", protect, authorize("student"), ExamController.getAllExamResults);
 
-// Get exam attempts for a specific exam
-router.get("/:id/attempts", protect, ExamController.getExamAttempts);
+// Get specific exam details
+router.get("/:id", protect, validateObjectId("id"), ExamController.getExamById);
+
+// Submit exam answers (student only)
+router.post("/:id/submit", protect, authorize("student"), validateObjectId("id"), ExamController.submitExam);
+
+// Get exam results for a student
+router.get("/:id/results", protect, authorize("student"), validateObjectId("id"), ExamController.getExamResults);
 
 // Instructor routes
 router.post(
@@ -128,6 +77,7 @@ router.put(
   "/:id",
   protect,
   authorize("instructor"),
+  validateObjectId("id"),
   validateExam,
   ExamController.updateExam
 );
@@ -136,6 +86,7 @@ router.delete(
   "/:id",
   protect,
   authorize("instructor"),
+  validateObjectId("id"),
   ExamController.deleteExam
 );
 
@@ -143,24 +94,8 @@ router.get(
   "/:id/stats",
   protect,
   authorize("instructor"),
+  validateObjectId("id"),
   ExamController.getExamStats
-);
-
-router.post(
-  "/:examId/attempts/:attemptId/grade",
-  protect,
-  authorize("instructor"),
-  validateExamGrading,
-  ExamController.gradeExam
-);
-
-// Student routes
-router.post(
-  "/:id/submit",
-  protect,
-  authorize("student"),
-  validateExamSubmission,
-  ExamController.submitExam
 );
 
 module.exports = router;

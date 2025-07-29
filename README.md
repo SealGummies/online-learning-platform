@@ -1,243 +1,342 @@
 # Online Learning Platform
 
-CS 5200 Practicum 2 - Advanced NoSQL Data Management with MongoDB
+A comprehensive online learning platform demonstrating advanced MongoDB usage with document-oriented design, CRUD operations, ACID transactions, role-based access control, advanced aggregation, and query optimization. Built with Node.js, Express, and MongoDB.
 
-## Project Overview
+## 🚀 Features
 
-A comprehensive online learning platform demonstrating advanced MongoDB usage with document-oriented design, CRUD operations, and role-based access control. Built with Node.js, Express, and MongoDB.
+### Core Functionality
+- **📚 Course Management**: Create, update, and manage courses with lessons and exams
+- **👥 User Management**: Multi-role system (Student, Instructor, Admin)
+- **🎓 Enrollment System**: Student enrollment with progress tracking
+- **📊 Analytics Dashboard**: Advanced MongoDB aggregation queries
+- **🔒 Security**: JWT authentication with role-based access control
+- **⚡ Performance**: Optimized queries with strategic indexing
 
-## Features Implemented
+### Technical Highlights
+- **🗄️ MongoDB Integration**: Document-oriented design with 5+ collections
+- **🔄 ACID Transactions**: Data consistency for critical operations
+- **📈 Query Optimization**: 22.4% average performance improvement with indexing
+- **🧪 Comprehensive Testing**: 85%+ test coverage with Jest
+- **🏗️ MVC Architecture**: Clean separation of concerns
 
-### ✅ Requirement 1: MongoDB Schema Design (10 pts)
+## 📊 Project Status
 
-- 5 distinct collections with clear relationships
-- 20+ sample documents per collection
-- Nested JSON data structures
-- Proper indexing for optimized queries
+| Milestone | Description | Status |
+|-----------|-------------|--------|
+| 1 | MongoDB Schema Design & Data Population | ✅ Completed |
+| 2 | CRUD Operations & API Development | ✅ Completed |
+| 3 | ACID Transactions in MongoDB | ✅ Completed |
+| 4 | Role-Based Access Control (RBAC) & Security | ✅ Completed |
+| 5 | Advanced MongoDB Queries & Aggregation | ✅ Completed |
+| 6 | Query Optimization & Indexing Strategy | ✅ Completed |
+| 7 | Data Replication & Sharding | ⏳ Planned |
+| 8 | Interactive Dashboard & Data Visualization | ⏳ Planned |
+| 9 | In-class Demo & Presentation | ⏳ Planned |
 
-### ✅ Requirement 2: CRUD Operations & API (20 pts)
+## 🏗️ Architecture
 
-- RESTful API with full CRUD operations for all 5 collections
-- **Users Collection**: Create (register), Read (profile), Update (profile), Delete (account)
-- **Courses Collection**: Create/Read/Update/Delete courses (instructor/admin)
-- **Enrollments Collection**: Create (enroll), Read (progress), Update (progress), Delete (unenroll)
-- **Lessons Collection**: Full CRUD for course content management
-- **Exams Collection**: Full CRUD for assessments and submissions
-- JWT authentication with role-based access control
-- Input validation and error handling
-- Pagination, search, and filtering
-
-### ✅ Requirement 3: ACID Transactions (20 pts)
-
-- MongoDB ACID transactions for critical operations
-- **Enrollment Transactions**: Atomic enrollment with course stats update
-- **Progress Transactions**: Atomic progress and completion tracking
-- **Exam Transactions**: Atomic submission with auto-grading and stats
-- Rollback mechanisms for failure handling
-- Transaction boundaries across multiple collections
-
-### ✅ Requirement 4: RBAC & Security (20 pts)
-
-- Role-based access control (Student/Instructor/Admin)
-- Database-level access restrictions by role
-- JWT authentication with bcrypt password hashing
-- Route-level authorization middleware
-- Resource ownership validation
-- Input sanitization and validation
-
-## Project Structure
-
+### Backend (Node.js + Express + MongoDB)
 ```
-online-learning-platform/
-├── backend/                    # Node.js API Server (MVC Architecture)
-│   ├── controllers/           # 🎮 HTTP request handlers
-│   ├── services/              # 🔧 Business logic & ACID transactions
-│   ├── routes/                # 🛣️ API endpoints with validation
-│   ├── models/                # 📊 MongoDB schemas (5 collections)
-│   ├── middleware/            # 🔒 Authentication middleware
-│   ├── tests/                 # 🧪 Jest test suite (85%+ coverage)
-│   ├── utils/                 # 🛠️ Development tools
-│   ├── legacy/                # 📦 Pre-refactor archived files
-│   └── README.md              # Backend deployment guide
-├── frontend/                   # Y2K Style Web Interface
-│   ├── css/                   # Retro styling
-│   ├── js/                    # Authentication logic
-│   ├── index.html             # Login page
-│   ├── register.html          # Registration page
-│   ├── dashboard.html         # Dashboard
-│   └── README.md              # Frontend usage guide
-├── ENVIRONMENT_SETUP.md       # Environment configuration
-└── README.md                  # This file
+backend/
+├── controllers/          # HTTP request handlers
+├── services/            # Business logic & ACID transactions
+├── routes/              # API route definitions
+├── models/              # MongoDB schemas (5 collections)
+├── middleware/          # Authentication & validation
+├── tests/               # Jest test suite (85%+ coverage)
+├── scripts/             # Database seeding & benchmarking
+└── utils/               # Development tools
 ```
 
-## Quick Start
+### Frontend (HTML/CSS/JavaScript)
+```
+frontend/
+├── pages/               # Main application pages
+├── components/          # Reusable UI components
+├── js/                  # Frontend logic
+├── css/                 # Styling
+└── assets/              # Static resources
+```
+
+## 🗄️ Database Schema
+
+### Collections
+- **Users**: Student, Instructor, Admin accounts
+- **Courses**: Course information and settings
+- **Enrollments**: Student enrollments and progress tracking
+- **Lessons**: Course content structure
+- **Exams**: Assessments and submissions
+
+### Key Features
+- Document-oriented design with nested JSON data
+- ObjectId references for relationships
+- Strategic indexing for query optimization
+- ACID transactions for data consistency
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js (v14 or higher)
+- MongoDB (local or Atlas)
+- npm or yarn
 
 ### Option 1: Automated Setup
-
 ```bash
 git clone <repository-url>
-cd online-learning-platform
+cd online-learning-platform-1
 ./setup.sh
 ```
 
 ### Option 2: Manual Setup
 
-1. **Backend Setup**:
-
-   ```bash
-   cd backend
-   npm install
-   # Configure MongoDB connection in .env
-   npm run dev
-   ```
-
-2. **Access Application**:
-
-   - Backend API: `http://localhost:3761/api`
-   - Frontend Interface: `http://localhost:3761`
-
-3. **Create Account**: Register → Login → Dashboard
-
-## Application Components
-
-### Backend API
-
-- **Architecture**: MVC + Services pattern with clear separation of concerns
-- **Collections**: Users, Courses, Enrollments, Lessons, Exams
-- **CRUD Support**: Full Create/Read/Update/Delete for all collections with ACID transactions
-- **Authentication**: JWT with role-based access (Student/Instructor/Admin)
-- **Transactions**: MongoDB ACID transactions for critical operations
-- **Security**: Role-based access control and input validation
-- **Features**: Search, pagination, validation, error handling, transaction safety
-- **Code Quality**: 76% code reduction through MVC refactor while adding transaction support
-- **Testing**: Jest test suite with 85%+ coverage
-
-### Frontend Interface
-
-- **Pages**: Login, Registration, Dashboard
-- **Features**: Token-based auth, responsive layout, nostalgic UI
-
-## User Roles
-
-- **Student**: Enroll in courses, track progress
-- **Instructor**: Create/manage courses and lessons
-- **Admin**: Full system access
-
-## Getting Started
-
-1. **Deploy Backend**: Follow [`backend/README.md`](backend/README.md)
-2. **Test API**: Server runs at `http://localhost:3761`
-3. **Sample Data**: Includes realistic test data for development
-4. **Authentication**: JWT tokens with role-based access
-
-## Sample API Usage
-
+#### Backend Setup
 ```bash
-# Register user (CREATE)
-curl -X POST http://localhost:3761/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"firstName":"Test","lastName":"User","email":"test@example.com","password":"password123","role":"student"}'
+cd backend
+npm install
 
-# Login (READ)
-curl -X POST http://localhost:3761/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
+# Configure environment
+cp .env.example .env
+# Edit .env with your MongoDB connection
 
-# CRUD Examples:
-# CREATE course
-curl -X POST http://localhost:3761/api/courses \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"New Course","description":"Course description"}'
+# Initialize database
+npm run seed
 
-# READ courses
-curl http://localhost:3761/api/courses
-
-# UPDATE course
-curl -X PUT http://localhost:3761/api/courses/COURSE_ID \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Updated Course Title"}'
-
-# DELETE course
-curl -X DELETE http://localhost:3761/api/courses/COURSE_ID \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+# Start development server
+npm run dev
 ```
 
-## MongoDB Features Demonstrated
+#### Frontend Setup
+```bash
+cd frontend
+# Start local server
+python3 -m http.server 8000
+```
 
-- Document-oriented design with nested JSON structures
-- Collection relationships using ObjectIds and references
-- Indexing strategies for performance optimization
-- Schema validation with Mongoose
-- Aggregation pipelines for analytics
-- Full-text search capabilities
+### Access URLs
+- **Backend API**: `http://localhost:3761/api`
+- **Frontend**: `http://localhost:8000`
 
-## Development Status
+## 🔐 Authentication
 
-### Week 1 (Completed - Tasks 1-2)
+### Sample Users (after seeding)
+- **Admin**: `admin@example.com` / `password123`
+- **Instructor**: `john.smith@example.com` / `password123`
+- **Student**: `alice.johnson@example.com` / `password123`
 
-- ✅ MongoDB schema design and data population
-- ✅ RESTful API with CRUD operations
-- ✅ JWT authentication and authorization
+## 📚 API Endpoints
 
-### Week 2 (Completed - Tasks 3-6)
+### Authentication
+```
+POST   /api/auth/register    # Register new user
+POST   /api/auth/login       # User login
+GET    /api/auth/me          # Get current user profile
+```
 
-- ✅ **ACID transactions** - MongoDB transactions for enrollment, progress, exam operations
-- ✅ **RBAC & Security** - Role-based access control with JWT authentication
-- ✅ **MVC architecture refactor** - Complete separation of concerns
-- ✅ **Jest testing suite** - 85%+ coverage with integration tests
-- 🚧 Advanced aggregation queries
-- 🚧 Query optimization and indexing
+### Course Management
+```
+GET    /api/courses          # List all courses
+POST   /api/courses          # Create course (instructor only)
+GET    /api/courses/:id      # Get course details
+PUT    /api/courses/:id      # Update course
+DELETE /api/courses/:id      # Delete course
+POST   /api/courses/:id/enroll # Enroll in course
+```
 
-### Frontend (Future)
+### Enrollment Management
+```
+GET    /api/enrollments      # Get student enrollments
+PUT    /api/enrollments/:id/progress # Update progress
+POST   /api/enrollments/:id/withdraw # Withdraw from course
+```
 
-- 🚧 Frontend interface
-- 🚧 User registration and login flow
-- 🚧 Course management interface
+### Analytics
+```
+GET    /api/analytics/courses/top-performing
+GET    /api/analytics/students/progress
+GET    /api/analytics/instructors/dashboard
+```
 
-## Technical Stack
+## ⚡ Performance Features
 
-- **Backend**: Node.js, Express.js, MongoDB with MVC architecture
-- **Database**: MongoDB with ACID transactions and aggregation pipelines
-- **Testing**: Jest framework with integration and unit tests
-- **Authentication**: JWT tokens with role-based access control
-- **Frontend**: HTML, CSS, JavaScript (Vanilla)
-- **Styling**: Retro Y2K/Windows 98 theme
+### Query Optimization
+- **22.4% average performance improvement** with strategic indexing
+- **49% improvement** on analytics queries
+- **Indexed fields**: email, role, category, instructor, isActive
+- **Text search indexes** for course and user search
 
-## Documentation
+### ACID Transactions
+- Enrollment operations with rollback on failure
+- Progress updates with data consistency
+- Exam submissions with atomic operations
 
-- [`backend/README.md`](backend/README.md) - Backend API and deployment
-- [`frontend/README.md`](frontend/README.md) - Frontend setup and usage
-- [`ENVIRONMENT_SETUP.md`](ENVIRONMENT_SETUP.md) - Environment configuration
+## 🧪 Testing
 
-### Architecture Documentation
+```bash
+# Run all tests
+npm test
 
-- **MVC Pattern**: Routes → Controllers → Services → Models
-- **ACID Transactions**: All critical operations are transaction-protected
-- **Testing Strategy**: Jest integration tests with 85%+ coverage
-- **Legacy Files**: Pre-refactor files archived in `backend/legacy/`
+# Run with coverage
+npm run test:coverage
 
-### Task Documentation
+# Run integration tests
+npm run test:integration
 
-- [`TASK3_ACID_TRANSACTIONS.md`](TASK3_ACID_TRANSACTIONS.md) - ACID transactions implementation
-- [`TASK4_RBAC_SECURITY.md`](TASK4_RBAC_SECURITY.md) - Role-based access control
-- [`TASK5_ADVANCED_QUERIES.md`](TASK5_ADVANCED_QUERIES.md) - Advanced aggregation queries
-- [`TASK6_QUERY_OPTIMIZATION.md`](TASK6_QUERY_OPTIMIZATION.md) - Query optimization and indexing
-- [`INDEXING_IMPLEMENTATION_GUIDE.md`](INDEXING_IMPLEMENTATION_GUIDE.md) - Step-by-step indexing guide
+# Run unit tests
+npm run test:unit
+```
 
-## Learning Objectives Met
+**Test Coverage**: 85%+ on core services
 
-This project demonstrates advanced NoSQL database management concepts:
+## 📊 Analytics & Reporting
 
-1. **Schema Design**: Document-oriented modeling with relationships
-2. **Data Operations**: Comprehensive CRUD with MongoDB ACID transactions
-3. **Security**: JWT authentication with role-based access control
-4. **Architecture**: Professional MVC pattern with separation of concerns
-5. **Performance**: Indexing and aggregation strategies
-6. **Quality**: Test-driven development with high coverage
-7. **Maintainability**: Clean code architecture with transaction safety
+### Advanced MongoDB Aggregation Queries
+- Top performing courses by enrollment and completion rates
+- Student progress analytics with time-based tracking
+- Instructor performance metrics
+- Course completion trends and patterns
+- Revenue analytics and financial reporting
+
+### Sample Analytics Queries
+```javascript
+// Top performing courses
+db.courses.aggregate([
+  { $lookup: { from: "enrollments", localField: "_id", foreignField: "course" } },
+  { $group: { _id: "$_id", enrollmentCount: { $sum: 1 } } },
+  { $sort: { enrollmentCount: -1 } }
+])
+```
+
+## 🔧 Development
+
+### Available Scripts
+```bash
+# Development
+npm run dev                 # Start with auto-reload
+npm start                   # Production server
+
+# Database
+npm run seed               # Populate with sample data
+npm run test-db            # Test database connection
+
+# Testing
+npm test                   # Run test suite
+npm run test:coverage      # Generate coverage report
+
+# Utilities
+npm run validate-env       # Validate configuration
+npm run config-db          # Database configuration
+```
+
+### Environment Variables
+```env
+NODE_ENV=development
+PORT=3761
+MONGODB_URI=your-mongodb-connection-string
+JWT_SECRET=your-jwt-secret
+JWT_EXPIRE=30d
+```
+
+## 📁 Project Structure
+
+```
+online-learning-platform-1/
+├── backend/                    # Node.js API Server
+│   ├── controllers/           # HTTP request handlers
+│   ├── services/              # Business logic & transactions
+│   ├── routes/                # API endpoints
+│   ├── models/                # MongoDB schemas
+│   ├── middleware/            # Auth & validation
+│   ├── tests/                 # Jest test suite
+│   ├── scripts/               # Database utilities
+│   └── utils/                 # Development tools
+├── frontend/                   # Web Interface
+│   ├── pages/                 # Application pages
+│   ├── components/            # Reusable components
+│   ├── js/                    # Frontend logic
+│   └── css/                   # Styling
+├── performance_comparison_table.md # Query optimization report
+└── setup.sh                    # Automated setup script
+```
+
+## 🔒 Security Features
+
+- **JWT Authentication**: Secure token-based authentication
+- **Role-Based Access Control (RBAC)**: Student, Instructor, Admin roles
+- **Input Validation**: Express-validator for request validation
+- **Password Hashing**: bcryptjs for secure password storage
+- **CORS Protection**: Configurable cross-origin resource sharing
+
+## 🚀 Performance Highlights
+
+### Query Optimization Results
+| Query Type | Performance Improvement |
+|------------|----------------------|
+| Analytics Queries | 49.0% |
+| Instructor Dashboard | 36.3% |
+| Text Search | 33.8% |
+| Course Search | 24.3% |
+| **Average Improvement** | **22.4%** |
+
+### Indexing Strategy
+- **Essential Indexes**: email, role, category, instructor, isActive
+- **Text Indexes**: Course and user search functionality
+- **Compound Indexes**: Multi-field query optimization
+- **Performance Monitoring**: Regular query analysis
+
+## 📚 Documentation
+
+- [`backend/README.md`](backend/README.md) - Backend API documentation
+- [`frontend/README.md`](frontend/README.md) - Frontend setup guide
+- [`performance_comparison_table.md`](performance_comparison_table.md) - Query optimization report
+- [`Milestone 1 Documentation.pdf`](Milestone%201%20Documentation.pdf) - Milestone 1 details
+- [`Milestone 2 Documentation.pdf`](Milestone%202%20Documentation.pdf) - Milestone 2 details
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Database Connection**
+   ```bash
+   npm run test-db          # Test local MongoDB
+   npm run test-atlas       # Test Atlas connection
+   npm run validate-env     # Validate environment
+   ```
+
+2. **Port Conflicts**
+   - Change `PORT` in `.env` file
+   - Ensure no other services using port 3761
+
+3. **JWT Errors**
+   - Ensure `JWT_SECRET` is set in `.env`
+   - Check token expiration settings
+
+### Development Tips
+- Use `npm run dev` for auto-reload during development
+- Run `npm test` before commits
+- Check test coverage with `npm run test:coverage`
+- Use `npm run seed` to reset database with sample data
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## 📞 Support
+
+For issues and questions:
+1. Check existing documentation
+2. Review test files for usage examples
+3. Check environment configuration
+4. Run validation scripts
 
 ---
 
-**CS 5200 Practicum 2** - Advanced NoSQL Data Management with MongoDB
+**Built with ❤️ using Node.js, Express, and MongoDB**

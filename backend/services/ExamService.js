@@ -12,104 +12,229 @@ class ExamService {
     if (!courseId) {
       throw new Error("Course ID is required");
     }
-
-    // Check if course exists and user has access
+    // Check if course exists
     const course = await Course.findById(courseId);
     if (!course) {
       throw new Error("Course not found");
     }
-
-    // Check access permissions
+    // 权限判断
     if (userRole === "student") {
-      // Students can only see exams if enrolled in the course
       const enrollment = await Enrollment.findOne({
         student: userId,
         course: courseId,
-        status: "active",
+        status: { $in: ["enrolled", "in-progress", "completed"] },
       });
-
       if (!enrollment) {
         throw new Error("You must be enrolled in this course to view exams");
       }
-
-      // Students only see published exams
-      return await Exam.find({
-        course: courseId,
+      // 只返回已发布的考试
+      return await Exam.find({ 
+        course: courseId, 
         isPublished: true,
-      }).select("-questions.correctAnswer -questions.explanation");
+        isActive: true 
+      }).populate("course", "title instructor");
     } else if (userRole === "instructor") {
-      // Instructors can only see their own course exams
       if (course.instructor.toString() !== userId) {
-        throw new Error(
-          "Access denied. You can only view exams for your own courses."
-        );
+        throw new Error("Access denied. You can only view exams for your own courses.");
       }
-
-      return await Exam.find({ course: courseId });
+      return await Exam.find({ course: courseId }).populate("course", "title instructor");
     } else if (userRole === "admin") {
-      // Admins can see all exams
-      return await Exam.find({ course: courseId });
+      return await Exam.find({ course: courseId }).populate("course", "title instructor");
     }
-
     throw new Error("Access denied");
+  }
+
+  /**
+   * Get all exams for student (across all enrolled courses)
+   */
+  static async getAllExamsForStudent(userId) {
+    // Get all enrollments for the student
+    const enrollments = await Enrollment.find({
+      student: userId,
+      status: { $in: ["enrolled", "in-progress", "completed"] },
+    }).populate("course");
+
+    const courseIds = enrollments.map(enrollment => enrollment.course._id);
+    
+    // Get all published exams for enrolled courses
+    return await Exam.find({
+      course: { $in: courseIds },
+      isPublished: true,
+      isActive: true
+    }).populate("course", "title instructor");
   }
 
   /**
    * Get exam by ID
    */
   static async getExamById(examId, userId, userRole) {
-    const exam = await Exam.findById(examId).populate(
-      "course",
-      "title instructor"
-    );
-
+    const exam = await Exam.findById(examId).populate("course", "title instructor");
     if (!exam) {
       throw new Error("Exam not found");
     }
-
-    // Check access permissions
+    // 权限判断
     if (userRole === "student") {
-      // Check if student is enrolled in the course
       const enrollment = await Enrollment.findOne({
         student: userId,
         course: exam.course._id,
-        status: "active",
+        status: { $in: ["enrolled", "in-progress", "completed"] },
       });
-
       if (!enrollment) {
-        throw new Error(
-          "You must be enrolled in this course to view this exam"
-        );
+        throw new Error("You must be enrolled in this course to view this exam");
+      }
+      if (!exam.isPublished) {
+        throw new Error("This exam is not yet available");
+      }
+      return exam;
+    } else if (userRole === "instructor") {
+      if (exam.course.instructor.toString() !== userId) {
+        throw new Error("Access denied. You can only view exams for your own courses.");
+      }
+      return exam;
+    } else if (userRole === "admin") {
+      return exam;
+    }
+    throw new Error("Access denied");
+  }
+
+  /**
+   * Submit exam answers
+   */
+  static async submitExam(examId, answers, userId) {
+    return await TransactionService.executeWithTransaction(async (session) => {
+      const exam = await Exam.findById(examId).populate("course").session(session);
+      if (!exam) {
+        throw new Error("Exam not found");
+      }
+
+      // Check if student is enrolled
+      const enrollment = await Enrollment.findOne({
+        student: userId,
+        course: exam.course._id,
+        status: { $in: ["enrolled", "in-progress", "completed"] },
+      }).session(session);
+      
+      if (!enrollment) {
+        throw new Error("You must be enrolled in this course to take this exam");
       }
 
       if (!exam.isPublished) {
         throw new Error("This exam is not yet available");
       }
 
-      // Don't show correct answers and explanations to students
-      const examResponse = exam.toObject();
-      examResponse.questions = examResponse.questions.map((q) => ({
-        ...q,
-        correctAnswer: undefined,
-        explanation: undefined,
-      }));
-
-      return examResponse;
-    } else if (userRole === "instructor") {
-      // Instructors can only view their own course exams
-      if (exam.course.instructor.toString() !== userId) {
-        throw new Error(
-          "Access denied. You can only view exams for your own courses."
-        );
+      // Check time constraints
+      const now = new Date();
+      if (exam.startDate && now < exam.startDate) {
+        throw new Error("This exam has not started yet");
+      }
+      if (exam.endDate && now > exam.endDate) {
+        throw new Error("This exam has expired");
       }
 
-      return exam;
-    } else if (userRole === "admin") {
-      // Admins can view all exams
-      return exam;
+      // Calculate score
+      let score = 0;
+      const questionResults = [];
+
+      exam.questions.forEach((question, index) => {
+        const studentAnswer = answers[question._id];
+        const isCorrect = studentAnswer === question.correctAnswer;
+        
+        if (isCorrect) {
+          score += question.points;
+        }
+
+        questionResults.push({
+          questionId: question._id,
+          text: question.text,
+          correctAnswer: question.correctAnswer,
+          yourAnswer: studentAnswer,
+          correct: isCorrect,
+          points: question.points
+        });
+      });
+
+      const percentage = Math.round((score / exam.totalPoints) * 100);
+
+      // Create exam result (you might want to create an ExamResult model)
+      const result = {
+        exam: examId,
+        student: userId,
+        course: exam.course._id,
+        score: score,
+        totalPoints: exam.totalPoints,
+        percentage: percentage,
+        answers: answers,
+        questionResults: questionResults,
+        submittedAt: now,
+        timeTaken: 0 // You can calculate this if you track start time
+      };
+
+      // For now, we'll return the result directly
+      // In a real implementation, you'd save this to a database
+      return result;
+    });
+  }
+
+  /**
+   * Get exam results for a student
+   */
+  static async getExamResults(examId, userId) {
+    const exam = await Exam.findById(examId).populate("course");
+    if (!exam) {
+      throw new Error("Exam not found");
     }
 
-    throw new Error("Access denied");
+    // Check if student is enrolled
+    const enrollment = await Enrollment.findOne({
+      student: userId,
+      course: exam.course._id,
+      status: { $in: ["enrolled", "in-progress"] },
+    });
+    
+    if (!enrollment) {
+      throw new Error("You must be enrolled in this course to view results");
+    }
+
+    // For now, return a mock result
+    // In a real implementation, you'd fetch from ExamResult collection
+    return {
+      exam: exam,
+      score: 0,
+      totalPoints: exam.totalPoints,
+      percentage: 0,
+      submittedAt: new Date(),
+      timeTaken: "N/A"
+    };
+  }
+
+  /**
+   * Get all exam results for a student
+   */
+  static async getAllExamResults(userId) {
+    // Get all enrollments for the student
+    const enrollments = await Enrollment.find({
+      student: userId,
+      status: { $in: ["enrolled", "in-progress"] },
+    }).populate("course");
+
+    const courseIds = enrollments.map(enrollment => enrollment.course._id);
+    
+    // Get all exams for enrolled courses
+    const exams = await Exam.find({
+      course: { $in: courseIds },
+      isPublished: true
+    }).populate("course", "title instructor");
+
+    // For now, return mock results
+    // In a real implementation, you'd fetch from ExamResult collection
+    return exams.map(exam => ({
+      exam: exam,
+      score: 0,
+      totalPoints: exam.totalPoints,
+      percentage: 0,
+      submittedAt: new Date(),
+      timeTaken: "N/A"
+    }));
   }
 
   /**
@@ -122,61 +247,41 @@ class ExamService {
       if (!course) {
         throw new Error("Course not found");
       }
-
       if (course.instructor.toString() !== instructorId) {
         throw new Error("You can only create exams for your own courses");
       }
-
+      
       // Validate exam data
       if (!examData.title || examData.title.length < 5) {
         throw new Error("Exam title must be at least 5 characters long");
       }
-
+      if (!examData.description || examData.description.length < 10) {
+        throw new Error("Exam description must be at least 10 characters long");
+      }
+      if (!examData.type || !["quiz", "midterm", "final", "assignment"].includes(examData.type)) {
+        throw new Error("Invalid exam type");
+      }
       if (!examData.questions || examData.questions.length === 0) {
         throw new Error("Exam must have at least one question");
       }
 
-      // Validate questions
-      for (let i = 0; i < examData.questions.length; i++) {
-        const question = examData.questions[i];
-
-        if (!question.question || question.question.length < 10) {
-          throw new Error(
-            `Question ${
-              i + 1
-            }: Question text must be at least 10 characters long`
-          );
-        }
-
-        if (question.type === "multiple-choice") {
-          if (!question.options || question.options.length < 2) {
-            throw new Error(
-              `Question ${
-                i + 1
-              }: Multiple choice questions must have at least 2 options`
-            );
-          }
-
-          if (
-            question.correctAnswer === undefined ||
-            question.correctAnswer >= question.options.length
-          ) {
-            throw new Error(`Question ${i + 1}: Invalid correct answer index`);
-          }
-        }
-
-        if (!question.points || question.points <= 0) {
-          throw new Error(`Question ${i + 1}: Points must be greater than 0`);
-        }
-      }
-
       // Create exam
       const exam = new Exam({
-        ...examData,
+        title: examData.title,
+        description: examData.description,
         course: course._id,
-        createdBy: instructorId,
+        type: examData.type,
+        questions: examData.questions,
+        duration: examData.duration || 60,
+        startDate: examData.startDate || null,
+        endDate: examData.endDate || null,
+        isPublished: examData.isPublished || false,
+        isActive: examData.isActive !== false,
+        allowRetake: examData.allowRetake || false,
+        maxAttempts: examData.maxAttempts || 1,
+        instructions: examData.instructions || ""
       });
-
+      
       await exam.save({ session });
       return exam;
     });
@@ -187,70 +292,26 @@ class ExamService {
    */
   static async updateExam(examId, updateData, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const exam = await Exam.findById(examId)
-        .populate("course")
-        .session(session);
-
+      const exam = await Exam.findById(examId).populate("course").session(session);
       if (!exam) {
         throw new Error("Exam not found");
       }
-
-      // Check ownership
       if (exam.course.instructor.toString() !== instructorId) {
         throw new Error("You can only update your own exams");
       }
-
-      // Prevent updates to published exams with attempts
-      if (exam.isPublished && exam.attempts && exam.attempts.length > 0) {
-        throw new Error("Cannot update exam with existing attempts");
-      }
-
-      // Validate update data (similar to create validation)
+      
       if (updateData.title && updateData.title.length < 5) {
         throw new Error("Exam title must be at least 5 characters long");
       }
-
-      if (updateData.questions) {
-        for (let i = 0; i < updateData.questions.length; i++) {
-          const question = updateData.questions[i];
-
-          if (question.text && question.text.length < 10) {
-            throw new Error(
-              `Question ${
-                i + 1
-              }: Question text must be at least 10 characters long`
-            );
-          }
-
-          if (question.type === "multiple-choice" && question.options) {
-            if (question.options.length < 2) {
-              throw new Error(
-                `Question ${
-                  i + 1
-                }: Multiple choice questions must have at least 2 options`
-              );
-            }
-
-            if (
-              question.correctAnswer !== undefined &&
-              question.correctAnswer >= question.options.length
-            ) {
-              throw new Error(
-                `Question ${i + 1}: Invalid correct answer index`
-              );
-            }
-          }
-
-          if (question.points !== undefined && question.points <= 0) {
-            throw new Error(`Question ${i + 1}: Points must be greater than 0`);
-          }
-        }
+      if (updateData.description && updateData.description.length < 10) {
+        throw new Error("Exam description must be at least 10 characters long");
       }
-
-      // Update exam
+      if (updateData.type && !["quiz", "midterm", "final", "assignment"].includes(updateData.type)) {
+        throw new Error("Invalid exam type");
+      }
+      
       Object.assign(exam, updateData);
       await exam.save({ session });
-
       return exam;
     });
   }
@@ -260,188 +321,16 @@ class ExamService {
    */
   static async deleteExam(examId, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const exam = await Exam.findById(examId)
-        .populate("course")
-        .session(session);
-
+      const exam = await Exam.findById(examId).populate("course").session(session);
       if (!exam) {
         throw new Error("Exam not found");
       }
-
-      // Check ownership
       if (exam.course.instructor.toString() !== instructorId) {
         throw new Error("You can only delete your own exams");
       }
-
-      // Prevent deletion of exams with attempts
-      if (exam.attempts && exam.attempts.length > 0) {
-        throw new Error("Cannot delete exam with existing attempts");
-      }
-
       await Exam.findByIdAndDelete(examId).session(session);
       return { message: "Exam deleted successfully" };
     });
-  }
-
-  /**
-   * Submit exam attempt
-   */
-  static async submitExam(examId, studentId, answers) {
-    return await TransactionService.executeWithTransaction(async (session) => {
-      const exam = await Exam.findById(examId)
-        .populate("course")
-        .session(session);
-
-      if (!exam) {
-        throw new Error("Exam not found");
-      }
-
-      if (!exam.isPublished) {
-        throw new Error("This exam is not yet available");
-      }
-
-      // Check if student is enrolled
-      const enrollment = await Enrollment.findOne({
-        student: studentId,
-        course: exam.course._id,
-        status: { $in: ["enrolled", "in-progress"] },
-      }).session(session);
-
-      if (!enrollment) {
-        throw new Error(
-          "You must be enrolled in this course to take this exam"
-        );
-      }
-
-      // Check attempt limits based on exam settings and current stats
-      if (
-        exam.settings?.attempts &&
-        exam.stats.attempts >= exam.settings.attempts
-      ) {
-        throw new Error(
-          `Maximum attempts (${exam.settings.attempts}) exceeded`
-        );
-      }
-
-      // Calculate score
-      let totalScore = 0;
-      let maxScore = 0;
-      const gradedAnswers = [];
-
-      exam.questions.forEach((question, index) => {
-        maxScore += question.points;
-        const studentAnswer = answers[index];
-        let isCorrect = false;
-        let score = 0;
-
-        if (question.type === "multiple-choice") {
-          // Check if using correctAnswer index or isCorrect flags in options
-          if (typeof question.correctAnswer === "number") {
-            // Using index-based correct answer
-            isCorrect = studentAnswer === question.correctAnswer;
-          } else if (question.options && question.options.length > 0) {
-            // Using isCorrect flags in options - find the correct option text
-            const correctOption = question.options.find((opt) => opt.isCorrect);
-            isCorrect =
-              correctOption && studentAnswer?.answer === correctOption.text;
-          }
-          score = isCorrect ? question.points : 0;
-        } else if (question.type === "true-false") {
-          isCorrect = studentAnswer === question.correctAnswer;
-          score = isCorrect ? question.points : 0;
-        } else if (question.type === "short-answer") {
-          // For short answer, manual grading required
-          isCorrect = null;
-          score = 0; // Will be updated during manual grading
-        }
-
-        totalScore += score;
-        gradedAnswers.push({
-          questionIndex: index,
-          answer: studentAnswer,
-          isCorrect,
-          score,
-          maxScore: question.points,
-        });
-      });
-
-      // Create attempt result
-      const attempt = {
-        student: studentId,
-        submittedAt: new Date(),
-        answers: gradedAnswers,
-        score: totalScore,
-        maxScore,
-        percentage:
-          maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0,
-        isGraded: !exam.questions.some((q) => q.type === "short-answer"),
-        timeSpent: 0, // This should be calculated based on start time if tracking
-      };
-
-      // Update exam statistics instead of storing individual attempts
-      exam.stats.attempts += 1;
-      if (attempt.percentage >= (exam.settings.passingScore || 70)) {
-        exam.stats.completions += 1;
-      }
-
-      // Update average score
-      const currentAvg = exam.stats.averageScore || 0;
-      const newAvg =
-        (currentAvg * (exam.stats.attempts - 1) + attempt.percentage) /
-        exam.stats.attempts;
-      exam.stats.averageScore = Math.round(newAvg * 100) / 100;
-
-      await exam.save({ session });
-
-      // Update enrollment progress if exam is passed
-      if (
-        exam.settings.passingScore &&
-        attempt.percentage >= exam.settings.passingScore
-      ) {
-        // Could update course progress here
-      }
-
-      return {
-        attemptId: new mongoose.Types.ObjectId(), // Generate a mock ID since we're not storing attempts
-        score: totalScore,
-        maxScore,
-        percentage: attempt.percentage,
-        isGraded: attempt.isGraded,
-        exam: exam._id,
-        attempt: attempt,
-      };
-    });
-  }
-
-  /**
-   * Get exam attempts
-   */
-  static async getExamAttempts(examId, userId, userRole) {
-    const exam = await Exam.findById(examId).populate("course");
-
-    if (!exam) {
-      throw new Error("Exam not found");
-    }
-
-    if (userRole === "student") {
-      // Students can only see their own attempts
-      const studentAttempts = exam.attempts.filter(
-        (a) => a.student.toString() === userId
-      );
-      return studentAttempts;
-    } else if (userRole === "instructor") {
-      // Instructors can see all attempts for their course exams
-      if (exam.course.instructor.toString() !== userId) {
-        throw new Error("Access denied");
-      }
-
-      return exam.attempts;
-    } else if (userRole === "admin") {
-      // Admins can see all attempts
-      return exam.attempts;
-    }
-
-    throw new Error("Access denied");
   }
 
   /**
@@ -449,89 +338,23 @@ class ExamService {
    */
   static async getExamStats(examId, instructorId) {
     const exam = await Exam.findById(examId).populate("course");
-
     if (!exam) {
       throw new Error("Exam not found");
     }
-
     if (exam.course.instructor.toString() !== instructorId) {
-      throw new Error("Access denied");
+      throw new Error("You can only view statistics for your own exams");
     }
 
-    // Use existing stats instead of non-existent attempts array
-    const totalAttempts = exam.stats.attempts || 0;
-    const averageScore = exam.stats.averageScore || 0;
-    const highestScore = exam.stats.highestScore || 0;
-    const lowestScore = exam.stats.lowestScore || 0;
-
-    if (totalAttempts === 0) {
-      return {
-        totalAttempts: 0,
-        uniqueStudents: 0,
-        averageScore: 0,
-        highestScore: 0,
-        lowestScore: 0,
-        passRate: 0,
-      };
-    }
-
+    // For now, return basic stats
+    // In a real implementation, you'd calculate from ExamResult collection
     return {
-      totalAttempts,
-      uniqueStudents: totalAttempts, // Assume each attempt is by different student for now
-      averageScore: Math.round(averageScore),
-      highestScore,
-      lowestScore,
-      passRate: Math.round(exam.stats.passRate || 0),
+      examId: examId,
+      totalStudents: 0,
+      averageScore: 0,
+      highestScore: 0,
+      lowestScore: 0,
+      completionRate: 0
     };
-  }
-
-  /**
-   * Grade exam manually (for subjective questions)
-   */
-  static async gradeExam(examId, attemptId, grades, feedback, instructorId) {
-    return await TransactionService.executeWithTransaction(async (session) => {
-      const exam = await Exam.findById(examId)
-        .populate("course")
-        .session(session);
-
-      if (!exam) {
-        throw new Error("Exam not found");
-      }
-
-      if (exam.course.instructor.toString() !== instructorId) {
-        throw new Error("Access denied");
-      }
-
-      const attempt = exam.attempts.id(attemptId);
-      if (!attempt) {
-        throw new Error("Attempt not found");
-      }
-
-      // Update grades for subjective questions
-      let totalScore = 0;
-      attempt.answers.forEach((answer, index) => {
-        if (grades[index] !== undefined) {
-          answer.score = grades[index];
-          answer.isCorrect = grades[index] > 0;
-        }
-        totalScore += answer.score;
-      });
-
-      attempt.score = totalScore;
-      attempt.percentage = Math.round((totalScore / attempt.maxScore) * 100);
-      attempt.isGraded = true;
-      attempt.feedback = feedback;
-      attempt.gradedAt = new Date();
-      attempt.gradedBy = instructorId;
-
-      await exam.save({ session });
-
-      return {
-        score: totalScore,
-        maxScore: attempt.maxScore,
-        percentage: attempt.percentage,
-      };
-    });
   }
 }
 

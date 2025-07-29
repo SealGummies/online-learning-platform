@@ -23,14 +23,6 @@ class AnalyticsService {
         },
         {
           $lookup: {
-            from: "exams",
-            localField: "_id",
-            foreignField: "course",
-            as: "exams",
-          },
-        },
-        {
-          $lookup: {
             from: "users",
             localField: "instructor",
             foreignField: "_id",
@@ -40,20 +32,44 @@ class AnalyticsService {
         {
           $addFields: {
             enrollmentCount: { $size: "$enrollments" },
-            averageGrade: {
-              $cond: {
-                if: { $gt: [{ $size: "$exams" }, 0] },
-                then: { $avg: "$exams.stats.averageScore" },
-                else: 0,
+            completedCount: {
+              $size: {
+                $filter: {
+                  input: "$enrollments",
+                  cond: { $eq: ["$$this.status", "completed"] },
+                },
               },
             },
-            totalExams: { $size: "$exams" },
+            averageCompletionPercentage: {
+              $avg: "$enrollments.completionPercentage",
+            },
             instructorName: {
               $concat: [
                 { $arrayElemAt: ["$instructorInfo.firstName", 0] },
                 " ",
                 { $arrayElemAt: ["$instructorInfo.lastName", 0] },
               ],
+            },
+          },
+        },
+        {
+          $addFields: {
+            completionRate: {
+              $cond: {
+                if: { $gt: ["$enrollmentCount", 0] },
+                then: {
+                  $round: [
+                    {
+                      $multiply: [
+                        { $divide: ["$completedCount", "$enrollmentCount"] },
+                        100,
+                      ],
+                    },
+                    2,
+                  ],
+                },
+                else: 0,
+              },
             },
           },
         },
@@ -65,15 +81,14 @@ class AnalyticsService {
             level: 1,
             price: 1,
             enrollmentCount: 1,
-            averageGrade: 1,
-            totalExams: 1,
+            completedCount: 1,
+            completionRate: 1,
+            averageCompletionPercentage: 1,
             instructorName: 1,
             createdAt: 1,
           },
         },
-        {
-          $sort: { enrollmentCount: -1, averageGrade: -1 },
-        },
+        { $sort: { enrollmentCount: -1 } },
         { $limit: 10 },
       ]);
     } catch (error) {
@@ -112,25 +127,8 @@ class AnalyticsService {
         { $unwind: "$courseDetails" },
         {
           $addFields: {
-            progressPercentage: "$enrollments.progress.completionPercentage",
-            completedLessons: {
-              $cond: {
-                if: {
-                  $and: [
-                    {
-                      $ifNull: [
-                        "$enrollments.progress.lessonsCompleted",
-                        false,
-                      ],
-                    },
-                    { $isArray: "$enrollments.progress.lessonsCompleted" },
-                  ],
-                },
-                then: { $size: "$enrollments.progress.lessonsCompleted" },
-                else: 0,
-              },
-            },
-            totalTimeSpent: "$enrollments.progress.totalTimeSpent",
+            completionPercentage: "$enrollments.completionPercentage",
+            finalGrade: "$enrollments.finalGrade",
           },
         },
         {
@@ -140,15 +138,13 @@ class AnalyticsService {
             courseName: "$courseDetails.title",
             courseCategory: "$courseDetails.category",
             courseLevel: "$courseDetails.level",
-            progress: "$progressPercentage",
-            completedLessons: 1,
-            totalTimeSpent: 1,
+            completionPercentage: 1,
+            finalGrade: 1,
             enrolledAt: "$enrollments.enrollmentDate",
-            lastActivity: "$enrollments.progress.lastActivityDate",
             status: "$enrollments.status",
           },
         },
-        { $sort: { progress: -1 } },
+        { $sort: { completionPercentage: -1 } },
       ]);
     } catch (error) {
       throw new Error(
@@ -183,18 +179,20 @@ class AnalyticsService {
           },
         },
         {
-          $lookup: {
-            from: "exams",
-            localField: "courses._id",
-            foreignField: "course",
-            as: "exams",
-          },
-        },
-        {
           $addFields: {
             totalCourses: { $size: "$courses" },
             totalEnrollments: { $size: "$enrollments" },
-            totalExams: { $size: "$exams" },
+            completedEnrollments: {
+              $size: {
+                $filter: {
+                  input: "$enrollments",
+                  cond: { $eq: ["$$this.status", "completed"] },
+                },
+              },
+            },
+            averageCompletionPercentage: {
+              $avg: "$enrollments.completionPercentage",
+            },
             averageEnrollmentsPerCourse: {
               $cond: {
                 if: { $gt: [{ $size: "$courses" }, 0] },
@@ -204,10 +202,24 @@ class AnalyticsService {
                 else: 0,
               },
             },
-            averageGrade: {
+          },
+        },
+        {
+          $addFields: {
+            avgCompletionRate: {
               $cond: {
-                if: { $gt: [{ $size: "$exams" }, 0] },
-                then: { $avg: "$exams.stats.averageScore" },
+                if: { $gt: ["$totalEnrollments", 0] },
+                then: {
+                  $round: [
+                    {
+                      $multiply: [
+                        { $divide: ["$completedEnrollments", "$totalEnrollments"] },
+                        100,
+                      ],
+                    },
+                    2,
+                  ],
+                },
                 else: 0,
               },
             },
@@ -219,10 +231,10 @@ class AnalyticsService {
             email: 1,
             totalCourses: 1,
             totalEnrollments: 1,
-            totalExams: 1,
+            completedEnrollments: 1,
+            avgCompletionRate: 1,
+            averageCompletionPercentage: 1,
             averageEnrollmentsPerCourse: 1,
-            averageGrade: 1,
-            profile: 1,
             createdAt: 1,
           },
         },
@@ -252,16 +264,6 @@ class AnalyticsService {
         },
         { $unwind: "$courseInfo" },
         {
-          $addFields: {
-            completionTime: {
-              $divide: [
-                { $subtract: ["$enrollmentDate", "$enrollmentDate"] },
-                1000 * 60 * 60 * 24, // Convert to days
-              ],
-            },
-          },
-        },
-        {
           $group: {
             _id: {
               year: { $year: "$updatedAt" },
@@ -270,7 +272,6 @@ class AnalyticsService {
               courseId: "$courseInfo._id",
             },
             completions: { $sum: 1 },
-            averageCompletionTime: { $avg: "$completionTime" },
             category: { $first: "$courseInfo.category" },
             level: { $first: "$courseInfo.level" },
           },
@@ -298,11 +299,11 @@ class AnalyticsService {
   static async getExamPerformanceAnalysis() {
     try {
       return await Enrollment.aggregate([
-        { $unwind: "$progress.examsCompleted" },
+        { $unwind: "$examsCompleted" },
         {
           $lookup: {
             from: "exams",
-            localField: "progress.examsCompleted.exam",
+            localField: "examsCompleted.exam",
             foreignField: "_id",
             as: "examInfo",
           },
@@ -319,17 +320,7 @@ class AnalyticsService {
         { $unwind: "$courseInfo" },
         {
           $addFields: {
-            gradePercentage: {
-              $multiply: [
-                {
-                  $divide: [
-                    "$progress.examsCompleted.correctAnswers",
-                    "$progress.examsCompleted.totalQuestions",
-                  ],
-                },
-                100,
-              ],
-            },
+            gradePercentage: "$examsCompleted.score",
           },
         },
         {
@@ -347,7 +338,6 @@ class AnalyticsService {
             maxGrade: { $max: "$gradePercentage" },
             minGrade: { $min: "$gradePercentage" },
             grades: { $push: "$gradePercentage" },
-            averageTimeSpent: { $avg: "$progress.examsCompleted.timeSpent" },
           },
         },
         {
@@ -355,10 +345,7 @@ class AnalyticsService {
             gradeDistribution: {
               A: {
                 $size: {
-                  $filter: {
-                    input: "$grades",
-                    cond: { $gte: ["$$this", 90] },
-                  },
+                  $filter: { input: "$grades", cond: { $gte: ["$$this", 90] } },
                 },
               },
               B: {
@@ -393,10 +380,7 @@ class AnalyticsService {
               },
               F: {
                 $size: {
-                  $filter: {
-                    input: "$grades",
-                    cond: { $lt: ["$$this", 60] },
-                  },
+                  $filter: { input: "$grades", cond: { $lt: ["$$this", 60] } },
                 },
               },
             },
@@ -412,7 +396,6 @@ class AnalyticsService {
             averageGrade: { $round: ["$averageGrade", 2] },
             maxGrade: { $round: ["$maxGrade", 2] },
             minGrade: { $round: ["$minGrade", 2] },
-            averageTimeSpent: { $round: ["$averageTimeSpent", 2] },
             gradeDistribution: 1,
           },
         },
@@ -446,7 +429,6 @@ class AnalyticsService {
         status: "completed",
       });
       const totalExams = await Exam.countDocuments();
-
       return {
         users: {
           total: totalUsers,
@@ -454,9 +436,7 @@ class AnalyticsService {
           instructors: totalInstructors,
           admins: totalUsers - totalStudents - totalInstructors,
         },
-        courses: {
-          total: totalCourses,
-        },
+        courses: { total: totalCourses },
         enrollments: {
           total: totalEnrollments,
           active: activeEnrollments,
@@ -466,9 +446,7 @@ class AnalyticsService {
               ? ((completedEnrollments / totalEnrollments) * 100).toFixed(2)
               : 0,
         },
-        exams: {
-          total: totalExams,
-        },
+        exams: { total: totalExams },
       };
     } catch (error) {
       throw new Error(`Error fetching platform overview: ${error.message}`);
@@ -476,19 +454,90 @@ class AnalyticsService {
   }
 
   /**
-   * Get revenue analytics
-   * Purpose: Track financial performance and revenue trends
-   * Business Value: Support financial planning and pricing strategies
+   * Get filtered analytics based on date range and criteria
+   * @param {Object} filters - { startDate, endDate, category, level, type }
+   * @returns {Promise<Array>} Filtered analytics data
    */
-  static async getRevenueAnalytics() {
-    try {
-      return await Enrollment.aggregate([
+  static async getFilteredAnalytics({
+    startDate,
+    endDate,
+    category,
+    level,
+    type,
+  }) {
+    // Build match conditions
+    const match = {};
+    if (startDate || endDate) {
+      match.enrollmentDate = {};
+      if (startDate) match.enrollmentDate.$gte = new Date(startDate);
+      if (endDate) match.enrollmentDate.$lte = new Date(endDate);
+    }
+    if (category) match["courseInfo.category"] = category;
+    if (level) match["courseInfo.level"] = level;
+    // type: filter exam type if needed (e.g., quiz, midterm, final, assignment)
+
+    // Aggregate enrollments with course info
+    const pipeline = [
+      {
+        $lookup: {
+          from: "courses",
+          localField: "course",
+          foreignField: "_id",
+          as: "courseInfo",
+        },
+      },
+      { $unwind: "$courseInfo" },
+    ];
+    if (Object.keys(match).length > 0) {
+      pipeline.push({ $match: match });
+    }
+    // Optionally join exams if type is specified
+    if (type) {
+      pipeline.push(
         {
-          $match: {
-            "paymentDetails.paymentDate": { $exists: true },
-            "paymentDetails.amount": { $gt: 0 },
+          $lookup: {
+            from: "exams",
+            localField: "course",
+            foreignField: "course",
+            as: "exams",
           },
         },
+        { $unwind: "$exams" },
+        { $match: { "exams.type": type } }
+      );
+    }
+    // Group and summarize
+    pipeline.push({
+      $group: {
+        _id: {
+          course: "$courseInfo.title",
+          category: "$courseInfo.category",
+          level: "$courseInfo.level",
+        },
+        totalEnrollments: { $sum: 1 },
+        completed: {
+          $sum: {
+            $cond: [{ $eq: ["$status", "completed"] }, 1, 0],
+          },
+        },
+        averageCompletion: { $avg: "$completionPercentage" },
+        averageGrade: { $avg: "$finalGrade" },
+      },
+    });
+    pipeline.push({ $sort: { totalEnrollments: -1 } });
+    return await (this.Enrollment || require("../models/Enrollment")).aggregate(
+      pipeline
+    );
+  }
+
+  /**
+   * Get instructor-specific enrollment data for dashboard
+   * @param {string} instructorId - The instructor's user ID
+   * @returns {Promise<Array>} Enrollment data for instructor's courses
+   */
+  static async getInstructorEnrollments(instructorId) {
+    try {
+      return await Enrollment.aggregate([
         {
           $lookup: {
             from: "courses",
@@ -499,26 +548,179 @@ class AnalyticsService {
         },
         { $unwind: "$courseInfo" },
         {
-          $group: {
-            _id: {
-              year: { $year: "$paymentDetails.paymentDate" },
-              month: { $month: "$paymentDetails.paymentDate" },
-            },
-            totalRevenue: { $sum: "$paymentDetails.amount" },
-            totalEnrollments: { $sum: 1 },
-            averagePrice: { $avg: "$paymentDetails.amount" },
-            courseCategories: { $addToSet: "$courseInfo.category" },
+          $match: {
+            "courseInfo.instructor": new mongoose.Types.ObjectId(instructorId),
           },
         },
         {
-          $sort: {
-            "_id.year": -1,
-            "_id.month": -1,
+          $lookup: {
+            from: "users",
+            localField: "student",
+            foreignField: "_id",
+            as: "studentInfo",
           },
         },
+        { $unwind: "$studentInfo" },
+        {
+          $project: {
+            course: "$courseInfo._id",
+            courseTitle: "$courseInfo.title",
+            coursePrice: "$courseInfo.price",
+            student: "$studentInfo._id",
+            studentName: {
+              $concat: ["$studentInfo.firstName", " ", "$studentInfo.lastName"],
+            },
+            studentEmail: "$studentInfo.email",
+            progress: "$completionPercentage",
+            grade: "$finalGrade",
+            status: 1,
+            enrollmentDate: 1,
+            updatedAt: 1,
+          },
+        },
+        { $sort: { enrollmentDate: -1 } },
       ]);
     } catch (error) {
-      throw new Error(`Error fetching revenue analytics: ${error.message}`);
+      throw new Error(
+        `Error fetching instructor enrollments: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Get instructor dashboard analytics overview
+   * @param {string} instructorId - The instructor's user ID
+   * @returns {Promise<Object>} Dashboard overview data
+   */
+  static async getInstructorDashboardOverview(instructorId) {
+    try {
+      const instructorCourses = await Course.find({
+        instructor: instructorId,
+      }).select("_id title price isActive");
+
+      const courseIds = instructorCourses.map((course) => course._id);
+
+      const [
+        totalEnrollments,
+        activeEnrollments,
+        completedEnrollments,
+        enrollmentStats,
+      ] = await Promise.all([
+        Enrollment.countDocuments({ course: { $in: courseIds } }),
+        Enrollment.countDocuments({
+          course: { $in: courseIds },
+          status: { $in: ["enrolled", "in-progress"] },
+        }),
+        Enrollment.countDocuments({
+          course: { $in: courseIds },
+          status: "completed",
+        }),
+        Enrollment.aggregate([
+          { $match: { course: { $in: courseIds } } },
+          {
+            $group: {
+              _id: null,
+              totalStudents: { $addToSet: "$student" },
+              avgCompletion: { $avg: "$completionPercentage" },
+              avgGrade: { $avg: "$finalGrade" },
+            },
+          },
+        ]),
+      ]);
+
+      const stats = enrollmentStats[0] || {
+        totalStudents: [],
+        avgCompletion: 0,
+        avgGrade: 0,
+      };
+
+      const totalRevenue = instructorCourses.reduce((sum, course) => {
+        return sum + (course.price || 0);
+      }, 0);
+
+      return {
+        courses: {
+          total: instructorCourses.length,
+          active: instructorCourses.filter((c) => c.isActive).length,
+        },
+        students: {
+          total: stats.totalStudents.length,
+          active: activeEnrollments,
+        },
+        enrollments: {
+          total: totalEnrollments,
+          active: activeEnrollments,
+          completed: completedEnrollments,
+        },
+        performance: {
+          avgCompletion: Math.round(stats.avgCompletion || 0),
+          avgGrade: Math.round(stats.avgGrade || 0),
+        },
+        revenue: {
+          potential: totalRevenue,
+          actual: totalRevenue * (totalEnrollments || 0),
+        },
+      };
+    } catch (error) {
+      throw new Error(
+        `Error fetching instructor dashboard overview: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Get instructor's student progress analytics
+   * @param {string} instructorId - The instructor's user ID
+   * @returns {Promise<Array>} Student progress data for instructor's courses
+   */
+  static async getInstructorStudentProgress(instructorId) {
+    try {
+      return await Enrollment.aggregate([
+        {
+          $lookup: {
+            from: "courses",
+            localField: "course",
+            foreignField: "_id",
+            as: "courseInfo",
+          },
+        },
+        { $unwind: "$courseInfo" },
+        {
+          $match: {
+            "courseInfo.instructor": new mongoose.Types.ObjectId(instructorId),
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "student",
+            foreignField: "_id",
+            as: "studentInfo",
+          },
+        },
+        { $unwind: "$studentInfo" },
+        {
+          $project: {
+            studentId: "$studentInfo._id",
+            studentName: {
+              $concat: ["$studentInfo.firstName", " ", "$studentInfo.lastName"],
+            },
+            studentEmail: "$studentInfo.email",
+            courseId: "$courseInfo._id",
+            courseName: "$courseInfo.title",
+            progress: "$completionPercentage",
+            grade: "$finalGrade",
+            status: 1,
+            enrollmentDate: 1,
+            lastActivity: "$updatedAt",
+          },
+        },
+        { $sort: { progress: -1, lastActivity: -1 } },
+      ]);
+    } catch (error) {
+      throw new Error(
+        `Error fetching instructor student progress: ${error.message}`
+      );
     }
   }
 }

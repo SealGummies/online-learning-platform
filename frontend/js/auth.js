@@ -79,11 +79,31 @@ async function register(userData) {
 
 // Local storage functions
 function saveToken(token) {
+  console.log(
+    "Saving token:",
+    token ? token.substring(0, 20) + "..." : "null/undefined"
+  );
   localStorage.setItem("authToken", token);
 }
 
 function getToken() {
-  return localStorage.getItem("authToken");
+  const token = localStorage.getItem("authToken");
+  console.log(
+    "Getting token:",
+    token ? token.substring(0, 20) + "..." : "null/undefined"
+  );
+  console.log("Token type:", typeof token);
+  // Check for invalid token values
+  if (
+    !token ||
+    token === "undefined" ||
+    token === "null" ||
+    token.trim() === ""
+  ) {
+    console.log("Token is invalid, returning null");
+    return null;
+  }
+  return token;
 }
 
 function removeToken() {
@@ -110,18 +130,46 @@ function isLoggedIn() {
 
 // Redirect functions
 function redirectToDashboard() {
-  window.location.href = "dashboard.html";
-}
+  // Check current path to determine correct redirect path
+  const currentPath = window.location.pathname;
+  console.log("Redirecting to dashboard, current path:", currentPath);
 
+  if (currentPath.includes("/pages/")) {
+    // Already in pages directory
+    console.log("Redirecting to: dashboard.html");
+    window.location.href = "dashboard.html";
+  } else {
+    // From root directory
+    console.log("Redirecting to: pages/dashboard.html");
+    window.location.href = "pages/dashboard.html";
+  }
+}
 function redirectToLogin() {
-  window.location.href = "index.html";
+  // Check current path to determine correct redirect path
+  const currentPath = window.location.pathname;
+
+  if (currentPath.includes("/pages/")) {
+    // Already in pages directory
+    window.location.href = "index.html";
+  } else {
+    // From root directory
+    window.location.href = "pages/index.html";
+  }
 }
 
 // Event listeners
 document.addEventListener("DOMContentLoaded", function () {
+  console.log(
+    "Auth.js DOMContentLoaded, current path:",
+    window.location.pathname
+  );
+  console.log("isLoggedIn():", isLoggedIn());
+
   // Check if already logged in and redirect appropriately
   if (window.location.pathname.includes("dashboard.html")) {
+    console.log("On dashboard page, checking login status");
     if (!isLoggedIn()) {
+      console.log("Not logged in, redirecting to login");
       redirectToLogin();
       return;
     }
@@ -129,7 +177,9 @@ document.addEventListener("DOMContentLoaded", function () {
     window.location.pathname.includes("index.html") ||
     window.location.pathname.endsWith("/")
   ) {
+    console.log("On login/home page, checking if already logged in");
     if (isLoggedIn()) {
+      console.log("Already logged in, redirecting to dashboard");
       redirectToDashboard();
       return;
     }
@@ -155,9 +205,25 @@ document.addEventListener("DOMContentLoaded", function () {
         const response = await login(email, password);
 
         if (response.success) {
+          console.log("Login successful, response:", response);
+          console.log(
+            "Token from response:",
+            response.data.token
+              ? response.data.token.substring(0, 20) + "..."
+              : "null/undefined"
+          );
+          console.log("User from response:", response.data.user);
+
           // Save token and user info
-          saveToken(response.token);
+          saveToken(response.data.token);
           saveUser(response.data.user);
+
+          // Verify token was saved correctly
+          console.log(
+            "Token after saving:",
+            getToken() ? getToken().substring(0, 20) + "..." : "null/undefined"
+          );
+          console.log("User after saving:", getUser());
 
           // Redirect to dashboard
           redirectToDashboard();

@@ -1,5 +1,29 @@
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const User = require("../models/User");
+
+// Validate MongoDB ObjectId
+const validateObjectId = (paramName) => {
+  return (req, res, next) => {
+    const id = req.params[paramName];
+    
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: `${paramName} is required`,
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid ${paramName} format`,
+      });
+    }
+
+    next();
+  };
+};
 
 // Protect routes
 const protect = async (req, res, next) => {
@@ -34,9 +58,7 @@ const protect = async (req, res, next) => {
         message: "Not authorized, token failed",
       });
     }
-  }
-
-  if (!token) {
+  } else {
     return res.status(401).json({
       success: false,
       message: "Not authorized, no token",
@@ -111,4 +133,5 @@ module.exports = {
   protect,
   authorize,
   checkOwnership,
+  validateObjectId,
 };

@@ -5,9 +5,7 @@ const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-/**
- * Course validation middleware
- */
+// Course validation middleware (only simplified model fields)
 const validateCourse = [
   body("title")
     .notEmpty()
@@ -26,6 +24,10 @@ const validateCourse = [
   body("price")
     .isFloat({ min: 0 })
     .withMessage("Price must be a positive number"),
+  body("isActive")
+    .optional()
+    .isBoolean()
+    .withMessage("isActive must be a boolean value"),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

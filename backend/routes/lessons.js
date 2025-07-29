@@ -5,9 +5,7 @@ const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-/**
- * Validation middleware for lesson creation
- */
+// Validation middleware for lesson creation (simplified fields only)
 const validateLesson = [
   body("title")
     .notEmpty()
@@ -24,22 +22,6 @@ const validateLesson = [
     .withMessage("Course ID is required")
     .isMongoId()
     .withMessage("Invalid course ID"),
-  body("type")
-    .optional()
-    .isIn(["video", "text", "interactive", "quiz"])
-    .withMessage("Invalid lesson type"),
-  body("duration")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Duration must be a positive integer"),
-  body("order")
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage("Order must be a positive integer"),
-  body("videoUrl")
-    .optional()
-    .isURL()
-    .withMessage("Invalid video URL"),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -53,69 +35,9 @@ const validateLesson = [
   },
 ];
 
-/**
- * Validation middleware for lesson completion
- */
-const validateLessonCompletion = [
-  body("timeSpent")
-    .optional()
-    .isInt({ min: 0 })
-    .withMessage("Time spent must be a non-negative integer"),
-  body("notes")
-    .optional()
-    .isString()
-    .withMessage("Notes must be a string"),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: errors.array(),
-      });
-    }
-    next();
-  },
-];
-
-/**
- * Validation middleware for lesson reordering
- */
-const validateLessonReorder = [
-  body("courseId")
-    .notEmpty()
-    .withMessage("Course ID is required")
-    .isMongoId()
-    .withMessage("Invalid course ID"),
-  body("lessonOrder")
-    .isArray({ min: 1 })
-    .withMessage("Lesson order must be a non-empty array"),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: errors.array(),
-      });
-    }
-    next();
-  },
-];
-
-// Public/Student routes (some may require enrollment check in controller)
+// Public routes
 router.get("/", LessonController.getLessons); // Query param: course
 router.get("/:id", LessonController.getLessonById);
-router.get("/:id/progress", protect, LessonController.getLessonProgress);
-
-// Student routes
-router.post(
-  "/:id/complete",
-  protect,
-  authorize("student"),
-  validateLessonCompletion,
-  LessonController.completeLesson
-);
 
 // Instructor routes
 router.post(
@@ -146,14 +68,6 @@ router.get(
   protect,
   authorize("instructor"),
   LessonController.getLessonStats
-);
-
-router.put(
-  "/reorder",
-  protect,
-  authorize("instructor"),
-  validateLessonReorder,
-  LessonController.reorderLessons
 );
 
 module.exports = router;

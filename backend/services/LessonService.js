@@ -19,20 +19,12 @@ class LessonService {
     }
 
     // Check access permissions
-    if (
-      course.status !== "published" &&
-      userRole !== "instructor" &&
-      userRole !== "admin"
-    ) {
-      // For unpublished courses, only instructors and admins can view
-      if (
-        userRole === "instructor" &&
-        course.instructor.toString() !== userId
-      ) {
+    if (!course.isActive && userRole !== "instructor" && userRole !== "admin") {
+      if (userRole === "instructor" && course.instructor.toString() !== userId) {
         throw new Error("Access denied");
       }
       if (!userRole) {
-        throw new Error("Course is not yet published");
+        throw new Error("Course is not active");
       }
     }
 
@@ -41,9 +33,8 @@ class LessonService {
       const enrollment = await Enrollment.findOne({
         student: userId,
         course: courseId,
-        status: "active",
+        status: { $in: ["enrolled", "in-progress"] },
       });
-
       if (!enrollment) {
         throw new Error("You must be enrolled in this course to view lessons");
       }
@@ -72,10 +63,7 @@ class LessonService {
    * Get lesson by ID
    */
   static async getLessonById(lessonId, userId, userRole) {
-    const lesson = await Lesson.findById(lessonId).populate(
-      "course",
-      "title instructor status"
-    );
+    const lesson = await Lesson.findById(lessonId).populate("course", "title instructor isActive");
 
     if (!lesson) {
       throw new Error("Lesson not found");
@@ -84,32 +72,18 @@ class LessonService {
     // Check course access
     const course = lesson.course;
 
-    if (
-      course.status !== "published" &&
-      userRole !== "instructor" &&
-      userRole !== "admin"
-    ) {
-      if (
-        userRole === "instructor" &&
-        course.instructor.toString() !== userId
-      ) {
+    if (!lesson.course.isActive && userRole !== "instructor" && userRole !== "admin") {
+      if (userRole === "instructor" && lesson.course.instructor.toString() !== userId) {
         throw new Error("Access denied");
       }
       if (!userRole) {
-        throw new Error("Course is not yet published");
+        throw new Error("Course is not active");
       }
     }
 
     // Check lesson publication status
-    if (
-      !lesson.isPublished &&
-      userRole !== "instructor" &&
-      userRole !== "admin"
-    ) {
-      if (
-        userRole === "instructor" &&
-        course.instructor.toString() !== userId
-      ) {
+    if (!lesson.isPublished && userRole !== "instructor" && userRole !== "admin") {
+      if (userRole === "instructor" && lesson.course.instructor.toString() !== userId) {
         throw new Error("Lesson not found");
       }
       if (!userRole || userRole === "student") {
@@ -121,14 +95,11 @@ class LessonService {
     if (userRole === "student") {
       const enrollment = await Enrollment.findOne({
         student: userId,
-        course: course._id,
-        status: "active",
+        course: lesson.course._id,
+        status: { $in: ["enrolled", "in-progress"] },
       });
-
       if (!enrollment) {
-        throw new Error(
-          "You must be enrolled in this course to view this lesson"
-        );
+        throw new Error("You must be enrolled in this course to view this lesson");
       }
     }
 
@@ -155,10 +126,6 @@ class LessonService {
         throw new Error("Lesson title must be at least 5 characters long");
       }
 
-      if (!lessonData.content || lessonData.content.length < 50) {
-        throw new Error("Lesson content must be at least 50 characters long");
-      }
-
       if (
         lessonData.type &&
         !["video", "text", "interactive", "quiz"].includes(lessonData.type)
@@ -178,17 +145,11 @@ class LessonService {
       const lesson = new Lesson({
         ...lessonData,
         course: course._id,
-        createdBy: instructorId,
       });
 
       await lesson.save({ session });
 
-      // Update course lesson count
-      await Course.findByIdAndUpdate(
-        course._id,
-        { $inc: { lessonCount: 1 } },
-        { session }
-      );
+      // 删除lessonCount相关逻辑
 
       return lesson;
     });
@@ -215,10 +176,6 @@ class LessonService {
       // Validate update data
       if (updateData.title && updateData.title.length < 5) {
         throw new Error("Lesson title must be at least 5 characters long");
-      }
-
-      if (updateData.content && updateData.content.length < 50) {
-        throw new Error("Lesson content must be at least 50 characters long");
       }
 
       if (
@@ -282,84 +239,36 @@ class LessonService {
    */
   static async completeLesson(lessonId, studentId, completionData) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const lesson = await Lesson.findById(lessonId)
-        .populate("course")
-        .session(session);
-
+      const lesson = await Lesson.findById(lessonId).populate("course").session(session);
       if (!lesson) {
         throw new Error("Lesson not found");
       }
-
       if (!lesson.isPublished) {
         throw new Error("Cannot complete unpublished lesson");
       }
-
       // Check enrollment
       const enrollment = await Enrollment.findOne({
         student: studentId,
         course: lesson.course._id,
-        status: "active",
+        status: { $in: ["enrolled", "in-progress"] },
       }).session(session);
-
       if (!enrollment) {
-        throw new Error(
-          "You must be enrolled in this course to complete lessons"
-        );
+        throw new Error("You must be enrolled in this course to complete lessons");
       }
-
-      // Check if lesson is already completed
-      const existingProgress = enrollment.progress.lessons.find(
-        (p) => p.lesson.toString() === lessonId
-      );
-
-      if (existingProgress && existingProgress.completed) {
-        throw new Error("Lesson already completed");
-      }
-
-      // Update or create lesson progress
-      if (existingProgress) {
-        existingProgress.completed = true;
-        existingProgress.completedAt = new Date();
-        if (completionData.timeSpent) {
-          existingProgress.timeSpent = completionData.timeSpent;
-        }
-        if (completionData.notes) {
-          existingProgress.notes = completionData.notes;
-        }
+      // 直接提升completionPercentage
+      const { completionPercentage } = completionData;
+      if (typeof completionPercentage === "number") {
+        enrollment.completionPercentage = Math.max(0, Math.min(100, completionPercentage));
       } else {
-        enrollment.progress.lessons.push({
-          lesson: lessonId,
-          completed: true,
-          completedAt: new Date(),
-          timeSpent: completionData.timeSpent || 0,
-          notes: completionData.notes || "",
-        });
+        enrollment.completionPercentage = Math.min(100, enrollment.completionPercentage + 100 / (await Lesson.countDocuments({ course: lesson.course._id, isPublished: true }).session(session)));
       }
-
-      // Update overall progress
-      const totalLessons = await Lesson.countDocuments({
-        course: lesson.course._id,
-        isPublished: true,
-      }).session(session);
-
-      const completedLessons = enrollment.progress.lessons.filter(
-        (p) => p.completed
-      ).length;
-      enrollment.progress.percentage = Math.round(
-        (completedLessons / totalLessons) * 100
-      );
-
-      // Check if course is completed
-      if (enrollment.progress.percentage >= 100) {
+      if (enrollment.completionPercentage >= 100) {
         enrollment.status = "completed";
-        enrollment.completedAt = new Date();
       }
-
       await enrollment.save({ session });
-
       return {
         lessonCompleted: true,
-        courseProgress: enrollment.progress.percentage,
+        courseProgress: enrollment.completionPercentage,
         courseCompleted: enrollment.status === "completed",
       };
     });
@@ -376,21 +285,16 @@ class LessonService {
     }
 
     if (userRole === "student") {
-      // Students can only see their own progress
       const enrollment = await Enrollment.findOne({
         student: userId,
         course: lesson.course._id,
       });
 
       if (!enrollment) {
-        return { completed: false, timeSpent: 0 };
+        return { completed: false, completionPercentage: 0 };
       }
 
-      const lessonProgress = enrollment.progress.lessons.find(
-        (p) => p.lesson.toString() === lessonId
-      );
-
-      return lessonProgress || { completed: false, timeSpent: 0 };
+      return { completionPercentage: enrollment.completionPercentage };
     } else if (userRole === "instructor") {
       // Instructors can see progress for their course lessons
       if (lesson.course.instructor.toString() !== userId) {
@@ -452,49 +356,18 @@ class LessonService {
       throw new Error("Access denied");
     }
 
-    // Get enrollment statistics
+    // 统计报名数和完成数
     const enrollments = await Enrollment.find({
       course: lesson.course._id,
-      status: { $in: ["active", "completed"] },
     });
-
     const totalStudents = enrollments.length;
-    const completedCount = enrollments.filter((enrollment) =>
-      enrollment.progress.lessons.some(
-        (p) => p.lesson.toString() === lessonId && p.completed
-      )
-    ).length;
-
-    const completionRate =
-      totalStudents > 0
-        ? Math.round((completedCount / totalStudents) * 100)
-        : 0;
-
-    // Calculate average time spent
-    const timeSpentData = enrollments
-      .map((enrollment) => {
-        const lessonProgress = enrollment.progress.lessons.find(
-          (p) => p.lesson.toString() === lessonId
-        );
-        return lessonProgress ? lessonProgress.timeSpent : 0;
-      })
-      .filter((time) => time > 0);
-
-    const averageTimeSpent =
-      timeSpentData.length > 0
-        ? Math.round(
-            timeSpentData.reduce((sum, time) => sum + time, 0) /
-              timeSpentData.length
-          )
-        : 0;
+    const completedCount = enrollments.filter((enrollment) => enrollment.completionPercentage >= 100).length;
+    const completionRate = totalStudents > 0 ? Math.round((completedCount / totalStudents) * 100) : 0;
 
     return {
       totalStudents,
       completedCount,
       completionRate,
-      averageTimeSpent,
-      engagementLevel:
-        completionRate >= 80 ? "High" : completionRate >= 50 ? "Medium" : "Low",
     };
   }
 

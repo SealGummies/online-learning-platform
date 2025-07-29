@@ -6,7 +6,7 @@ const router = express.Router();
 
 /**
  * @route   GET /api/analytics/top-courses
- * @desc    Get top performing courses by enrollment and grades
+ * @desc    Get top performing courses by enrollment
  * @access  Private (Admin/Instructor)
  */
 router.get(
@@ -71,25 +71,44 @@ router.get(
 );
 
 /**
- * @route   GET /api/analytics/revenue
- * @desc    Get revenue analytics and financial performance
- * @access  Private (Admin)
- */
-router.get("/revenue", protect, AnalyticsController.getRevenueAnalytics);
-
-/**
- * @route   GET /api/analytics/dashboard
- * @desc    Get comprehensive analytics dashboard data
- * @access  Private (Admin)
- */
-router.get("/dashboard", protect, AnalyticsController.getAnalyticsDashboard);
-
-/**
  * @route   GET /api/analytics/filtered
  * @desc    Get filtered analytics based on criteria
  * @access  Private (Admin/Instructor)
  * @query   startDate, endDate, category, level, type
  */
 router.get("/filtered", protect, AnalyticsController.getFilteredAnalytics);
+
+/**
+ * @route   GET /api/analytics/instructor/enrollments
+ * @desc    Get instructor-specific enrollment data for dashboard
+ * @access  Private (Instructor)
+ */
+router.get(
+  "/instructor/enrollments",
+  protect,
+  AnalyticsController.getInstructorEnrollments
+);
+
+/**
+ * @route   GET /api/analytics/instructor/overview
+ * @desc    Get instructor dashboard overview statistics
+ * @access  Private (Instructor)
+ */
+router.get(
+  "/instructor/overview",
+  protect,
+  AnalyticsController.getInstructorDashboardOverview
+);
+
+/**
+ * @route   GET /api/analytics/instructor/student-progress
+ * @desc    Get instructor's student progress analytics
+ * @access  Private (Instructor)
+ */
+router.get(
+  "/instructor/student-progress",
+  protect,
+  AnalyticsController.getInstructorStudentProgress
+);
 
 module.exports = router;

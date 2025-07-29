@@ -1,5 +1,8 @@
 const LessonService = require("../services/LessonService");
 
+/**
+ * Lesson Controller - Handles HTTP requests for lesson operations (aligned with simplified models)
+ */
 class LessonController {
   /**
    * Get lessons for a course
@@ -11,16 +14,14 @@ class LessonController {
       const { course } = req.query;
       const userId = req.user?.id;
       const userRole = req.user?.role;
-
       const lessons = await LessonService.getLessons(course, userId, userRole);
-
       res.json({
         success: true,
+        data: lessons,
         count: lessons.length,
-        data: { lessons },
+        message: "Lessons retrieved successfully",
       });
     } catch (error) {
-      console.error("Get lessons error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Failed to retrieve lessons",
@@ -38,19 +39,13 @@ class LessonController {
       const lessonId = req.params.id;
       const userId = req.user?.id;
       const userRole = req.user?.role;
-
-      const lesson = await LessonService.getLessonById(
-        lessonId,
-        userId,
-        userRole
-      );
-
+      const lesson = await LessonService.getLessonById(lessonId, userId, userRole);
       res.json({
         success: true,
-        data: { lesson },
+        data: lesson,
+        message: "Lesson retrieved successfully",
       });
     } catch (error) {
-      console.error("Get lesson by ID error:", error);
       res.status(404).json({
         success: false,
         message: error.message || "Lesson not found",
@@ -66,15 +61,15 @@ class LessonController {
   static async createLesson(req, res) {
     try {
       const instructorId = req.user.id;
-      const lesson = await LessonService.createLesson(req.body, instructorId);
-
+      // Only allow fields in simplified model
+      const { title, course, order, type, content, isPublished } = req.body;
+      const lesson = await LessonService.createLesson({ title, course, order, type, content, isPublished }, instructorId);
       res.status(201).json({
         success: true,
+        data: lesson,
         message: "Lesson created successfully",
-        data: { lesson },
       });
     } catch (error) {
-      console.error("Create lesson error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Lesson creation failed",
@@ -91,20 +86,16 @@ class LessonController {
     try {
       const lessonId = req.params.id;
       const instructorId = req.user.id;
-
-      const lesson = await LessonService.updateLesson(
-        lessonId,
-        req.body,
-        instructorId
-      );
-
+      // Only allow fields in simplified model
+      const { title, order, type, content, isPublished } = req.body;
+      const updateData = { title, order, type, content, isPublished };
+      const lesson = await LessonService.updateLesson(lessonId, updateData, instructorId);
       res.json({
         success: true,
+        data: lesson,
         message: "Lesson updated successfully",
-        data: { lesson },
       });
     } catch (error) {
-      console.error("Update lesson error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Lesson update failed",
@@ -121,15 +112,12 @@ class LessonController {
     try {
       const lessonId = req.params.id;
       const instructorId = req.user.id;
-
       await LessonService.deleteLesson(lessonId, instructorId);
-
       res.json({
         success: true,
         message: "Lesson deleted successfully",
       });
     } catch (error) {
-      console.error("Delete lesson error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Lesson deletion failed",
@@ -138,7 +126,7 @@ class LessonController {
   }
 
   /**
-   * Mark lesson as completed
+   * Complete a lesson (increase completionPercentage)
    * @route POST /api/lessons/:id/complete
    * @access Private/Student
    */
@@ -146,20 +134,14 @@ class LessonController {
     try {
       const lessonId = req.params.id;
       const studentId = req.user.id;
-      const { timeSpent, notes } = req.body;
-
-      const result = await LessonService.completeLesson(lessonId, studentId, {
-        timeSpent,
-        notes,
-      });
-
+      const { completionPercentage } = req.body;
+      const result = await LessonService.completeLesson(lessonId, studentId, { completionPercentage });
       res.json({
         success: true,
+        data: result,
         message: "Lesson marked as completed",
-        data: { result },
       });
     } catch (error) {
-      console.error("Complete lesson error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Failed to mark lesson as completed",
@@ -177,19 +159,13 @@ class LessonController {
       const lessonId = req.params.id;
       const userId = req.user.id;
       const userRole = req.user.role;
-
-      const progress = await LessonService.getLessonProgress(
-        lessonId,
-        userId,
-        userRole
-      );
-
+      const progress = await LessonService.getLessonProgress(lessonId, userId, userRole);
       res.json({
         success: true,
-        data: { progress },
+        data: progress,
+        message: "Lesson progress retrieved successfully",
       });
     } catch (error) {
-      console.error("Get lesson progress error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Failed to retrieve lesson progress",
@@ -206,15 +182,13 @@ class LessonController {
     try {
       const lessonId = req.params.id;
       const instructorId = req.user.id;
-
       const stats = await LessonService.getLessonStats(lessonId, instructorId);
-
       res.json({
         success: true,
-        data: { stats },
+        data: stats,
+        message: "Lesson statistics retrieved successfully",
       });
     } catch (error) {
-      console.error("Get lesson stats error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Failed to retrieve lesson statistics",
@@ -231,15 +205,12 @@ class LessonController {
     try {
       const instructorId = req.user.id;
       const { courseId, lessonOrder } = req.body;
-
       await LessonService.reorderLessons(courseId, lessonOrder, instructorId);
-
       res.json({
         success: true,
         message: "Lessons reordered successfully",
       });
     } catch (error) {
-      console.error("Reorder lessons error:", error);
       res.status(400).json({
         success: false,
         message: error.message || "Failed to reorder lessons",

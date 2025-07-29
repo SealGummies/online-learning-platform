@@ -1,106 +1,104 @@
 # Routes
 
-API route definitions following MVC architecture pattern.
+API route definitions following simplified MVC architecture.
 
-## Current Routes (MVC Architecture)
+## Route Files
 
-### Files
+- `auth.js` - Authentication (register, login, current user)
+- `users.js` - User management (CRUD, status, stats)
+- `courses.js` - Course management (CRUD, enrollment, stats)
+- `enrollments.js` - Enrollment management (CRUD, progress, withdraw, stats)
+- `lessons.js` - Lesson management (CRUD, stats)
+- `exams.js` - Exam management (CRUD, stats)
 
-- `auth.js` - Authentication routes (login, register, profile)
-- `users.js` - User management (admin operations)
-- `courses.js` - Course management (CRUD, enrollment)
-- `enrollments.js` - Enrollment management (progress, reviews)
-- `lessons.js` - Lesson content management
-- `exams.js` - Exam management and submissions
+## Example Endpoints
 
-### 🔐 Authentication Routes (`auth.js`)
+### Authentication (`auth.js`)
 
 ```
-POST   /api/auth/register    # User registration
+POST   /api/auth/register    # Register new user
 POST   /api/auth/login       # User login
-GET    /api/auth/me          # Get current user profile
+GET    /api/auth/me          # Get current user info
 ```
 
-### 📚 Course Routes (`courses.js`)
+### Users (`users.js`)
 
 ```
-GET    /api/courses          # List all courses (public)
-POST   /api/courses          # Create course (instructor only)
+GET    /api/users            # List users (admin)
+POST   /api/users            # Create user (admin)
+GET    /api/users/:id        # Get user details
+PUT    /api/users/:id        # Update user
+DELETE /api/users/:id        # Delete user (admin)
+PATCH  /api/users/:id/status # Update user status (admin)
+GET    /api/users/:id/stats  # Get user statistics
+GET    /api/users/:id/enrollments # Get user enrollments
+GET    /api/users/instructors # List instructors
+GET    /api/users/students    # List students
+```
+
+### Courses (`courses.js`)
+
+```
+GET    /api/courses          # List all courses
+POST   /api/courses          # Create course (instructor)
 GET    /api/courses/:id      # Get course details
-PUT    /api/courses/:id      # Update course (instructor only)
-DELETE /api/courses/:id      # Delete course (instructor only)
+PUT    /api/courses/:id      # Update course (instructor)
+DELETE /api/courses/:id      # Delete course (instructor)
 GET    /api/courses/:id/stats # Get course statistics
-POST   /api/courses/:id/enroll # Enroll in course (student only)
+POST   /api/courses/:id/enroll # Enroll in course (student)
 ```
 
-### 📝 Enrollment Routes (`enrollments.js`)
+### Enrollments (`enrollments.js`)
 
 ```
-GET    /api/enrollments      # Get student enrollments
+GET    /api/enrollments      # List student enrollments
 GET    /api/enrollments/:id  # Get enrollment details
-PUT    /api/enrollments/:id/progress # Update learning progress
-PUT    /api/enrollments/:id/review   # Submit course review
-GET    /api/enrollments/stats        # Get student statistics
+PUT    /api/enrollments/:id/progress # Update progress
+POST   /api/enrollments/:id/withdraw # Withdraw from course
+GET    /api/enrollments/stats # Get student statistics
 ```
 
-## 🏗️ MVC Architecture Pattern
+### Lessons (`lessons.js`)
 
-Each route file follows clean MVC principles:
-
-### Route Structure
-
-```javascript
-const express = require("express");
-const Controller = require("../controllers/Controller");
-const { protect, authorize } = require("../middleware/auth");
-
-const router = express.Router();
-
-// Thin routes - delegate to controllers
-router.get("/", Controller.getAll);
-router.post("/", protect, authorize("role"), Controller.create);
-
-module.exports = router;
+```
+GET    /api/lessons          # List lessons (by course)
+GET    /api/lessons/:id      # Get lesson details
+POST   /api/lessons          # Create lesson (instructor)
+PUT    /api/lessons/:id      # Update lesson (instructor)
+DELETE /api/lessons/:id      # Delete lesson (instructor)
+GET    /api/lessons/:id/stats # Get lesson statistics
 ```
 
-### Key Features
+### Exams (`exams.js`)
 
-- **🎯 Single Responsibility**: Routes only handle HTTP routing
-- **🎮 Controller Delegation**: Business logic in controllers/services
-- **🔒 Middleware Integration**: Authentication and validation
-- **📝 Input Validation**: Express-validator middleware
-- **🛡️ Role-Based Access**: Fine-grained permissions
-
-## 🔒 Authentication & Authorization
-
-```javascript
-protect                              # Requires valid JWT token
-authorize('student')                 # Single role requirement
-authorize(['admin', 'instructor'])   # Multiple roles allowed
+```
+GET    /api/exams            # List exams (by course)
+GET    /api/exams/:id        # Get exam details
+POST   /api/exams            # Create exam (instructor)
+PUT    /api/exams/:id        # Update exam (instructor)
+DELETE /api/exams/:id        # Delete exam (instructor)
+GET    /api/exams/:id/stats  # Get exam statistics
 ```
 
-## 📦 Legacy Files
+## Route Principles
 
-Legacy route implementations have been moved to `../legacy/routes/`:
-
-- Contains old monolithic routes with embedded business logic
-- Preserved for reference and comparison
-- No longer used in the application
-
-## 🎯 Best Practices
-
-1. **Keep Routes Thin**: Delegate to controllers
-2. **Use Middleware**: Authentication, validation, logging
-3. **RESTful Conventions**: Standard HTTP methods and paths
-4. **Error Handling**: Controllers manage all error responses
-5. **Consistent Responses**: Standardized JSON response format
-
-- `PUT /api/{resource}/:id` - Update resource
-- `DELETE /api/{resource}/:id` - Delete resource
+- **Thin Routes**: Only handle HTTP routing, delegate logic to controllers
+- **Middleware**: Use for authentication, authorization, validation
+- **RESTful**: Standard HTTP methods and resource paths
+- **Role-Based Access**: Enforced via middleware (student, instructor, admin)
+- **Consistent JSON Responses**: All endpoints return standardized JSON
 
 ## Access Control
 
 - **Public**: Registration, login
-- **Student**: View courses, enroll, submit assignments
-- **Instructor**: Manage own courses and students
-- **Admin**: Full system access
+- **Student**: Enrollments, course access
+- **Instructor**: Manage own courses, lessons, exams
+- **Admin**: Full user and system management
+
+## Best Practices
+
+1. Keep routes minimal and focused
+2. Use middleware for security and validation
+3. Follow RESTful conventions
+4. Delegate all business logic to controllers/services
+5. Standardize error and success responses

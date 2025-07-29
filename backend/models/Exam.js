@@ -1,5 +1,38 @@
 const mongoose = require("mongoose");
 
+const questionSchema = new mongoose.Schema({
+  text: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  options: {
+    type: [String],
+    required: true,
+    validate: {
+      validator: function(options) {
+        return options.length >= 2;
+      },
+      message: 'Question must have at least 2 options'
+    }
+  },
+  correctAnswer: {
+    type: Number,
+    required: true,
+    validate: {
+      validator: function(value) {
+        return value >= 0 && value < this.options.length;
+      },
+      message: 'Correct answer must be a valid option index'
+    }
+  },
+  points: {
+    type: Number,
+    default: 1,
+    min: 1
+  }
+});
+
 const examSchema = new mongoose.Schema(
   {
     title: {
@@ -16,170 +49,76 @@ const examSchema = new mongoose.Schema(
       ref: "Course",
       required: true,
     },
-    instructor: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
     type: {
       type: String,
-      enum: ["quiz", "midterm", "final", "assignment", "project"],
+      enum: ["quiz", "midterm", "final", "assignment"],
       required: true,
     },
-    questions: [
-      {
-        question: {
-          type: String,
-          required: true,
+    questions: {
+      type: [questionSchema],
+      default: [],
+      validate: {
+        validator: function(questions) {
+          return questions.length > 0;
         },
-        type: {
-          type: String,
-          enum: [
-            "multiple-choice",
-            "true-false",
-            "short-answer",
-            "essay",
-            "code",
-          ],
-          required: true,
-        },
-        options: [
-          {
-            text: String,
-            isCorrect: Boolean,
-          },
-        ],
-        correctAnswer: String, // For non-multiple choice questions
-        explanation: String,
-        points: {
-          type: Number,
-          default: 1,
-        },
-        difficulty: {
-          type: String,
-          enum: ["Easy", "Medium", "Hard"],
-          default: "Medium",
-        },
-        tags: [String],
-        hints: [String],
-        codeSnippet: String, // For code-based questions
-        expectedOutput: String,
-      },
-    ],
-    settings: {
-      timeLimit: {
-        type: Number, // in minutes
-        default: 60,
-      },
-      attempts: {
-        type: Number,
-        default: 1,
-      },
-      passingScore: {
-        type: Number,
-        default: 70,
-      },
-      showCorrectAnswers: {
-        type: Boolean,
-        default: true,
-      },
-      showScoreImmediately: {
-        type: Boolean,
-        default: true,
-      },
-      randomizeQuestions: {
-        type: Boolean,
-        default: false,
-      },
-      randomizeOptions: {
-        type: Boolean,
-        default: false,
-      },
-      allowReview: {
-        type: Boolean,
-        default: true,
-      },
-      proctored: {
-        type: Boolean,
-        default: false,
-      },
-      lockdownBrowser: {
-        type: Boolean,
-        default: false,
-      },
+        message: 'Exam must have at least one question'
+      }
     },
-    availability: {
-      startDate: Date,
-      endDate: Date,
-      timezone: {
-        type: String,
-        default: "UTC",
-      },
+    duration: {
+      type: Number, // in minutes
+      min: 1,
+      default: 60
     },
-    prerequisites: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Lesson",
-      },
-    ],
-    weight: {
-      type: Number, // Percentage of total course grade
-      default: 10,
+    totalPoints: {
+      type: Number,
+      default: 0
     },
-    instructions: String,
-    resources: [
-      {
-        title: String,
-        type: String,
-        url: String,
-        description: String,
-      },
-    ],
-    stats: {
-      attempts: {
-        type: Number,
-        default: 0,
-      },
-      completions: {
-        type: Number,
-        default: 0,
-      },
-      averageScore: {
-        type: Number,
-        default: 0,
-      },
-      highestScore: {
-        type: Number,
-        default: 0,
-      },
-      lowestScore: {
-        type: Number,
-        default: 0,
-      },
-      averageTimeSpent: {
-        type: Number,
-        default: 0,
-      },
-      passRate: {
-        type: Number,
-        default: 0,
-      },
+    startDate: {
+      type: Date,
+      default: null
+    },
+    endDate: {
+      type: Date,
+      default: null
     },
     isPublished: {
       type: Boolean,
-      default: false,
+      default: false
     },
-    publishedAt: Date,
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    allowRetake: {
+      type: Boolean,
+      default: false
+    },
+    maxAttempts: {
+      type: Number,
+      default: 1,
+      min: 1
+    },
+    instructions: {
+      type: String,
+      default: ""
+    }
   },
   {
     timestamps: true,
   }
 );
 
+// Calculate total points before saving
+examSchema.pre('save', function(next) {
+  if (this.questions && this.questions.length > 0) {
+    this.totalPoints = this.questions.reduce((total, question) => total + question.points, 0);
+  }
+  next();
+});
+
+// Essential indexes
 examSchema.index({ course: 1 });
-examSchema.index({ instructor: 1 });
-examSchema.index({ type: 1 });
-examSchema.index({ "availability.startDate": 1 });
-examSchema.index({ "availability.endDate": 1 });
+examSchema.index({ isPublished: 1 });
+examSchema.index({ startDate: 1, endDate: 1 });
 
 module.exports = mongoose.model("Exam", examSchema);

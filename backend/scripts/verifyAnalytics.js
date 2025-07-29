@@ -7,7 +7,7 @@ async function connectDB() {
   try {
     const conn = await mongoose.connect(
       process.env.MONGODB_URI ||
-        "mongodb://localhost:27017/online-learning-test"
+      "mongodb://localhost:27017/online-learning-test"
     );
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
@@ -45,8 +45,7 @@ async function testAnalytics() {
       );
       if (studentProgress.length > 0) {
         console.log(
-          `   Sample: ${studentProgress[0].studentName || "No name"} - ${
-            studentProgress[0].courseName || "No course"
+          `   Sample: ${studentProgress[0].studentName || "No name"} - ${studentProgress[0].courseName || "No course"
           }`
         );
       }
@@ -64,8 +63,7 @@ async function testAnalytics() {
       );
       if (instructorAnalytics.length > 0) {
         console.log(
-          `   Sample: ${instructorAnalytics[0].instructorName || "No name"} - ${
-            instructorAnalytics[0].totalCourses || 0
+          `   Sample: ${instructorAnalytics[0].instructorName || "No name"} - ${instructorAnalytics[0].totalCourses || 0
           } courses`
         );
       }
@@ -83,8 +81,7 @@ async function testAnalytics() {
       );
       if (completionTrends.length > 0) {
         console.log(
-          `   Sample: ${completionTrends[0]._id?.course || "No course"} - ${
-            completionTrends[0].completions || 0
+          `   Sample: ${completionTrends[0]._id?.course || "No course"} - ${completionTrends[0].completions || 0
           } completions`
         );
       }
@@ -102,8 +99,7 @@ async function testAnalytics() {
       );
       if (examPerformance.length > 0) {
         console.log(
-          `   Sample: ${
-            examPerformance[0].examTitle || "No title"
+          `   Sample: ${examPerformance[0].examTitle || "No title"
           } - Avg Grade: ${examPerformance[0].averageGrade || 0}%`
         );
       }
@@ -116,26 +112,27 @@ async function testAnalytics() {
     try {
       const platformOverview = await AnalyticsService.getPlatformOverview();
       console.log(
-        `✅ Success: Platform has ${
-          platformOverview.users?.total || 0
+        `✅ Success: Platform has ${platformOverview.users?.total || 0
         } users, ${platformOverview.courses?.total || 0} courses`
       );
     } catch (error) {
       console.log(`❌ Error: ${error.message}`);
     }
 
-    // Test 7: Revenue Analytics
-    console.log("\n7. Testing Revenue Analytics:");
+    // Test 7: Filtered Analytics
+    console.log("\n7. Testing Filtered Analytics:");
     try {
-      const revenueAnalytics = await AnalyticsService.getRevenueAnalytics();
+      const filteredAnalytics = await AnalyticsService.getFilteredAnalytics({
+        category: "Programming",
+        level: "Beginner"
+      });
       console.log(
-        `✅ Success: Found ${revenueAnalytics.length} revenue records`
+        `✅ Success: Found ${filteredAnalytics.length} filtered records`
       );
-      if (revenueAnalytics.length > 0) {
+      if (filteredAnalytics.length > 0) {
         console.log(
-          `   Sample: ${revenueAnalytics[0]._id?.year || "No year"}/${
-            revenueAnalytics[0]._id?.month || "No month"
-          } - $${revenueAnalytics[0].totalRevenue || 0}`
+          `   Sample: ${filteredAnalytics[0]._id?.course || "No course"} - ${filteredAnalytics[0].totalEnrollments || 0
+          } enrollments`
         );
       }
     } catch (error) {

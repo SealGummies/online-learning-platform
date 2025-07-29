@@ -5,43 +5,20 @@ const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-/**
- * Progress validation middleware
- */
+// Progress validation middleware (only simplified model fields)
 const validateProgress = [
-  body("lessonId").notEmpty().withMessage("Lesson ID is required"),
-  body("completed").isBoolean().withMessage("Completed must be a boolean"),
-  body("timeSpent")
-    .optional()
-    .isInt({ min: 0 })
-    .withMessage("Time spent must be a positive integer"),
-  body("score")
+  body("completionPercentage")
     .optional()
     .isFloat({ min: 0, max: 100 })
-    .withMessage("Score must be between 0 and 100"),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array(),
-      });
-    }
-    next();
-  },
-];
-
-/**
- * Review validation middleware
- */
-const validateReview = [
-  body("rating")
-    .isInt({ min: 1, max: 5 })
-    .withMessage("Rating must be between 1 and 5"),
-  body("comment")
+    .withMessage("Completion percentage must be between 0 and 100"),
+  body("finalGrade")
     .optional()
-    .isLength({ max: 500 })
-    .withMessage("Comment must be less than 500 characters"),
+    .isFloat({ min: 0, max: 100 })
+    .withMessage("Final grade must be between 0 and 100"),
+  body("status")
+    .optional()
+    .isIn(["enrolled", "in-progress", "completed", "dropped"])
+    .withMessage("Invalid status value"),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -54,23 +31,46 @@ const validateReview = [
   },
 ];
 
-// All routes require authentication and student role
+// All routes require authentication
 router.use(protect);
-router.use(authorize("student"));
 
-// Student enrollment routes
-router.get("/", EnrollmentController.getStudentEnrollments);
-router.get("/stats", EnrollmentController.getStudentStats);
-router.get("/:id", EnrollmentController.getEnrollmentById);
-router.get("/:id/progress", EnrollmentController.getProgressDetails);
+// Instructor-specific enrollment routes (must come before other routes to avoid pattern conflicts)
+router.get(
+  "/instructor",
+  authorize("instructor"),
+  EnrollmentController.getInstructorEnrollments
+);
 
-// Progress and review management
+// Student-specific routes
+router.get(
+  "/",
+  authorize("student"),
+  EnrollmentController.getStudentEnrollments
+);
+router.get(
+  "/stats",
+  authorize("student"),
+  EnrollmentController.getStudentStats
+);
+
+// Progress management (student only)
 router.put(
   "/:id/progress",
+  authorize("student"),
   validateProgress,
   EnrollmentController.updateProgress
 );
-router.put("/:id/review", validateReview, EnrollmentController.submitReview);
-router.post("/:id/withdraw", EnrollmentController.withdrawEnrollment);
+router.post(
+  "/:id/withdraw",
+  authorize("student"),
+  EnrollmentController.withdrawEnrollment
+);
+
+// Individual enrollment by ID (must come last to avoid conflicts)
+router.get(
+  "/:id",
+  authorize("student"),
+  EnrollmentController.getEnrollmentById
+);
 
 module.exports = router;

@@ -25,10 +25,10 @@ class EnrollmentService {
       .sort(sort)
       .populate({
         path: "course",
-        select: "title description category level instructor duration",
+        select: "title description category level instructor",
         populate: {
           path: "instructor",
-          select: "name email",
+          select: "firstName lastName email",
         },
       })
       .lean();
@@ -48,7 +48,7 @@ class EnrollmentService {
         path: "course",
         populate: {
           path: "instructor",
-          select: "name email profile.bio",
+          select: "firstName lastName email",
         },
       })
       .populate("student", "firstName lastName email")
@@ -76,90 +76,33 @@ class EnrollmentService {
    */
   static async updateProgress(enrollmentId, progressData, studentId) {
     return TransactionService.executeWithTransaction(async (session) => {
-      const enrollment = await Enrollment.findById(enrollmentId).session(
-        session
-      );
-
+      const enrollment = await Enrollment.findById(enrollmentId).session(session);
       if (!enrollment) {
         throw new Error("Enrollment not found");
       }
-
       if (enrollment.student.toString() !== studentId) {
         throw new Error("Not authorized to update this enrollment");
       }
-
-      const {
-        lessonId,
-        completed = false,
-        timeSpent = 0,
-        score = null,
-      } = progressData;
-
-      // Update lesson progress
-      const lessonIndex = enrollment.lessonsCompleted.findIndex(
-        (lesson) => lesson.lessonId.toString() === lessonId
-      );
-
-      if (lessonIndex >= 0) {
-        // Update existing lesson progress
-        enrollment.lessonsCompleted[lessonIndex] = {
-          ...enrollment.lessonsCompleted[lessonIndex],
-          completed,
-          completedAt: completed
-            ? new Date()
-            : enrollment.lessonsCompleted[lessonIndex].completedAt,
-          timeSpent:
-            enrollment.lessonsCompleted[lessonIndex].timeSpent + timeSpent,
-          score:
-            score !== null
-              ? score
-              : enrollment.lessonsCompleted[lessonIndex].score,
-        };
-      } else if (completed) {
-        // Add new completed lesson
-        enrollment.lessonsCompleted.push({
-          lessonId,
-          completed: true,
-          completedAt: new Date(),
-          timeSpent,
-          score,
-        });
+      // Only update completionPercentage and finalGrade
+      const { completionPercentage, finalGrade, status } = progressData;
+      if (typeof completionPercentage === "number") {
+        enrollment.completionPercentage = Math.max(0, Math.min(100, completionPercentage));
       }
-
-      // Recalculate overall progress
-      const course = await Course.findById(enrollment.course).session(session);
-      const totalLessons = course.lessons?.length || 1;
-      const completedLessons = enrollment.lessonsCompleted.filter(
-        (l) => l.completed
-      ).length;
-
-      enrollment.progress = Math.round((completedLessons / totalLessons) * 100);
-
-      // Update completion status
-      if (enrollment.progress >= 100 && enrollment.status !== "completed") {
+      if (typeof finalGrade === "number") {
+        enrollment.finalGrade = Math.max(0, Math.min(100, finalGrade));
+      }
+      if (status && ["enrolled", "in-progress", "completed", "dropped"].includes(status)) {
+        enrollment.status = status;
+      }
+      // Auto-complete if 100% completed
+      if (enrollment.completionPercentage === 100 && enrollment.status !== "completed") {
         enrollment.status = "completed";
-        enrollment.completionDate = new Date();
       }
-
       await enrollment.save({ session });
-
-      // Update course completion statistics
-      if (enrollment.status === "completed") {
-        await Course.findByIdAndUpdate(
-          enrollment.course,
-          { $inc: { completionCount: 1 } },
-          { session }
-        );
-      }
-
-      // Populate for response
       await enrollment.populate("course", "title category level");
-
       return {
         enrollment: enrollment.toObject(),
-        message: completed
-          ? "Lesson completed successfully"
-          : "Progress updated successfully",
+        message: "Progress updated successfully",
       };
     });
   }
@@ -248,38 +191,22 @@ class EnrollmentService {
    */
   static async withdrawEnrollment(enrollmentId, studentId) {
     return TransactionService.executeWithTransaction(async (session) => {
-      const enrollment = await Enrollment.findById(enrollmentId).session(
-        session
-      );
-
+      const enrollment = await Enrollment.findById(enrollmentId).session(session);
       if (!enrollment) {
         throw new Error("Enrollment not found");
       }
-
       if (enrollment.student.toString() !== studentId) {
         throw new Error("Not authorized to withdraw from this enrollment");
       }
-
       if (enrollment.status === "completed") {
         throw new Error("Cannot withdraw from completed course");
       }
-
-      if (enrollment.status === "withdrawn") {
+      if (enrollment.status === "dropped") {
         throw new Error("Already withdrawn from this course");
       }
-
-      // Update enrollment status
-      enrollment.status = "withdrawn";
-      enrollment.withdrawalDate = new Date();
+      // Only update status
+      enrollment.status = "dropped";
       await enrollment.save({ session });
-
-      // Update course enrollment count
-      await Course.findByIdAndUpdate(
-        enrollment.course,
-        { $inc: { enrollmentCount: -1 } },
-        { session }
-      );
-
       return {
         enrollment: enrollment.toObject(),
         message: "Successfully withdrawn from course",
@@ -299,39 +226,24 @@ class EnrollmentService {
         $group: {
           _id: "$status",
           count: { $sum: 1 },
-          avgProgress: { $avg: "$progress" },
-          totalTimeSpent: {
-            $sum: {
-              $reduce: {
-                input: "$lessonsCompleted",
-                initialValue: 0,
-                in: { $add: ["$$value", "$$this.timeSpent"] },
-              },
-            },
-          },
+          avgCompletion: { $avg: "$completionPercentage" },
         },
       },
     ]);
-
     const result = {
       total: 0,
-      active: 0,
+      enrolled: 0,
+      "in-progress": 0,
       completed: 0,
-      withdrawn: 0,
-      averageProgress: 0,
-      totalTimeSpent: 0,
+      dropped: 0,
+      averageCompletion: 0,
     };
-
     stats.forEach((stat) => {
       result.total += stat.count;
       result[stat._id] = stat.count;
-      result.averageProgress += stat.avgProgress * stat.count;
-      result.totalTimeSpent += stat.totalTimeSpent;
+      result.averageCompletion += (stat.avgCompletion || 0) * stat.count;
     });
-
-    result.averageProgress =
-      result.total > 0 ? Math.round(result.averageProgress / result.total) : 0;
-
+    result.averageCompletion = result.total > 0 ? Math.round(result.averageCompletion / result.total) : 0;
     return result;
   }
 }
