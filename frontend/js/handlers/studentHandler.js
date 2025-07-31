@@ -566,7 +566,13 @@ export class StudentHandler {
     const submitBtn = document.getElementById("submitQuiz");
     const saveBtn = document.getElementById("saveProgress");
 
-    // Close button
+    // Close button with multiple fallback methods
+    closeBtn.onclick = () => {
+      if (confirm("Are you sure you want to exit? Your progress will be lost.")) {
+        modal.remove();
+      }
+    };
+    
     closeBtn.addEventListener('click', () => {
       if (confirm("Are you sure you want to exit? Your progress will be lost.")) {
         modal.remove();
@@ -733,7 +739,7 @@ export class StudentHandler {
         <div class="modal-content results-modal">
           <div class="modal-header">
             <h3>Quiz Results</h3>
-            <button class="close-modal">&times;</button>
+            <button class="close-modal" onclick="closeResultsAndQuiz()">&times;</button>
           </div>
           <div class="modal-body">
             <div class="results-summary">
@@ -787,19 +793,62 @@ export class StudentHandler {
     // Add modal to body
     document.body.insertAdjacentHTML('beforeend', resultsHTML);
 
-    // Setup modal event listeners
+    // Add global function for onclick
+    window.closeResultsAndQuiz = function() {
+      const resultsModal = document.getElementById("resultsModal");
+      const quizModal = document.getElementById("quizModal");
+      
+      if (resultsModal) {
+        resultsModal.remove();
+      }
+      if (quizModal) {
+        quizModal.remove();
+      }
+    };
+
+    // Setup modal event listeners with multiple fallback methods
     const modal = document.getElementById("resultsModal");
     const closeBtn = modal.querySelector(".close-modal");
 
-    closeBtn.addEventListener('click', () => {
+    // Function to close both results modal and quiz modal
+    const closeAllModals = () => {
+      // Close results modal
       modal.remove();
-    });
+      
+      // Also close the quiz modal if it exists
+      const quizModal = document.getElementById("quizModal");
+      if (quizModal) {
+        quizModal.remove();
+      }
+      
+      // Remove any escape key listeners
+      document.removeEventListener('keydown', handleEscape);
+    };
 
+    // Method 1: Direct onclick (already added in HTML)
+    // Method 2: Event listener
+    closeBtn.addEventListener('click', closeAllModals);
+
+    // Method 3: Click outside modal to close
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        modal.remove();
+        closeAllModals();
       }
     });
+
+    // Method 4: Escape key to close
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        closeAllModals();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // Method 5: Ensure modal is properly positioned and clickable
+    setTimeout(() => {
+      closeBtn.style.pointerEvents = 'auto';
+      closeBtn.style.cursor = 'pointer';
+    }, 100);
   }
 
   static async showQuizzesAndExams() {
@@ -1099,19 +1148,33 @@ export class StudentHandler {
     // Add modal to body
     document.body.insertAdjacentHTML('beforeend', syllabusHTML);
 
-    // Setup modal event listeners
+    // Setup modal event listeners with multiple fallback methods
     const modal = document.getElementById("syllabusModal");
     const closeBtn = modal.querySelector(".close-modal");
 
+    // Method 1: Direct onclick
+    closeBtn.onclick = () => modal.remove();
+    
+    // Method 2: Event listener
     closeBtn.addEventListener('click', () => {
       modal.remove();
     });
 
+    // Method 3: Click outside modal to close
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.remove();
       }
     });
+
+    // Method 4: Escape key to close
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        modal.remove();
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
   }
 
   // Utility methods
