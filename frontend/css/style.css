@@ -1956,23 +1956,39 @@ button:disabled {
 
 /* Status Badge Styles */
 .status-badge.enrolled {
-    background: #4CAF50;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
     color: white;
+    border-radius: 15px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: bold;
 }
 
 .status-badge.in-progress {
-    background: #FF9800;
+    background: linear-gradient(135deg, #FF9800, #f57c00);
     color: white;
+    border-radius: 15px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: bold;
 }
 
 .status-badge.completed {
-    background: #2196F3;
+    background: linear-gradient(135deg, #2196F3, #1976d2);
     color: white;
+    border-radius: 15px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: bold;
 }
 
 .status-badge.dropped {
-    background: #f44336;
+    background: linear-gradient(135deg, #f44336, #d32f2f);
     color: white;
+    border-radius: 15px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: bold;
 }
 
 .status-badge.draft {

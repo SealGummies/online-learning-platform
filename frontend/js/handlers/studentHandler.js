@@ -282,9 +282,9 @@ export class StudentHandler {
             <div class="course-info">
               <p class="course-description">${course.description}</p>
               <div class="course-meta">
-                <span class="category">${course.category}</span>
-                <span class="level">${course.level}</span>
-                <span class="instructor">Instructor: ${course.instructor?.firstName} ${course.instructor?.lastName}</span>
+                <span class="category">📂 ${course.category}</span>
+                <span class="level">📊 ${course.level}</span>
+                <span class="instructor">👨‍🏫 ${course.instructor?.firstName} ${course.instructor?.lastName}</span>
               </div>
               
               <div class="progress-section">
@@ -292,15 +292,15 @@ export class StudentHandler {
                   <div class="progress-fill" style="width: ${progress}%"></div>
                 </div>
                 <div class="progress-info">
-                  <span class="completion">${progress}% Complete</span>
-                  <span class="grade">Grade: ${grade}</span>
+                  <span class="completion">📈 ${progress}% Complete</span>
+                  <span class="grade">📝 Grade: ${grade}</span>
                 </div>
               </div>
             </div>
             
             <div class="course-actions">
-              <button class="btn-primary view-quizzes" data-course-id="${course._id}">View Quizzes</button>
-              <button class="btn-secondary view-syllabus" data-course-id="${course._id}">Syllabus</button>
+              <button class="btn-primary view-quizzes" data-course-id="${course._id}">📋 View Quizzes</button>
+              <button class="btn-secondary view-syllabus" data-course-id="${course._id}">📖 Syllabus</button>
             </div>
           </div>
         `;
@@ -1267,10 +1267,10 @@ export class StudentHandler {
   // Utility methods
   static formatStatus(status) {
     const statusMap = {
-      'enrolled': 'Enrolled',
-      'in-progress': 'In Progress',
-      'completed': 'Completed',
-      'dropped': 'Dropped'
+      'enrolled': '📚 Enrolled',
+      'in-progress': '⏳ Learning',
+      'completed': '✅ Completed',
+      'dropped': '❌ Dropped'
     };
     return statusMap[status] || status;
   }
