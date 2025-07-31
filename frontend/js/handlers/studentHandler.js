@@ -81,10 +81,97 @@ export class StudentHandler {
     // Back to dashboard button
     document.getElementById("backToStudentDashboard").addEventListener("click", () => {
       // Remove the current interface
-      document.getElementById("enrolledCoursesInterface").remove();
+      const enrolledInterface = document.getElementById("enrolledCoursesInterface");
+      if (enrolledInterface) {
+        enrolledInterface.remove();
+      }
       
-      // Restore original dashboard content
-      this.restoreOriginalDashboard();
+      // Clear the dashboard content
+      const dashboardContent = document.querySelector(".dashboard-content");
+      if (dashboardContent) {
+        // Restore the original dashboard structure
+        dashboardContent.innerHTML = `
+          <!-- Student Dashboard -->
+          <div id="studentDashboard" class="role-dashboard" style="display: none;">
+            <h2>Student Dashboard</h2>
+            <div class="dashboard-grid">
+              <div class="dashboard-card">
+                <h3>My Courses</h3>
+                <p>View your enrolled courses and progress</p>
+                <button class="btn-primary" data-action="view-courses">View Courses</button>
+              </div>
+              <div class="dashboard-card">
+                <h3>Quizzes & Exams</h3>
+                <p>Take quizzes and exams for your courses</p>
+                <button class="btn-primary" data-action="view-quizzes">View Quizzes</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instructor Dashboard -->
+          <div id="instructorDashboard" class="role-dashboard" style="display: none;">
+            <h2>Instructor Dashboard</h2>
+            <div class="dashboard-grid">
+              <div class="dashboard-card">
+                <h3>Course Management</h3>
+                <p>Create, edit and manage your courses</p>
+                <button class="btn-primary" data-action="manage-courses">Manage Courses</button>
+              </div>
+              <div class="dashboard-card">
+                <h3>Lesson Content</h3>
+                <p>Create and edit lesson materials</p>
+                <button class="btn-primary" data-action="manage-lessons">Manage Lessons</button>
+              </div>
+              <div class="dashboard-card">
+                <h3>Exams & Assessments</h3>
+                <p>Create and grade exams</p>
+                <button class="btn-primary" data-action="manage-exams">Manage Exams</button>
+              </div>
+              <div class="dashboard-card">
+                <h3>Analytics & Reports</h3>
+                <p>View course performance analytics</p>
+                <button class="btn-primary" data-action="view-analytics">View Analytics</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Admin Dashboard -->
+          <div id="adminDashboard" class="role-dashboard" style="display: none;">
+            <h2>Admin Dashboard</h2>
+            <div class="dashboard-grid">
+              <div class="dashboard-card">
+                <h3>User Management</h3>
+                <p>Manage users, roles and permissions</p>
+                <button class="btn-primary" data-action="manage-users">Manage Users</button>
+              </div>
+              <div class="dashboard-card">
+                <h3>Platform Analytics</h3>
+                <p>View system-wide performance metrics</p>
+                <button class="btn-primary" data-action="view-analytics">View Analytics</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Default Dashboard (for unknown roles) -->
+          <div id="defaultDashboard" class="role-dashboard">
+            <div class="development-notice">
+              <h2>Development in Progress</h2>
+              <p>Thank you for logging in! Our platform is currently under development.</p>
+              <p>More features will be available soon.</p>
+              
+              <div class="coming-soon">
+                <h3>Coming Soon:</h3>
+                <ul>
+                  <li>Course Catalog</li>
+                  <li>Interactive Lessons</li>
+                  <li>Progress Tracking</li>
+                  <li>Certificates</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        `;
+      }
       
       // Re-bind dashboard event listeners
       this.rebindDashboardEventListeners();
