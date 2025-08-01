@@ -16,6 +16,175 @@ const categories = [
     "Database",
     "Other",
 ];
+
+// Database questions for database-related courses
+const databaseQuestions = [
+    {
+        text: "What is the primary key in a database table?",
+        options: [
+            "A column that contains unique values for each row",
+            "A column that can contain duplicate values",
+            "A column that is always the first column",
+            "A column that stores only text data"
+        ],
+        correctAnswer: 0,
+        points: 2
+    },
+    {
+        text: "Which SQL command is used to retrieve data from a database?",
+        options: [
+            "INSERT",
+            "SELECT",
+            "UPDATE",
+            "DELETE"
+        ],
+        correctAnswer: 1,
+        points: 1
+    },
+    {
+        text: "What is normalization in database design?",
+        options: [
+            "A process to make databases faster",
+            "A process to organize data to reduce redundancy",
+            "A process to encrypt database data",
+            "A process to backup database data"
+        ],
+        correctAnswer: 1,
+        points: 3
+    },
+    {
+        text: "Which of the following is NOT a valid SQL data type?",
+        options: [
+            "VARCHAR",
+            "INTEGER",
+            "BOOLEAN",
+            "STRING"
+        ],
+        correctAnswer: 3,
+        points: 2
+    },
+    {
+        text: "What does ACID stand for in database transactions?",
+        options: [
+            "Atomicity, Consistency, Isolation, Durability",
+            "Access, Control, Integrity, Data",
+            "Authentication, Confidentiality, Integrity, Data",
+            "Application, Connection, Interface, Database"
+        ],
+        correctAnswer: 0,
+        points: 3
+    },
+    {
+        text: "Which SQL clause is used to filter results?",
+        options: [
+            "SELECT",
+            "FROM",
+            "WHERE",
+            "ORDER BY"
+        ],
+        correctAnswer: 2,
+        points: 1
+    },
+    {
+        text: "What is a foreign key?",
+        options: [
+            "A key that is always unique",
+            "A key that references a primary key in another table",
+            "A key that is used for encryption",
+            "A key that is automatically generated"
+        ],
+        correctAnswer: 1,
+        points: 2
+    },
+    {
+        text: "Which database model is most commonly used today?",
+        options: [
+            "Hierarchical",
+            "Network",
+            "Relational",
+            "Object-oriented"
+        ],
+        correctAnswer: 2,
+        points: 2
+    },
+    {
+        text: "What is the purpose of an INDEX in a database?",
+        options: [
+            "To store backup data",
+            "To improve query performance",
+            "To encrypt sensitive data",
+            "To validate data integrity"
+        ],
+        correctAnswer: 1,
+        points: 2
+    },
+    {
+        text: "Which SQL command is used to add new data to a table?",
+        options: [
+            "SELECT",
+            "INSERT",
+            "UPDATE",
+            "CREATE"
+        ],
+        correctAnswer: 1,
+        points: 1
+    },
+    {
+        text: "What is a database transaction?",
+        options: [
+            "A backup of the database",
+            "A logical unit of work that must be completed entirely or not at all",
+            "A connection to the database",
+            "A query that returns data"
+        ],
+        correctAnswer: 1,
+        points: 3
+    },
+    {
+        text: "Which of the following is a valid SQL aggregate function?",
+        options: [
+            "COUNT",
+            "FIND",
+            "LOCATE",
+            "SEARCH"
+        ],
+        correctAnswer: 0,
+        points: 1
+    },
+    {
+        text: "What is the difference between DELETE and TRUNCATE?",
+        options: [
+            "DELETE removes all rows, TRUNCATE removes specific rows",
+            "DELETE can be rolled back, TRUNCATE cannot be rolled back",
+            "DELETE is faster than TRUNCATE",
+            "There is no difference"
+        ],
+        correctAnswer: 1,
+        points: 3
+    },
+    {
+        text: "Which SQL keyword is used to sort results?",
+        options: [
+            "SORT",
+            "ORDER BY",
+            "ARRANGE",
+            "ORGANIZE"
+        ],
+        correctAnswer: 1,
+        points: 1
+    },
+    {
+        text: "What is a database view?",
+        options: [
+            "A physical copy of a table",
+            "A virtual table based on a SQL query",
+            "A backup of the database",
+            "A connection to the database"
+        ],
+        correctAnswer: 1,
+        points: 2
+    }
+];
 const levels = ["Beginner", "Intermediate", "Advanced"];
 const lessonTypes = ["video", "text", "quiz", "assignment"];
 const examTypes = ["quiz", "midterm", "final", "assignment"];
@@ -110,18 +279,30 @@ const seedDatabase = async () => {
             const questions = [];
             const numQuestions = Math.floor(Math.random() * 3) + 3; // 3-5 questions
             
-            for (let j = 0; j < numQuestions; j++) {
-                questions.push({
-                    text: `Question ${j + 1} for exam ${i + 1}`,
-                    options: [
-                        `Option A for question ${j + 1}`,
-                        `Option B for question ${j + 1}`,
-                        `Option C for question ${j + 1}`,
-                        `Option D for question ${j + 1}`
-                    ],
-                    correctAnswer: Math.floor(Math.random() * 4), // Random correct answer
-                    points: Math.floor(Math.random() * 3) + 1 // 1-3 points per question
-                });
+            // Check if this is a database course
+            const isDatabaseCourse = course.category === "Database";
+            
+            if (isDatabaseCourse) {
+                // Use database-specific questions
+                const shuffledQuestions = [...databaseQuestions].sort(() => Math.random() - 0.5);
+                for (let j = 0; j < numQuestions && j < shuffledQuestions.length; j++) {
+                    questions.push(shuffledQuestions[j]);
+                }
+            } else {
+                // Use generic questions for other courses
+                for (let j = 0; j < numQuestions; j++) {
+                    questions.push({
+                        text: `Question ${j + 1} for exam ${i + 1}`,
+                        options: [
+                            `Option A for question ${j + 1}`,
+                            `Option B for question ${j + 1}`,
+                            `Option C for question ${j + 1}`,
+                            `Option D for question ${j + 1}`
+                        ],
+                        correctAnswer: Math.floor(Math.random() * 4), // Random correct answer
+                        points: Math.floor(Math.random() * 3) + 1 // 1-3 points per question
+                    });
+                }
             }
             
             exams.push({

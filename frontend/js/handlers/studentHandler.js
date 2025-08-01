@@ -81,10 +81,97 @@ export class StudentHandler {
     // Back to dashboard button
     document.getElementById("backToStudentDashboard").addEventListener("click", () => {
       // Remove the current interface
-      document.getElementById("enrolledCoursesInterface").remove();
+      const enrolledInterface = document.getElementById("enrolledCoursesInterface");
+      if (enrolledInterface) {
+        enrolledInterface.remove();
+      }
       
-      // Restore original dashboard content
-      this.restoreOriginalDashboard();
+      // Clear the dashboard content
+      const dashboardContent = document.querySelector(".dashboard-content");
+      if (dashboardContent) {
+        // Restore the original dashboard structure
+        dashboardContent.innerHTML = `
+          <!-- Student Dashboard -->
+          <div id="studentDashboard" class="role-dashboard" style="display: none;">
+            <h2>Student Dashboard</h2>
+            <div class="dashboard-grid">
+              <div class="dashboard-card">
+                <h3>My Courses</h3>
+                <p>View your enrolled courses and progress</p>
+                <button class="btn-primary" data-action="view-courses">View Courses</button>
+              </div>
+              <div class="dashboard-card">
+                <h3>Quizzes & Exams</h3>
+                <p>Take quizzes and exams for your courses</p>
+                <button class="btn-primary" data-action="view-quizzes">View Quizzes</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instructor Dashboard -->
+          <div id="instructorDashboard" class="role-dashboard" style="display: none;">
+            <h2>Instructor Dashboard</h2>
+            <div class="dashboard-grid">
+              <div class="dashboard-card">
+                <h3>Course Management</h3>
+                <p>Create, edit and manage your courses</p>
+                <button class="btn-primary" data-action="manage-courses">Manage Courses</button>
+              </div>
+              <div class="dashboard-card">
+                <h3>Lesson Content</h3>
+                <p>Create and edit lesson materials</p>
+                <button class="btn-primary" data-action="manage-lessons">Manage Lessons</button>
+              </div>
+              <div class="dashboard-card">
+                <h3>Exams & Assessments</h3>
+                <p>Create and grade exams</p>
+                <button class="btn-primary" data-action="manage-exams">Manage Exams</button>
+              </div>
+              <div class="dashboard-card">
+                <h3>Analytics & Reports</h3>
+                <p>View course performance analytics</p>
+                <button class="btn-primary" data-action="view-analytics">View Analytics</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Admin Dashboard -->
+          <div id="adminDashboard" class="role-dashboard" style="display: none;">
+            <h2>Admin Dashboard</h2>
+            <div class="dashboard-grid">
+              <div class="dashboard-card">
+                <h3>User Management</h3>
+                <p>Manage users, roles and permissions</p>
+                <button class="btn-primary" data-action="manage-users">Manage Users</button>
+              </div>
+              <div class="dashboard-card">
+                <h3>Platform Analytics</h3>
+                <p>View system-wide performance metrics</p>
+                <button class="btn-primary" data-action="view-analytics">View Analytics</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Default Dashboard (for unknown roles) -->
+          <div id="defaultDashboard" class="role-dashboard">
+            <div class="development-notice">
+              <h2>Development in Progress</h2>
+              <p>Thank you for logging in! Our platform is currently under development.</p>
+              <p>More features will be available soon.</p>
+              
+              <div class="coming-soon">
+                <h3>Coming Soon:</h3>
+                <ul>
+                  <li>Course Catalog</li>
+                  <li>Interactive Lessons</li>
+                  <li>Progress Tracking</li>
+                  <li>Certificates</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        `;
+      }
       
       // Re-bind dashboard event listeners
       this.rebindDashboardEventListeners();
@@ -195,9 +282,9 @@ export class StudentHandler {
             <div class="course-info">
               <p class="course-description">${course.description}</p>
               <div class="course-meta">
-                <span class="category">${course.category}</span>
-                <span class="level">${course.level}</span>
-                <span class="instructor">Instructor: ${course.instructor?.firstName} ${course.instructor?.lastName}</span>
+                <span class="category">📂 ${course.category}</span>
+                <span class="level">📊 ${course.level}</span>
+                <span class="instructor">👨‍🏫 ${course.instructor?.firstName} ${course.instructor?.lastName}</span>
               </div>
               
               <div class="progress-section">
@@ -205,15 +292,15 @@ export class StudentHandler {
                   <div class="progress-fill" style="width: ${progress}%"></div>
                 </div>
                 <div class="progress-info">
-                  <span class="completion">${progress}% Complete</span>
-                  <span class="grade">Grade: ${grade}</span>
+                  <span class="completion">📈 ${progress}% Complete</span>
+                  <span class="grade">📝 Grade: ${grade}</span>
                 </div>
               </div>
             </div>
             
             <div class="course-actions">
-              <button class="btn-primary view-quizzes" data-course-id="${course._id}">View Quizzes</button>
-              <button class="btn-secondary view-syllabus" data-course-id="${course._id}">Syllabus</button>
+              <button class="btn-primary view-quizzes" data-course-id="${course._id}">📋 View Quizzes</button>
+              <button class="btn-secondary view-syllabus" data-course-id="${course._id}">📖 Syllabus</button>
             </div>
           </div>
         `;
@@ -566,7 +653,13 @@ export class StudentHandler {
     const submitBtn = document.getElementById("submitQuiz");
     const saveBtn = document.getElementById("saveProgress");
 
-    // Close button
+    // Close button with multiple fallback methods
+    closeBtn.onclick = () => {
+      if (confirm("Are you sure you want to exit? Your progress will be lost.")) {
+        modal.remove();
+      }
+    };
+    
     closeBtn.addEventListener('click', () => {
       if (confirm("Are you sure you want to exit? Your progress will be lost.")) {
         modal.remove();
@@ -733,7 +826,7 @@ export class StudentHandler {
         <div class="modal-content results-modal">
           <div class="modal-header">
             <h3>Quiz Results</h3>
-            <button class="close-modal">&times;</button>
+            <button class="close-modal" onclick="closeResultsAndQuiz()">&times;</button>
           </div>
           <div class="modal-body">
             <div class="results-summary">
@@ -787,19 +880,62 @@ export class StudentHandler {
     // Add modal to body
     document.body.insertAdjacentHTML('beforeend', resultsHTML);
 
-    // Setup modal event listeners
+    // Add global function for onclick
+    window.closeResultsAndQuiz = function() {
+      const resultsModal = document.getElementById("resultsModal");
+      const quizModal = document.getElementById("quizModal");
+      
+      if (resultsModal) {
+        resultsModal.remove();
+      }
+      if (quizModal) {
+        quizModal.remove();
+      }
+    };
+
+    // Setup modal event listeners with multiple fallback methods
     const modal = document.getElementById("resultsModal");
     const closeBtn = modal.querySelector(".close-modal");
 
-    closeBtn.addEventListener('click', () => {
+    // Function to close both results modal and quiz modal
+    const closeAllModals = () => {
+      // Close results modal
       modal.remove();
-    });
+      
+      // Also close the quiz modal if it exists
+      const quizModal = document.getElementById("quizModal");
+      if (quizModal) {
+        quizModal.remove();
+      }
+      
+      // Remove any escape key listeners
+      document.removeEventListener('keydown', handleEscape);
+    };
 
+    // Method 1: Direct onclick (already added in HTML)
+    // Method 2: Event listener
+    closeBtn.addEventListener('click', closeAllModals);
+
+    // Method 3: Click outside modal to close
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        modal.remove();
+        closeAllModals();
       }
     });
+
+    // Method 4: Escape key to close
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        closeAllModals();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // Method 5: Ensure modal is properly positioned and clickable
+    setTimeout(() => {
+      closeBtn.style.pointerEvents = 'auto';
+      closeBtn.style.cursor = 'pointer';
+    }, 100);
   }
 
   static async showQuizzesAndExams() {
@@ -1099,28 +1235,42 @@ export class StudentHandler {
     // Add modal to body
     document.body.insertAdjacentHTML('beforeend', syllabusHTML);
 
-    // Setup modal event listeners
+    // Setup modal event listeners with multiple fallback methods
     const modal = document.getElementById("syllabusModal");
     const closeBtn = modal.querySelector(".close-modal");
 
+    // Method 1: Direct onclick
+    closeBtn.onclick = () => modal.remove();
+    
+    // Method 2: Event listener
     closeBtn.addEventListener('click', () => {
       modal.remove();
     });
 
+    // Method 3: Click outside modal to close
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.remove();
       }
     });
+
+    // Method 4: Escape key to close
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        modal.remove();
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
   }
 
   // Utility methods
   static formatStatus(status) {
     const statusMap = {
-      'enrolled': 'Enrolled',
-      'in-progress': 'In Progress',
-      'completed': 'Completed',
-      'dropped': 'Dropped'
+      'enrolled': '📚 Enrolled',
+      'in-progress': '⏳ Learning',
+      'completed': '✅ Completed',
+      'dropped': '❌ Dropped'
     };
     return statusMap[status] || status;
   }
