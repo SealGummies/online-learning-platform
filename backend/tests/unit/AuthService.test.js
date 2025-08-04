@@ -4,16 +4,14 @@ const AuthService = require("../../services/AuthService");
 const User = require("../../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const PasswordConfig = require("../../config/passwordConfig");
 
 describe("AuthService Unit Tests", () => {
   let testUser;
 
   beforeAll(async () => {
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(
-        process.env.MONGODB_URI ||
-          "mongodb://localhost:27017/online-learning-test"
-      );
+      await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/online-learning-test");
     }
   });
 
@@ -67,9 +65,7 @@ describe("AuthService Unit Tests", () => {
       await AuthService.registerUser(userData);
 
       // Try to create duplicate
-      await expect(AuthService.registerUser(userData)).rejects.toThrow(
-        "Email already registered"
-      );
+      await expect(AuthService.registerUser(userData)).rejects.toThrow("Email already registered");
 
       // Cleanup
       await User.findOneAndDelete({ email: userData.email });
@@ -89,9 +85,7 @@ describe("AuthService Unit Tests", () => {
 
       const dbUser = await User.findById(result.user._id);
       expect(dbUser.password).not.toBe(userData.password);
-      expect(await bcrypt.compare(userData.password, dbUser.password)).toBe(
-        true
-      );
+      expect(await PasswordConfig.comparePassword(userData.password, dbUser.password)).toBe(true);
     });
   });
 
@@ -110,10 +104,7 @@ describe("AuthService Unit Tests", () => {
     });
 
     test("should login with valid credentials", async () => {
-      const result = await AuthService.loginUser(
-        "test.login@example.com",
-        "testpassword123"
-      );
+      const result = await AuthService.loginUser("test.login@example.com", "testpassword123");
 
       expect(result.success).toBe(true);
       expect(result.user.email).toBe("test.login@example.com");
@@ -122,24 +113,24 @@ describe("AuthService Unit Tests", () => {
     });
 
     test("should throw error for invalid email", async () => {
-      await expect(
-        AuthService.loginUser("nonexistent@example.com", "testpassword123")
-      ).rejects.toThrow("Invalid credentials");
+      await expect(AuthService.loginUser("nonexistent@example.com", "testpassword123")).rejects.toThrow(
+        "Invalid credentials"
+      );
     });
 
     test("should throw error for invalid password", async () => {
-      await expect(
-        AuthService.loginUser("test.login@example.com", "wrongpassword")
-      ).rejects.toThrow("Invalid credentials");
+      await expect(AuthService.loginUser("test.login@example.com", "wrongpassword")).rejects.toThrow(
+        "Invalid credentials"
+      );
     });
 
     test("should throw error for inactive user", async () => {
       // Deactivate user
       await User.findByIdAndUpdate(testUser._id, { isActive: false });
 
-      await expect(
-        AuthService.loginUser("test.login@example.com", "testpassword123")
-      ).rejects.toThrow("Account is deactivated");
+      await expect(AuthService.loginUser("test.login@example.com", "testpassword123")).rejects.toThrow(
+        "Account is deactivated"
+      );
     });
   });
 
@@ -157,38 +148,27 @@ describe("AuthService Unit Tests", () => {
     });
 
     test("should change password successfully", async () => {
-      const result = await AuthService.changePassword(
-        testUser._id,
-        "oldpassword123",
-        "newpassword123"
-      );
+      const result = await AuthService.changePassword(testUser._id, "oldpassword123", "newpassword123");
 
       expect(result.success).toBe(true);
       expect(result.message).toBe("Password updated successfully");
 
       // Verify new password works
-      const loginResult = await AuthService.loginUser(
-        testUser.email,
-        "newpassword123"
-      );
+      const loginResult = await AuthService.loginUser(testUser.email, "newpassword123");
       expect(loginResult.success).toBe(true);
     });
 
     test("should throw error for incorrect current password", async () => {
-      await expect(
-        AuthService.changePassword(
-          testUser._id,
-          "wrongpassword",
-          "newpassword123"
-        )
-      ).rejects.toThrow("Current password is incorrect");
+      await expect(AuthService.changePassword(testUser._id, "wrongpassword", "newpassword123")).rejects.toThrow(
+        "Current password is incorrect"
+      );
     });
 
     test("should throw error for non-existent user", async () => {
       const fakeId = new mongoose.Types.ObjectId();
-      await expect(
-        AuthService.changePassword(fakeId, "oldpassword123", "newpassword123")
-      ).rejects.toThrow("User not found");
+      await expect(AuthService.changePassword(fakeId, "oldpassword123", "newpassword123")).rejects.toThrow(
+        "User not found"
+      );
     });
   });
 
@@ -218,7 +198,7 @@ describe("AuthService Unit Tests", () => {
 
       expect(hashedPassword).not.toBe(password);
       expect(hashedPassword).toMatch(/^\$2[ab]\$\d+\$.{53}$/); // bcrypt format
-      expect(await bcrypt.compare(password, hashedPassword)).toBe(true);
+      expect(await PasswordConfig.comparePassword(password, hashedPassword)).toBe(true);
     });
 
     test("should generate different hashes for same password", async () => {
@@ -227,8 +207,8 @@ describe("AuthService Unit Tests", () => {
       const hash2 = await AuthService.hashPassword(password);
 
       expect(hash1).not.toBe(hash2);
-      expect(await bcrypt.compare(password, hash1)).toBe(true);
-      expect(await bcrypt.compare(password, hash2)).toBe(true);
+      expect(await PasswordConfig.comparePassword(password, hash1)).toBe(true);
+      expect(await PasswordConfig.comparePassword(password, hash2)).toBe(true);
     });
   });
 
@@ -237,10 +217,7 @@ describe("AuthService Unit Tests", () => {
       const password = "testpassword123";
       const hashedPassword = await AuthService.hashPassword(password);
 
-      const isValid = await AuthService.validatePassword(
-        password,
-        hashedPassword
-      );
+      const isValid = await AuthService.validatePassword(password, hashedPassword);
       expect(isValid).toBe(true);
     });
 
@@ -248,10 +225,7 @@ describe("AuthService Unit Tests", () => {
       const password = "testpassword123";
       const hashedPassword = await AuthService.hashPassword(password);
 
-      const isValid = await AuthService.validatePassword(
-        "wrongpassword",
-        hashedPassword
-      );
+      const isValid = await AuthService.validatePassword("wrongpassword", hashedPassword);
       expect(isValid).toBe(false);
     });
   });

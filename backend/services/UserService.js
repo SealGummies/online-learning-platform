@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Enrollment = require("../models/Enrollment");
 const Course = require("../models/Course");
 const TransactionService = require("./TransactionService");
+const PasswordConfig = require("../config/passwordConfig");
 
 class UserService {
   /**
@@ -23,9 +24,8 @@ class UserService {
         throw new Error("Password must be at least 6 characters long");
       }
 
-      // Hash password
-      const salt = await bcrypt.genSalt(12);
-      const hashedPassword = await bcrypt.hash(password, salt);
+      // Hash password using centralized configuration
+      const hashedPassword = await PasswordConfig.hashPassword(password);
 
       // Create user
       const user = new User({
@@ -70,11 +70,7 @@ class UserService {
     }
 
     // Get users with pagination
-    const users = await User.find(query)
-      .select("-password")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const users = await User.find(query).select("-password").sort({ createdAt: -1 }).skip(skip).limit(limit);
 
     // Get total count for pagination
     const total = await User.countDocuments(query);
@@ -106,12 +102,7 @@ class UserService {
    */
   static async updateUser(userId, updateData) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const allowedUpdates = [
-        "firstName",
-        "lastName",
-        "role",
-        "isActive",
-      ];
+      const allowedUpdates = ["firstName", "lastName", "role", "isActive"];
 
       // Filter out non-allowed updates
       const filteredData = {};
@@ -130,10 +121,7 @@ class UserService {
       }
 
       // Validate role
-      if (
-        filteredData.role &&
-        !["student", "instructor", "admin"].includes(filteredData.role)
-      ) {
+      if (filteredData.role && !["student", "instructor", "admin"].includes(filteredData.role)) {
         throw new Error("Invalid role specified");
       }
 
@@ -172,9 +160,7 @@ class UserService {
       }).session(session);
 
       if (activeEnrollments > 0) {
-        throw new Error(
-          "Cannot delete user with active enrollments. Please complete or withdraw from courses first."
-        );
+        throw new Error("Cannot delete user with active enrollments. Please complete or withdraw from courses first.");
       }
 
       // Check if user is an instructor with active courses
@@ -185,9 +171,7 @@ class UserService {
         }).session(session);
 
         if (activeCourses > 0) {
-          throw new Error(
-            "Cannot delete instructor with active courses. Please archive courses first."
-          );
+          throw new Error("Cannot delete instructor with active courses. Please archive courses first.");
         }
       }
 
@@ -201,6 +185,76 @@ class UserService {
   }
 
   /**
+   * Get student statistics
+   */
+  static async getStudentStats(userId) {
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (user.role !== "student") {
+      throw new Error("User is not a student");
+    }
+
+    // Get enrollment statistics (use aggregation for performance)
+    const statsAgg = await Enrollment.aggregate([
+      { $match: { student: user._id } },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+          avgCompletion: { $avg: "$completionPercentage" },
+        },
+      },
+    ]);
+
+    let totalEnrollments = 0,
+      completedCourses = 0,
+      inProgressCourses = 0,
+      avgCompletion = 0;
+    statsAgg.forEach((s) => {
+      totalEnrollments += s.count;
+      if (s._id === "completed") completedCourses = s.count;
+      if (s._id === "in-progress" || s._id === "enrolled") inProgressCourses += s.count;
+      avgCompletion += (s.avgCompletion || 0) * s.count;
+    });
+    avgCompletion = totalEnrollments > 0 ? Math.round(avgCompletion / totalEnrollments) : 0;
+
+    return {
+      totalEnrollments,
+      inProgressCourses,
+      completedCourses,
+      averageCompletion: avgCompletion,
+    };
+  }
+
+  /**
+   * Get instructor statistics
+   */
+  static async getInstructorStats(userId) {
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (user.role !== "instructor") {
+      throw new Error("User is not an instructor");
+    }
+
+    // Get course statistics
+    const courses = await Course.find({ instructor: userId });
+    const activeCourses = courses.filter((c) => c.isActive).length;
+    const totalEnrollments = await Enrollment.countDocuments({
+      course: { $in: courses.map((c) => c._id) },
+    });
+
+    return {
+      totalCourses: courses.length,
+      activeCourses,
+      totalStudents: totalEnrollments,
+    };
+  }
+
+  /**
    * Get user statistics
    */
   static async getUserStats(userId) {
@@ -209,53 +263,19 @@ class UserService {
       throw new Error("User not found");
     }
 
-    const stats = {};
+    const stats = {
+      general: {
+        joinDate: user.createdAt,
+        lastLogin: user.lastLogin,
+        isActive: user.isActive,
+      },
+    };
 
     if (user.role === "student") {
-      // Get enrollment statistics (use aggregation for performance)
-      const statsAgg = await Enrollment.aggregate([
-        { $match: { student: user._id } },
-        {
-          $group: {
-            _id: "$status",
-            count: { $sum: 1 },
-            avgCompletion: { $avg: "$completionPercentage" },
-          },
-        },
-      ]);
-      let totalEnrollments = 0, completedCourses = 0, inProgressCourses = 0, avgCompletion = 0;
-      statsAgg.forEach((s) => {
-        totalEnrollments += s.count;
-        if (s._id === "completed") completedCourses = s.count;
-        if (s._id === "in-progress" || s._id === "enrolled") inProgressCourses += s.count;
-        avgCompletion += (s.avgCompletion || 0) * s.count;
-      });
-      avgCompletion = totalEnrollments > 0 ? Math.round(avgCompletion / totalEnrollments) : 0;
-      stats.student = {
-        totalEnrollments,
-        inProgressCourses,
-        completedCourses,
-        averageCompletion: avgCompletion,
-      };
+      stats.student = await this.getStudentStats(userId);
     } else if (user.role === "instructor") {
-      // Get course statistics
-      const courses = await Course.find({ instructor: userId });
-      const activeCourses = courses.filter((c) => c.isActive).length;
-      const totalEnrollments = await Enrollment.countDocuments({
-        course: { $in: courses.map((c) => c._id) },
-      });
-      stats.instructor = {
-        totalCourses: courses.length,
-        activeCourses,
-        totalStudents: totalEnrollments,
-      };
+      stats.instructor = await this.getInstructorStats(userId);
     }
-
-    stats.general = {
-      joinDate: user.createdAt,
-      lastLogin: user.lastLogin,
-      isActive: user.isActive,
-    };
 
     return stats;
   }
@@ -265,11 +285,7 @@ class UserService {
    */
   static async updateUserStatus(userId, isActive) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const user = await User.findByIdAndUpdate(
-        userId,
-        { isActive },
-        { new: true, session }
-      ).select("-password");
+      const user = await User.findByIdAndUpdate(userId, { isActive }, { new: true, session }).select("-password");
 
       if (!user) {
         throw new Error("User not found");
@@ -314,9 +330,7 @@ class UserService {
       ];
     }
 
-    const instructors = await User.find(query)
-      .select("-password")
-      .sort({ createdAt: -1 });
+    const instructors = await User.find(query).select("-password").sort({ createdAt: -1 });
 
     return instructors;
   }
@@ -339,9 +353,7 @@ class UserService {
       ];
     }
 
-    const students = await User.find(query)
-      .select("-password")
-      .sort({ createdAt: -1 });
+    const students = await User.find(query).select("-password").sort({ createdAt: -1 });
 
     return students;
   }
@@ -368,9 +380,7 @@ class UserService {
         .limit(5);
     } else if (user.role === "instructor") {
       // Get recent courses
-      dashboard.recentCourses = await Course.find({ instructor: userId })
-        .sort({ createdAt: -1 })
-        .limit(5);
+      dashboard.recentCourses = await Course.find({ instructor: userId }).sort({ createdAt: -1 }).limit(5);
     }
 
     return dashboard;

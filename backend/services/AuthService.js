@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../models/User");
 const TransactionService = require("./TransactionService");
+const PasswordConfig = require("../config/passwordConfig");
 
 class AuthService {
   /**
@@ -28,13 +29,7 @@ class AuthService {
    */
   static async register(userData) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const {
-        firstName,
-        lastName,
-        email,
-        password,
-        role = "student",
-      } = userData;
+      const { firstName, lastName, email, password, role = "student" } = userData;
 
       // Check if user already exists
       const existingUser = await User.findOne({ email }).session(session);
@@ -47,9 +42,8 @@ class AuthService {
         throw new Error("Password must be at least 6 characters long");
       }
 
-      // Hash password
-      const salt = await bcrypt.genSalt(12);
-      const hashedPassword = await bcrypt.hash(password, salt);
+      // Hash password using centralized configuration
+      const hashedPassword = await PasswordConfig.hashPassword(password);
 
       // Create user
       const user = new User({
@@ -100,7 +94,7 @@ class AuthService {
     }
 
     // Validate password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await PasswordConfig.comparePassword(password, user.password);
     if (!isPasswordValid) {
       throw new Error("Invalid credentials");
     }
@@ -143,10 +137,7 @@ class AuthService {
    */
   static async updateProfile(userId, updateData) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const allowedUpdates = [
-        "firstName",
-        "lastName",
-      ];
+      const allowedUpdates = ["firstName", "lastName"];
       // Filter out non-allowed updates
       const filteredData = {};
       Object.keys(updateData).forEach((key) => {
@@ -200,18 +191,13 @@ class AuthService {
 
     return await TransactionService.executeWithTransaction(async (session) => {
       // Find user with password
-      const user = await User.findById(userId)
-        .select("+password")
-        .session(session);
+      const user = await User.findById(userId).select("+password").session(session);
       if (!user) {
         throw new Error("User not found");
       }
 
       // Verify current password
-      const isCurrentPasswordValid = await bcrypt.compare(
-        currentPassword,
-        user.password
-      );
+      const isCurrentPasswordValid = await PasswordConfig.comparePassword(currentPassword, user.password);
       if (!isCurrentPasswordValid) {
         throw new Error("Current password is incorrect");
       }
@@ -226,8 +212,7 @@ class AuthService {
       }
 
       // Hash new password
-      const salt = await bcrypt.genSalt(12);
-      const hashedPassword = await bcrypt.hash(newPass, salt);
+      const hashedPassword = await PasswordConfig.hashPassword(newPass);
 
       // Update password
       user.password = hashedPassword;
@@ -252,17 +237,13 @@ class AuthService {
       if (!user) {
         // Don't reveal if email exists or not for security
         return {
-          message:
-            "If an account with that email exists, reset instructions have been sent",
+          message: "If an account with that email exists, reset instructions have been sent",
         };
       }
 
       // Generate reset token
       const resetToken = crypto.randomBytes(32).toString("hex");
-      const resetTokenHash = crypto
-        .createHash("sha256")
-        .update(resetToken)
-        .digest("hex");
+      const resetTokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
 
       // Set reset token and expiry
       user.resetPasswordToken = resetTokenHash;
@@ -273,9 +254,7 @@ class AuthService {
       // TODO: Send email with reset token
       // For now, we'll just log it (in production, integrate with email service)
       console.log("Password reset token:", resetToken);
-      console.log(
-        "Reset URL: http://localhost:3000/reset-password/" + resetToken
-      );
+      console.log("Reset URL: http://localhost:3000/reset-password/" + resetToken);
 
       return { message: "Password reset instructions sent to email" };
     });
@@ -287,10 +266,7 @@ class AuthService {
   static async resetPassword(token, newPassword) {
     return await TransactionService.executeWithTransaction(async (session) => {
       // Hash the token to compare with stored hash
-      const resetTokenHash = crypto
-        .createHash("sha256")
-        .update(token)
-        .digest("hex");
+      const resetTokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
       // Find user with valid reset token
       const user = await User.findOne({
@@ -308,8 +284,7 @@ class AuthService {
       }
 
       // Hash new password
-      const salt = await bcrypt.genSalt(12);
-      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      const hashedPassword = await PasswordConfig.hashPassword(newPassword);
 
       // Update password and clear reset token
       user.password = hashedPassword;
@@ -353,15 +328,14 @@ class AuthService {
    * Hash password using bcrypt
    */
   static async hashPassword(password) {
-    const salt = await bcrypt.genSalt(12);
-    return await bcrypt.hash(password, salt);
+    return await PasswordConfig.hashPassword(password);
   }
 
   /**
    * Validate password against hash
    */
   static async validatePassword(password, hashedPassword) {
-    return await bcrypt.compare(password, hashedPassword);
+    return await PasswordConfig.comparePassword(password, hashedPassword);
   }
 
   /**
