@@ -4,6 +4,7 @@ const Enrollment = require("../models/Enrollment");
 const Course = require("../models/Course");
 const TransactionService = require("./TransactionService");
 const PasswordConfig = require("../config/passwordConfig");
+const PopulateConfig = require("../config/populateConfig");
 
 class UserService {
   /**
@@ -297,7 +298,7 @@ class UserService {
     }
 
     const enrollments = await Enrollment.find(query)
-      .populate("course", "title category level instructor")
+      .populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor")
       .sort({ enrollmentDate: -1 });
 
     return enrollments;
@@ -366,7 +367,7 @@ class UserService {
     if (user.role === "student") {
       // Get recent enrollments
       dashboard.recentEnrollments = await Enrollment.find({ student: userId })
-        .populate("course", "title category level instructor")
+        .populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor")
         .sort({ enrollmentDate: -1 })
         .limit(5);
     } else if (user.role === "instructor") {

@@ -3,6 +3,7 @@ const Exam = require("../models/Exam");
 const Course = require("../models/Course");
 const Enrollment = require("../models/Enrollment");
 const TransactionService = require("./TransactionService");
+const PopulateConfig = require("../config/populateConfig");
 
 class ExamService {
   /**
@@ -32,14 +33,14 @@ class ExamService {
         course: courseId, 
         isPublished: true,
         isActive: true 
-      }).populate("course", "title instructor");
+      }).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
     } else if (userRole === "instructor") {
       if (course.instructor.toString() !== userId) {
         throw new Error("Access denied. You can only view exams for your own courses.");
       }
-      return await Exam.find({ course: courseId }).populate("course", "title instructor");
+      return await Exam.find({ course: courseId }).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
     } else if (userRole === "admin") {
-      return await Exam.find({ course: courseId }).populate("course", "title instructor");
+      return await Exam.find({ course: courseId }).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
     }
     throw new Error("Access denied");
   }
@@ -52,7 +53,7 @@ class ExamService {
     const enrollments = await Enrollment.find({
       student: userId,
       status: { $in: ["enrolled", "in-progress", "completed"] },
-    }).populate("course");
+    }).populate("course", PopulateConfig.helpers.getCourseFields('basic'));
 
     const courseIds = enrollments.map(enrollment => enrollment.course._id);
     
@@ -61,14 +62,14 @@ class ExamService {
       course: { $in: courseIds },
       isPublished: true,
       isActive: true
-    }).populate("course", "title instructor");
+    }).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
   }
 
   /**
    * Get exam by ID
    */
   static async getExamById(examId, userId, userRole) {
-    const exam = await Exam.findById(examId).populate("course", "title instructor");
+    const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
     if (!exam) {
       throw new Error("Exam not found");
     }
@@ -102,7 +103,7 @@ class ExamService {
    */
   static async submitExam(examId, answers, userId) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const exam = await Exam.findById(examId).populate("course").session(session);
+      const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic')).session(session);
       if (!exam) {
         throw new Error("Exam not found");
       }
@@ -179,7 +180,7 @@ class ExamService {
    * Get exam results for a student
    */
   static async getExamResults(examId, userId) {
-    const exam = await Exam.findById(examId).populate("course");
+    const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic'));
     if (!exam) {
       throw new Error("Exam not found");
     }
@@ -215,7 +216,7 @@ class ExamService {
     const enrollments = await Enrollment.find({
       student: userId,
       status: { $in: ["enrolled", "in-progress"] },
-    }).populate("course");
+    }).populate("course", PopulateConfig.helpers.getCourseFields('basic'));
 
     const courseIds = enrollments.map(enrollment => enrollment.course._id);
     
@@ -223,7 +224,7 @@ class ExamService {
     const exams = await Exam.find({
       course: { $in: courseIds },
       isPublished: true
-    }).populate("course", "title instructor");
+    }).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
 
     // For now, return mock results
     // In a real implementation, you'd fetch from ExamResult collection
@@ -292,7 +293,7 @@ class ExamService {
    */
   static async updateExam(examId, updateData, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const exam = await Exam.findById(examId).populate("course").session(session);
+      const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor").session(session);
       if (!exam) {
         throw new Error("Exam not found");
       }
@@ -321,7 +322,7 @@ class ExamService {
    */
   static async deleteExam(examId, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const exam = await Exam.findById(examId).populate("course").session(session);
+      const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor").session(session);
       if (!exam) {
         throw new Error("Exam not found");
       }
@@ -337,7 +338,7 @@ class ExamService {
    * Get exam statistics
    */
   static async getExamStats(examId, instructorId) {
-    const exam = await Exam.findById(examId).populate("course");
+    const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
     if (!exam) {
       throw new Error("Exam not found");
     }

@@ -1,6 +1,7 @@
 const Course = require("../models/Course");
 const Enrollment = require("../models/Enrollment");
 const TransactionService = require("./TransactionService");
+const PopulateConfig = require("../config/populateConfig");
 const mongoose = require("mongoose");
 
 /**
@@ -28,7 +29,7 @@ class CourseService {
     const sort = { [sortBy]: sortOrder === "desc" ? -1 : 1 };
 
     const [courses, total] = await Promise.all([
-      Course.find(query).sort(sort).populate("instructor", "firstName lastName email").lean(),
+      Course.find(query).sort(sort).populate("instructor", PopulateConfig.helpers.getInstructorFields('public')).lean(),
       Course.countDocuments(query),
     ]);
 
@@ -45,7 +46,9 @@ class CourseService {
    * @returns {Promise<Object>} Course with additional info
    */
   static async getCourseById(courseId, userId = null) {
-    const course = await Course.findById(courseId).populate("instructor", "firstName lastName email").lean();
+    const course = await Course.findById(courseId)
+      .populate("instructor", PopulateConfig.helpers.getInstructorFields('student'))
+      .lean();
 
     if (!course) {
       throw new Error("Course not found");
@@ -95,8 +98,8 @@ class CourseService {
       });
       await enrollment.save({ session });
       await enrollment.populate([
-        { path: "course", select: "title category level" },
-        { path: "student", select: "firstName lastName email" },
+        { path: "course", select: PopulateConfig.helpers.getCourseFields('basic') },
+        { path: "student", select: PopulateConfig.helpers.getUserFields('student', 'detailed') },
       ]);
       return {
         enrollment: enrollment.toObject(),
@@ -117,7 +120,7 @@ class CourseService {
       instructor: instructorId,
     });
     await course.save();
-    await course.populate("instructor", "firstName lastName email");
+    await course.populate("instructor", PopulateConfig.helpers.getInstructorFields('student'));
     return course.toObject();
   }
 
@@ -145,7 +148,7 @@ class CourseService {
       courseId,
       { ...updateData, updatedAt: new Date() },
       { new: true, runValidators: true }
-    ).populate("instructor", "firstName lastName email");
+    ).populate("instructor", PopulateConfig.helpers.getInstructorFields('student'));
     return updatedCourse.toObject();
   }
 

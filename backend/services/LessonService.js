@@ -2,6 +2,7 @@ const Lesson = require("../models/Lesson");
 const Course = require("../models/Course");
 const Enrollment = require("../models/Enrollment");
 const TransactionService = require("./TransactionService");
+const PopulateConfig = require("../config/populateConfig");
 
 class LessonService {
   /**
@@ -63,7 +64,7 @@ class LessonService {
    * Get lesson by ID
    */
   static async getLessonById(lessonId, userId, userRole) {
-    const lesson = await Lesson.findById(lessonId).populate("course", "title instructor isActive");
+    const lesson = await Lesson.findById(lessonId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor isActive");
 
     if (!lesson) {
       throw new Error("Lesson not found");
@@ -161,7 +162,7 @@ class LessonService {
   static async updateLesson(lessonId, updateData, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
       const lesson = await Lesson.findById(lessonId)
-        .populate("course")
+        .populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor")
         .session(session);
 
       if (!lesson) {
@@ -199,7 +200,7 @@ class LessonService {
   static async deleteLesson(lessonId, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
       const lesson = await Lesson.findById(lessonId)
-        .populate("course")
+        .populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor")
         .session(session);
 
       if (!lesson) {
@@ -239,7 +240,7 @@ class LessonService {
    */
   static async completeLesson(lessonId, studentId, completionData) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const lesson = await Lesson.findById(lessonId).populate("course").session(session);
+      const lesson = await Lesson.findById(lessonId).populate("course", PopulateConfig.helpers.getCourseFields('basic')).session(session);
       if (!lesson) {
         throw new Error("Lesson not found");
       }
@@ -278,7 +279,7 @@ class LessonService {
    * Get lesson progress for a student
    */
   static async getLessonProgress(lessonId, userId, userRole) {
-    const lesson = await Lesson.findById(lessonId).populate("course");
+    const lesson = await Lesson.findById(lessonId).populate("course", PopulateConfig.helpers.getCourseFields('basic'));
 
     if (!lesson) {
       throw new Error("Lesson not found");
@@ -305,7 +306,7 @@ class LessonService {
       const enrollments = await Enrollment.find({
         course: lesson.course._id,
         status: { $in: ["active", "completed"] },
-      }).populate("student", "firstName lastName email");
+      }).populate("student", PopulateConfig.helpers.getUserFields('student', 'detailed'));
 
       const progressData = enrollments.map((enrollment) => {
         const lessonProgress = enrollment.progress.lessons.find(
@@ -323,7 +324,7 @@ class LessonService {
       // Admins can see all progress
       const enrollments = await Enrollment.find({
         course: lesson.course._id,
-      }).populate("student", "firstName lastName email");
+      }).populate("student", PopulateConfig.helpers.getUserFields('student', 'detailed'));
 
       const progressData = enrollments.map((enrollment) => {
         const lessonProgress = enrollment.progress.lessons.find(
@@ -346,7 +347,7 @@ class LessonService {
    * Get lesson statistics
    */
   static async getLessonStats(lessonId, instructorId) {
-    const lesson = await Lesson.findById(lessonId).populate("course");
+    const lesson = await Lesson.findById(lessonId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
 
     if (!lesson) {
       throw new Error("Lesson not found");

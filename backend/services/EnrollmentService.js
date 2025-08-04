@@ -1,6 +1,7 @@
 const Enrollment = require("../models/Enrollment");
 const Course = require("../models/Course");
 const TransactionService = require("./TransactionService");
+const PopulateConfig = require("../config/populateConfig");
 const mongoose = require("mongoose");
 
 /**
@@ -25,10 +26,10 @@ class EnrollmentService {
       .sort(sort)
       .populate({
         path: "course",
-        select: "title description category level instructor",
+        select: PopulateConfig.helpers.getCourseFields('detailed'),
         populate: {
           path: "instructor",
-          select: "firstName lastName email",
+          select: PopulateConfig.helpers.getInstructorFields('student'),
         },
       })
       .lean();
@@ -48,10 +49,10 @@ class EnrollmentService {
         path: "course",
         populate: {
           path: "instructor",
-          select: "firstName lastName email",
+          select: PopulateConfig.helpers.getInstructorFields('student'),
         },
       })
-      .populate("student", "firstName lastName email")
+      .populate("student", PopulateConfig.helpers.getUserFields('student', 'detailed'))
       .lean();
 
     if (!enrollment) {
@@ -99,7 +100,7 @@ class EnrollmentService {
         enrollment.status = "completed";
       }
       await enrollment.save({ session });
-      await enrollment.populate("course", "title category level");
+      await enrollment.populate("course", PopulateConfig.helpers.getCourseFields('basic'));
       return {
         enrollment: enrollment.toObject(),
         message: "Progress updated successfully",
@@ -174,7 +175,7 @@ class EnrollmentService {
       );
 
       // Populate for response
-      await enrollment.populate("course", "title rating");
+      await enrollment.populate("course", PopulateConfig.helpers.getCourseFields('basic') + " rating");
 
       return {
         enrollment: enrollment.toObject(),
