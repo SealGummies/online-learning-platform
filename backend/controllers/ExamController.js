@@ -1,4 +1,11 @@
 const ExamService = require("../services/ExamService");
+const {
+  handleErrorResponse,
+  sendSuccessResponse,
+  sendListResponse,
+  sendCreatedResponse,
+  sendMessageResponse,
+} = require("../utils/errorHandler");
 
 /**
  * Exam Controller - Handles HTTP requests for exam operations
@@ -14,7 +21,7 @@ class ExamController {
       const { course } = req.query;
       const userId = req.user.id;
       const userRole = req.user.role;
-      
+
       let exams;
       if (course) {
         // Get exams for specific course
@@ -25,18 +32,10 @@ class ExamController {
       } else {
         throw new Error("Course parameter is required for non-student users");
       }
-      
-      res.json({
-        success: true,
-        data: exams,
-        count: exams.length,
-        message: "Exams retrieved successfully",
-      });
+
+      return sendListResponse(res, exams, "Exams retrieved successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to retrieve exams",
-      });
+      handleErrorResponse(error, res, "Failed to retrieve exams");
     }
   }
 
@@ -51,16 +50,9 @@ class ExamController {
       const userId = req.user.id;
       const userRole = req.user.role;
       const exam = await ExamService.getExamById(examId, userId, userRole);
-      res.json({
-        success: true,
-        data: exam,
-        message: "Exam retrieved successfully",
-      });
+      return sendSuccessResponse(res, exam, "Exam retrieved successfully");
     } catch (error) {
-      res.status(404).json({
-        success: false,
-        message: error.message || "Exam not found",
-      });
+      handleErrorResponse(error, res, "Failed to retrieve exam");
     }
   }
 
@@ -74,25 +66,16 @@ class ExamController {
       const examId = req.params.id;
       const userId = req.user.id;
       const { answers } = req.body;
-      
-      if (!answers || typeof answers !== 'object') {
-        return res.status(400).json({
-          success: false,
-          message: "Answers are required"
-        });
+
+      if (!answers || typeof answers !== "object") {
+        const { AppError } = require("../utils/errors");
+        throw new AppError("Answers are required", 400);
       }
 
       const result = await ExamService.submitExam(examId, answers, userId);
-      res.json({
-        success: true,
-        data: result,
-        message: "Exam submitted successfully",
-      });
+      return sendSuccessResponse(res, result, "Exam submitted successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to submit exam",
-      });
+      handleErrorResponse(error, res, "Failed to submit exam");
     }
   }
 
@@ -106,16 +89,9 @@ class ExamController {
       const examId = req.params.id;
       const userId = req.user.id;
       const result = await ExamService.getExamResults(examId, userId);
-      res.json({
-        success: true,
-        data: result,
-        message: "Exam results retrieved successfully",
-      });
+      return sendSuccessResponse(res, result, "Exam results retrieved successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to retrieve exam results",
-      });
+      handleErrorResponse(error, res, "Failed to retrieve exam results");
     }
   }
 
@@ -128,17 +104,9 @@ class ExamController {
     try {
       const userId = req.user.id;
       const results = await ExamService.getAllExamResults(userId);
-      res.json({
-        success: true,
-        data: results,
-        count: results.length,
-        message: "Exam results retrieved successfully",
-      });
+      return sendListResponse(res, results, "Exam results retrieved successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to retrieve exam results",
-      });
+      handleErrorResponse(error, res, "Failed to retrieve all exam results");
     }
   }
 
@@ -152,16 +120,9 @@ class ExamController {
       const instructorId = req.user.id;
       const examData = req.body;
       const exam = await ExamService.createExam(examData, instructorId);
-      res.status(201).json({
-        success: true,
-        data: exam,
-        message: "Exam created successfully",
-      });
+      return sendCreatedResponse(res, exam, "Exam created successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Exam creation failed",
-      });
+      handleErrorResponse(error, res, "Failed to create exam");
     }
   }
 
@@ -176,16 +137,9 @@ class ExamController {
       const instructorId = req.user.id;
       const updateData = req.body;
       const exam = await ExamService.updateExam(examId, updateData, instructorId);
-      res.json({
-        success: true,
-        data: exam,
-        message: "Exam updated successfully",
-      });
+      return sendSuccessResponse(res, exam, "Exam updated successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Exam update failed",
-      });
+      handleErrorResponse(error, res, "Failed to update exam");
     }
   }
 
@@ -199,15 +153,9 @@ class ExamController {
       const examId = req.params.id;
       const instructorId = req.user.id;
       await ExamService.deleteExam(examId, instructorId);
-      res.json({
-        success: true,
-        message: "Exam deleted successfully",
-      });
+      return sendMessageResponse(res, "Exam deleted successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Exam deletion failed",
-      });
+      handleErrorResponse(error, res, "Failed to delete exam");
     }
   }
 
@@ -221,16 +169,9 @@ class ExamController {
       const examId = req.params.id;
       const instructorId = req.user.id;
       const stats = await ExamService.getExamStats(examId, instructorId);
-      res.json({
-        success: true,
-        data: stats,
-        message: "Exam statistics retrieved successfully",
-      });
+      return sendSuccessResponse(res, stats, "Exam statistics retrieved successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to retrieve exam statistics",
-      });
+      handleErrorResponse(error, res, "Failed to retrieve exam statistics");
     }
   }
 }

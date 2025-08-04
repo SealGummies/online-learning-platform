@@ -1,4 +1,5 @@
 const AnalyticsService = require("../services/AnalyticsService");
+const { handleErrorResponse, sendListResponse, sendSuccessResponse } = require("../utils/errorHandler");
 
 class AnalyticsController {
   /**
@@ -9,19 +10,10 @@ class AnalyticsController {
   static async getTopPerformingCourses(req, res) {
     try {
       const courses = await AnalyticsService.getTopPerformingCourses();
-      res.status(200).json({
-        success: true,
-        message: "Top performing courses retrieved successfully",
-        data: courses,
-        total: courses.length,
-      });
+      return sendListResponse(res, courses, "Top performing courses retrieved successfully");
     } catch (error) {
       console.error("Error in getTopPerformingCourses:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve top performing courses",
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve top performing courses");
     }
   }
 
@@ -33,19 +25,10 @@ class AnalyticsController {
   static async getStudentProgressAnalytics(req, res) {
     try {
       const progressData = await AnalyticsService.getStudentProgressAnalytics();
-      res.status(200).json({
-        success: true,
-        message: "Student progress analytics retrieved successfully",
-        data: progressData,
-        total: progressData.length,
-      });
+      return sendListResponse(res, progressData, "Student progress analytics retrieved successfully");
     } catch (error) {
       console.error("Error in getStudentProgressAnalytics:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve student progress analytics",
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve student progress analytics");
     }
   }
 
@@ -57,19 +40,10 @@ class AnalyticsController {
   static async getInstructorAnalytics(req, res) {
     try {
       const instructorData = await AnalyticsService.getInstructorAnalytics();
-      res.status(200).json({
-        success: true,
-        message: "Instructor analytics retrieved successfully",
-        data: instructorData,
-        total: instructorData.length,
-      });
+      return sendListResponse(res, instructorData, "Instructor analytics retrieved successfully");
     } catch (error) {
       console.error("Error in getInstructorAnalytics:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve instructor analytics",
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve instructor analytics");
     }
   }
 
@@ -81,19 +55,10 @@ class AnalyticsController {
   static async getCourseCompletionTrends(req, res) {
     try {
       const trendsData = await AnalyticsService.getCourseCompletionTrends();
-      res.status(200).json({
-        success: true,
-        message: "Course completion trends retrieved successfully",
-        data: trendsData,
-        total: trendsData.length,
-      });
+      return sendListResponse(res, trendsData, "Course completion trends retrieved successfully");
     } catch (error) {
       console.error("Error in getCourseCompletionTrends:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve course completion trends",
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve course completion trends");
     }
   }
 
@@ -105,19 +70,10 @@ class AnalyticsController {
   static async getExamPerformanceAnalysis(req, res) {
     try {
       const examData = await AnalyticsService.getExamPerformanceAnalysis();
-      res.status(200).json({
-        success: true,
-        message: "Exam performance analysis retrieved successfully",
-        data: examData,
-        total: examData.length,
-      });
+      return sendListResponse(res, examData, "Exam performance analysis retrieved successfully");
     } catch (error) {
       console.error("Error in getExamPerformanceAnalysis:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve exam performance analysis",
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve exam performance analysis");
     }
   }
 
@@ -129,18 +85,10 @@ class AnalyticsController {
   static async getPlatformOverview(req, res) {
     try {
       const overviewData = await AnalyticsService.getPlatformOverview();
-      res.status(200).json({
-        success: true,
-        message: "Platform overview retrieved successfully",
-        data: overviewData,
-      });
+      return sendSuccessResponse(res, overviewData, "Platform overview retrieved successfully");
     } catch (error) {
       console.error("Error in getPlatformOverview:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve platform overview",
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve platform overview");
     }
   }
 
@@ -159,19 +107,10 @@ class AnalyticsController {
         level,
         type,
       });
-      res.status(200).json({
-        success: true,
-        message: "Filtered analytics retrieved successfully",
-        data: result,
-        total: result.length,
-      });
+      return sendListResponse(res, result, "Filtered analytics retrieved successfully");
     } catch (error) {
       console.error("Error in getFilteredAnalytics:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve filtered analytics",
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve filtered analytics");
     }
   }
 
@@ -183,22 +122,11 @@ class AnalyticsController {
   static async getInstructorEnrollments(req, res) {
     try {
       const instructorId = req.user.id;
-      const enrollments = await AnalyticsService.getInstructorEnrollments(
-        instructorId
-      );
-      res.status(200).json({
-        success: true,
-        message: "Instructor enrollments retrieved successfully",
-        data: enrollments,
-        total: enrollments.length,
-      });
+      const enrollments = await AnalyticsService.getInstructorEnrollments(instructorId);
+      return sendListResponse(res, enrollments, "Instructor enrollments retrieved successfully");
     } catch (error) {
       console.error("Error in getInstructorEnrollments:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve instructor enrollments",
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve instructor enrollments");
     }
   }
 
@@ -210,21 +138,11 @@ class AnalyticsController {
   static async getInstructorDashboardOverview(req, res) {
     try {
       const instructorId = req.user.id;
-      const overview = await AnalyticsService.getInstructorDashboardOverview(
-        instructorId
-      );
-      res.status(200).json({
-        success: true,
-        message: "Instructor dashboard overview retrieved successfully",
-        data: overview,
-      });
+      const overview = await AnalyticsService.getInstructorDashboardOverview(instructorId);
+      return sendSuccessResponse(res, overview, "Instructor dashboard overview retrieved successfully");
     } catch (error) {
       console.error("Error in getInstructorDashboardOverview:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve instructor dashboard overview",
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve instructor dashboard overview");
     }
   }
 
@@ -236,22 +154,11 @@ class AnalyticsController {
   static async getInstructorStudentProgress(req, res) {
     try {
       const instructorId = req.user.id;
-      const progressData = await AnalyticsService.getInstructorStudentProgress(
-        instructorId
-      );
-      res.status(200).json({
-        success: true,
-        message: "Instructor student progress retrieved successfully",
-        data: progressData,
-        total: progressData.length,
-      });
+      const progressData = await AnalyticsService.getInstructorStudentProgress(instructorId);
+      return sendListResponse(res, progressData, "Instructor student progress retrieved successfully");
     } catch (error) {
       console.error("Error in getInstructorStudentProgress:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve instructor student progress",
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve instructor student progress");
     }
   }
 }

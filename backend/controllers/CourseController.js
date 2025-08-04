@@ -1,4 +1,10 @@
 const CourseService = require("../services/CourseService");
+const {
+  handleErrorResponse,
+  sendListResponse,
+  sendSuccessResponse,
+  sendCreatedResponse,
+} = require("../utils/errorHandler");
 
 /**
  * Course Controller - Handles HTTP requests for course operations (aligned with simplified models)
@@ -22,17 +28,16 @@ class CourseController {
         sortOrder: req.query.sortOrder || "desc",
       };
       const result = await CourseService.getCourses(options);
-      res.json({
-        success: true,
-        data: result.courses,
-        pagination: result.pagination,
-        message: "Courses retrieved successfully",
-      });
+      return sendListResponse(
+        res,
+        result.courses,
+        "Courses retrieved successfully",
+        200,
+        result.pagination.total,
+        result.pagination
+      );
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve courses");
     }
   }
 
@@ -46,17 +51,9 @@ class CourseController {
       const { id } = req.params;
       const userId = req.user?.id;
       const course = await CourseService.getCourseById(id, userId);
-      res.json({
-        success: true,
-        data: course,
-        message: "Course retrieved successfully",
-      });
+      return sendSuccessResponse(res, course, "Course retrieved successfully");
     } catch (error) {
-      const statusCode = error.message === "Course not found" ? 404 : 400;
-      res.status(statusCode).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve course");
     }
   }
 
@@ -70,23 +67,10 @@ class CourseController {
       const instructorId = req.user.id;
       // Only allow fields in simplified model
       const { title, description, category, level, price } = req.body;
-      if (req.user.role !== "instructor") {
-        return res.status(403).json({
-          success: false,
-          error: "Only instructors can create courses",
-        });
-      }
       const course = await CourseService.createCourse({ title, description, category, level, price }, instructorId);
-      res.status(201).json({
-        success: true,
-        data: course,
-        message: "Course created successfully",
-      });
+      return sendCreatedResponse(res, course, "Course created successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to create course");
     }
   }
 
@@ -101,23 +85,18 @@ class CourseController {
       // Only allow fields in simplified model
       const { title, description, category, level, price, isActive } = req.body;
       const instructorId = req.user.id;
-      const updateData = { title, description, category, level, price, isActive };
+      const updateData = {
+        title,
+        description,
+        category,
+        level,
+        price,
+        isActive,
+      };
       const course = await CourseService.updateCourse(id, updateData, instructorId);
-      res.json({
-        success: true,
-        data: course,
-        message: "Course updated successfully",
-      });
+      return sendSuccessResponse(res, course, "Course updated successfully");
     } catch (error) {
-      const statusCode = error.message.includes("not found")
-        ? 404
-        : error.message.includes("Not authorized")
-          ? 403
-          : 400;
-      res.status(statusCode).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to update course");
     }
   }
 
@@ -131,21 +110,9 @@ class CourseController {
       const { id } = req.params;
       const instructorId = req.user.id;
       const result = await CourseService.deleteCourse(id, instructorId);
-      res.json({
-        success: true,
-        data: result,
-        message: result.message,
-      });
+      return sendSuccessResponse(res, result, "Course deleted successfully");
     } catch (error) {
-      const statusCode = error.message.includes("not found")
-        ? 404
-        : error.message.includes("Not authorized")
-          ? 403
-          : 400;
-      res.status(statusCode).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to delete course");
     }
   }
 
@@ -158,30 +125,10 @@ class CourseController {
     try {
       const { id } = req.params;
       const userId = req.user.id;
-      if (req.user.role !== "student") {
-        return res.status(403).json({
-          success: false,
-          error: "Only students can enroll in courses",
-        });
-      }
       const result = await CourseService.enrollStudent(id, userId);
-      res.status(201).json({
-        success: true,
-        data: result.enrollment,
-        message: result.message,
-      });
+      return sendCreatedResponse(res, result.enrollment, "Enrolled in course successfully");
     } catch (error) {
-      const statusCode = error.message.includes("not found")
-        ? 404
-        : error.message.includes("full")
-          ? 409
-          : error.message.includes("Already enrolled")
-            ? 409
-            : 400;
-      res.status(statusCode).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to enroll in course");
     }
   }
 
@@ -194,17 +141,9 @@ class CourseController {
     try {
       const { id } = req.params;
       const stats = await CourseService.getCourseStats(id);
-      res.json({
-        success: true,
-        data: stats,
-        message: "Course statistics retrieved successfully",
-      });
+      return sendSuccessResponse(res, stats, "Course statistics retrieved successfully");
     } catch (error) {
-      const statusCode = error.message === "Course not found" ? 404 : 400;
-      res.status(statusCode).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve course statistics");
     }
   }
 
@@ -216,28 +155,21 @@ class CourseController {
   static async getInstructorCourses(req, res) {
     try {
       const instructorId = req.user.id;
-      if (req.user.role !== "instructor") {
-        return res.status(403).json({
-          success: false,
-          error: "Only instructors can view their courses",
-        });
-      }
       const options = {
         ...req.query,
         instructor: instructorId,
       };
       const result = await CourseService.getCourses(options);
-      res.json({
-        success: true,
-        data: result.courses,
-        pagination: result.pagination,
-        message: "Instructor courses retrieved successfully",
-      });
+      return sendListResponse(
+        res,
+        result.courses,
+        "Instructor courses retrieved successfully",
+        200,
+        result.pagination.total,
+        result.pagination
+      );
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve instructor courses");
     }
   }
 }

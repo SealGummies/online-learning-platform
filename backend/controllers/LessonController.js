@@ -1,4 +1,11 @@
 const LessonService = require("../services/LessonService");
+const {
+  handleErrorResponse,
+  sendSuccessResponse,
+  sendListResponse,
+  sendCreatedResponse,
+  sendMessageResponse,
+} = require("../utils/errorHandler");
 
 /**
  * Lesson Controller - Handles HTTP requests for lesson operations (aligned with simplified models)
@@ -15,17 +22,9 @@ class LessonController {
       const userId = req.user?.id;
       const userRole = req.user?.role;
       const lessons = await LessonService.getLessons(course, userId, userRole);
-      res.json({
-        success: true,
-        data: lessons,
-        count: lessons.length,
-        message: "Lessons retrieved successfully",
-      });
+      sendListResponse(res, lessons, "Lessons retrieved successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to retrieve lessons",
-      });
+      handleErrorResponse(error, res, "Failed to retrieve lessons");
     }
   }
 
@@ -40,16 +39,9 @@ class LessonController {
       const userId = req.user?.id;
       const userRole = req.user?.role;
       const lesson = await LessonService.getLessonById(lessonId, userId, userRole);
-      res.json({
-        success: true,
-        data: lesson,
-        message: "Lesson retrieved successfully",
-      });
+      sendSuccessResponse(res, lesson, "Lesson retrieved successfully");
     } catch (error) {
-      res.status(404).json({
-        success: false,
-        message: error.message || "Lesson not found",
-      });
+      handleErrorResponse(error, res, "Failed to retrieve lesson");
     }
   }
 
@@ -63,17 +55,13 @@ class LessonController {
       const instructorId = req.user.id;
       // Only allow fields in simplified model
       const { title, course, order, type, content, isPublished } = req.body;
-      const lesson = await LessonService.createLesson({ title, course, order, type, content, isPublished }, instructorId);
-      res.status(201).json({
-        success: true,
-        data: lesson,
-        message: "Lesson created successfully",
-      });
+      const lesson = await LessonService.createLesson(
+        { title, course, order, type, content, isPublished },
+        instructorId
+      );
+      sendCreatedResponse(res, lesson, "Lesson created successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Lesson creation failed",
-      });
+      handleErrorResponse(error, res, "Failed to create lesson");
     }
   }
 
@@ -90,16 +78,9 @@ class LessonController {
       const { title, order, type, content, isPublished } = req.body;
       const updateData = { title, order, type, content, isPublished };
       const lesson = await LessonService.updateLesson(lessonId, updateData, instructorId);
-      res.json({
-        success: true,
-        data: lesson,
-        message: "Lesson updated successfully",
-      });
+      sendSuccessResponse(res, lesson, "Lesson updated successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Lesson update failed",
-      });
+      handleErrorResponse(error, res, "Failed to update lesson");
     }
   }
 
@@ -113,15 +94,9 @@ class LessonController {
       const lessonId = req.params.id;
       const instructorId = req.user.id;
       await LessonService.deleteLesson(lessonId, instructorId);
-      res.json({
-        success: true,
-        message: "Lesson deleted successfully",
-      });
+      sendMessageResponse(res, "Lesson deleted successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Lesson deletion failed",
-      });
+      handleErrorResponse(error, res, "Failed to delete lesson");
     }
   }
 
@@ -136,16 +111,9 @@ class LessonController {
       const studentId = req.user.id;
       const { completionPercentage } = req.body;
       const result = await LessonService.completeLesson(lessonId, studentId, { completionPercentage });
-      res.json({
-        success: true,
-        data: result,
-        message: "Lesson marked as completed",
-      });
+      sendSuccessResponse(res, result, "Lesson marked as completed");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to mark lesson as completed",
-      });
+      handleErrorResponse(error, res, "Failed to complete lesson");
     }
   }
 
@@ -160,16 +128,9 @@ class LessonController {
       const userId = req.user.id;
       const userRole = req.user.role;
       const progress = await LessonService.getLessonProgress(lessonId, userId, userRole);
-      res.json({
-        success: true,
-        data: progress,
-        message: "Lesson progress retrieved successfully",
-      });
+      sendSuccessResponse(res, progress, "Lesson progress retrieved successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to retrieve lesson progress",
-      });
+      handleErrorResponse(error, res, "Failed to retrieve lesson progress");
     }
   }
 
@@ -183,16 +144,9 @@ class LessonController {
       const lessonId = req.params.id;
       const instructorId = req.user.id;
       const stats = await LessonService.getLessonStats(lessonId, instructorId);
-      res.json({
-        success: true,
-        data: stats,
-        message: "Lesson statistics retrieved successfully",
-      });
+      sendSuccessResponse(res, stats, "Lesson statistics retrieved successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to retrieve lesson statistics",
-      });
+      handleErrorResponse(error, res, "Failed to retrieve lesson statistics");
     }
   }
 
@@ -206,15 +160,9 @@ class LessonController {
       const instructorId = req.user.id;
       const { courseId, lessonOrder } = req.body;
       await LessonService.reorderLessons(courseId, lessonOrder, instructorId);
-      res.json({
-        success: true,
-        message: "Lessons reordered successfully",
-      });
+      sendMessageResponse(res, "Lessons reordered successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to reorder lessons",
-      });
+      handleErrorResponse(error, res, "Failed to reorder lessons");
     }
   }
 }

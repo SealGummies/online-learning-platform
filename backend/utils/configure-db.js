@@ -47,10 +47,7 @@ function showCurrentConfig() {
 
     if (match) {
       const currentUri = match[1];
-      const maskedUri = currentUri.replace(
-        /\/\/[^:]+:[^@]+@/,
-        "//*****:*****@"
-      );
+      const maskedUri = currentUri.replace(/\/\/[^:]+:[^@]+@/, "//*****:*****@");
       console.log(`📊 Current MONGODB_URI: ${maskedUri}`);
 
       if (currentUri.includes("mongodb+srv://")) {

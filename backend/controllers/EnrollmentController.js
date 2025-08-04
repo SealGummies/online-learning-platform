@@ -1,4 +1,5 @@
 const EnrollmentService = require("../services/EnrollmentService");
+const { handleErrorResponse, sendSuccessResponse, sendListResponse } = require("../utils/errorHandler");
 
 /**
  * Enrollment Controller - Handles HTTP requests for enrollment operations (aligned with simplified models)
@@ -12,31 +13,15 @@ class EnrollmentController {
   static async getStudentEnrollments(req, res) {
     try {
       const studentId = req.user.id;
-      if (req.user.role !== "student") {
-        return res.status(403).json({
-          success: false,
-          error: "Only students can view enrollments",
-        });
-      }
       const options = {
         status: req.query.status,
         sortBy: req.query.sortBy || "enrollmentDate",
         sortOrder: req.query.sortOrder || "desc",
       };
-      const enrollments = await EnrollmentService.getStudentEnrollments(
-        studentId,
-        options
-      );
-      res.json({
-        success: true,
-        data: enrollments,
-        message: "Enrollments retrieved successfully",
-      });
+      const enrollments = await EnrollmentService.getStudentEnrollments(studentId, options);
+      return sendListResponse(res, enrollments, "Enrollments retrieved successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve enrollments");
     }
   }
 
@@ -49,25 +34,10 @@ class EnrollmentController {
     try {
       const { id } = req.params;
       const studentId = req.user.id;
-      const enrollment = await EnrollmentService.getEnrollmentById(
-        id,
-        studentId
-      );
-      res.json({
-        success: true,
-        data: enrollment,
-        message: "Enrollment retrieved successfully",
-      });
+      const enrollment = await EnrollmentService.getEnrollmentById(id, studentId);
+      return sendSuccessResponse(res, enrollment, "Enrollment retrieved successfully");
     } catch (error) {
-      const statusCode = error.message.includes("not found")
-        ? 404
-        : error.message.includes("Not authorized")
-        ? 403
-        : 400;
-      res.status(statusCode).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve enrollment");
     }
   }
 
@@ -81,32 +51,10 @@ class EnrollmentController {
       const { id } = req.params;
       const progressData = req.body;
       const studentId = req.user.id;
-      if (req.user.role !== "student") {
-        return res.status(403).json({
-          success: false,
-          error: "Only students can update progress",
-        });
-      }
-      const result = await EnrollmentService.updateProgress(
-        id,
-        progressData,
-        studentId
-      );
-      res.json({
-        success: true,
-        data: result.enrollment,
-        message: result.message,
-      });
+      const result = await EnrollmentService.updateProgress(id, progressData, studentId);
+      return sendSuccessResponse(res, result.enrollment, result.message);
     } catch (error) {
-      const statusCode = error.message.includes("not found")
-        ? 404
-        : error.message.includes("Not authorized")
-        ? 403
-        : 400;
-      res.status(statusCode).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to update enrollment progress");
     }
   }
 
@@ -119,28 +67,10 @@ class EnrollmentController {
     try {
       const { id } = req.params;
       const studentId = req.user.id;
-      if (req.user.role !== "student") {
-        return res.status(403).json({
-          success: false,
-          error: "Only students can withdraw from courses",
-        });
-      }
       const result = await EnrollmentService.withdrawEnrollment(id, studentId);
-      res.json({
-        success: true,
-        data: result.enrollment,
-        message: result.message,
-      });
+      return sendSuccessResponse(res, result.enrollment, result.message);
     } catch (error) {
-      const statusCode = error.message.includes("not found")
-        ? 404
-        : error.message.includes("Not authorized")
-        ? 403
-        : 400;
-      res.status(statusCode).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to withdraw from enrollment");
     }
   }
 
@@ -152,23 +82,10 @@ class EnrollmentController {
   static async getStudentStats(req, res) {
     try {
       const studentId = req.user.id;
-      if (req.user.role !== "student") {
-        return res.status(403).json({
-          success: false,
-          error: "Only students can view their statistics",
-        });
-      }
       const stats = await EnrollmentService.getStudentStats(studentId);
-      res.json({
-        success: true,
-        data: stats,
-        message: "Student statistics retrieved successfully",
-      });
+      return sendSuccessResponse(res, stats, "Student statistics retrieved successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve student statistics");
     }
   }
 
@@ -183,21 +100,11 @@ class EnrollmentController {
 
       // Use the AnalyticsService method we created
       const AnalyticsService = require("../services/AnalyticsService");
-      const enrollments = await AnalyticsService.getInstructorEnrollments(
-        instructorId
-      );
+      const enrollments = await AnalyticsService.getInstructorEnrollments(instructorId);
 
-      res.json({
-        success: true,
-        data: enrollments,
-        message: "Instructor enrollments retrieved successfully",
-        total: enrollments.length,
-      });
+      return sendListResponse(res, enrollments, "Instructor enrollments retrieved successfully");
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error.message,
-      });
+      handleErrorResponse(error, res, "Failed to retrieve instructor enrollments");
     }
   }
 }

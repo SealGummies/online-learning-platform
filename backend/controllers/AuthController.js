@@ -1,4 +1,10 @@
 const AuthService = require("../services/AuthService");
+const {
+  handleErrorResponse,
+  sendSuccessResponse,
+  sendCreatedResponse,
+  sendMessageResponse,
+} = require("../utils/errorHandler");
 
 class AuthController {
   /**
@@ -10,21 +16,24 @@ class AuthController {
     try {
       // Only allow firstName, lastName, email, password, role
       const { firstName, lastName, email, password, role } = req.body;
-      const result = await AuthService.register({ firstName, lastName, email, password, role });
-      res.status(201).json({
-        success: true,
-        message: "User registered successfully",
-        data: {
+      const result = await AuthService.register({
+        firstName,
+        lastName,
+        email,
+        password,
+        role,
+      });
+      return sendCreatedResponse(
+        res,
+        {
           user: result.user,
           token: result.token,
         },
-      });
+        "User registered successfully"
+      );
     } catch (error) {
       console.error("Register error:", error);
-      res.status(400).json({
-        success: false,
-        message: error.message || "Registration failed",
-      });
+      handleErrorResponse(error, res, "Registration failed");
     }
   }
 
@@ -37,20 +46,17 @@ class AuthController {
     try {
       const { email, password } = req.body;
       const result = await AuthService.login(email, password);
-      res.json({
-        success: true,
-        message: "Login successful",
-        data: {
+      return sendSuccessResponse(
+        res,
+        {
           user: result.user,
           token: result.token,
         },
-      });
+        "Login successful"
+      );
     } catch (error) {
       console.error("Login error:", error);
-      res.status(401).json({
-        success: false,
-        message: error.message || "Invalid credentials",
-      });
+      handleErrorResponse(error, res, "Invalid credentials");
     }
   }
 
@@ -62,16 +68,10 @@ class AuthController {
   static async getMe(req, res) {
     try {
       const user = await AuthService.getCurrentUser(req.user.id);
-      res.json({
-        success: true,
-        data: { user },
-      });
+      return sendSuccessResponse(res, { user }, "User information retrieved successfully");
     } catch (error) {
       console.error("Get me error:", error);
-      res.status(404).json({
-        success: false,
-        message: error.message || "User not found",
-      });
+      handleErrorResponse(error, res, "Failed to retrieve user");
     }
   }
 
@@ -84,18 +84,14 @@ class AuthController {
     try {
       // Only allow firstName, lastName
       const { firstName, lastName } = req.body;
-      const user = await AuthService.updateProfile(req.user.id, { firstName, lastName });
-      res.json({
-        success: true,
-        message: "Profile updated successfully",
-        data: { user },
+      const user = await AuthService.updateProfile(req.user.id, {
+        firstName,
+        lastName,
       });
+      return sendSuccessResponse(res, { user }, "Profile updated successfully");
     } catch (error) {
       console.error("Update profile error:", error);
-      res.status(400).json({
-        success: false,
-        message: error.message || "Profile update failed",
-      });
+      handleErrorResponse(error, res, "Profile update failed");
     }
   }
 
@@ -107,16 +103,10 @@ class AuthController {
   static async changePassword(req, res) {
     try {
       await AuthService.changePassword(req.user.id, req.body);
-      res.json({
-        success: true,
-        message: "Password changed successfully",
-      });
+      return sendMessageResponse(res, "Password changed successfully");
     } catch (error) {
       console.error("Change password error:", error);
-      res.status(400).json({
-        success: false,
-        message: error.message || "Password change failed",
-      });
+      handleErrorResponse(error, res, "Password change failed");
     }
   }
 
@@ -129,16 +119,10 @@ class AuthController {
     try {
       const { email } = req.body;
       await AuthService.forgotPassword(email);
-      res.json({
-        success: true,
-        message: "Password reset instructions sent to email",
-      });
+      return sendMessageResponse(res, "Password reset instructions sent to email");
     } catch (error) {
       console.error("Forgot password error:", error);
-      res.status(400).json({
-        success: false,
-        message: error.message || "Failed to send reset instructions",
-      });
+      handleErrorResponse(error, res, "Failed to send reset instructions");
     }
   }
 
@@ -152,16 +136,10 @@ class AuthController {
       const { token } = req.params;
       const { password } = req.body;
       await AuthService.resetPassword(token, password);
-      res.json({
-        success: true,
-        message: "Password reset successfully",
-      });
+      return sendMessageResponse(res, "Password reset successfully");
     } catch (error) {
       console.error("Reset password error:", error);
-      res.status(400).json({
-        success: false,
-        message: error.message || "Password reset failed",
-      });
+      handleErrorResponse(error, res, "Password reset failed");
     }
   }
 }
