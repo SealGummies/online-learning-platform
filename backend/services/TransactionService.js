@@ -1,14 +1,31 @@
 const mongoose = require("mongoose");
 
 /**
- * Transaction Service for MongoDB ACID operations
- * Provides business logic layer for handling multi-document transactions
+ * @class TransactionService
+ * @description Service for handling MongoDB ACID transactions.
+ * Provides methods for executing database operations with transaction safety,
+ * automatic retry logic, and proper error handling.
+ * 
+ * @requires mongoose - MongoDB ODM for transaction support
  */
 class TransactionService {
   /**
-   * Execute multiple operations within a single transaction
-   * @param {Function[]} operations - Array of async functions that accept session parameter
-   * @returns {Promise<Array>} Results from all operations
+   * Executes multiple operations within a single transaction.
+   * All operations succeed together or fail together (ACID compliance).
+   * 
+   * @static
+   * @async
+   * @method executeTransaction
+   * @param {Array<Function>} operations - Array of async functions that accept a session parameter
+   * @returns {Promise<Array>} Array of results from all operations in order
+   * @throws {Error} If any operation fails, all operations are rolled back
+   * 
+   * @example
+   * const results = await TransactionService.executeTransaction([
+   *   async (session) => await Model1.create([data1], { session }),
+   *   async (session) => await Model2.updateOne(filter, update, { session }),
+   *   async (session) => await Model3.deleteOne(filter, { session })
+   * ]);
    */
   static async executeTransaction(operations) {
     const session = await mongoose.startSession();
@@ -32,9 +49,22 @@ class TransactionService {
   }
 
   /**
-   * Execute a single operation with transaction wrapper
-   * @param {Function} operation - Async function that accepts session parameter
-   * @returns {Promise} Result from the operation
+   * Executes a single operation within a transaction wrapper.
+   * Provides transaction safety for individual operations.
+   * 
+   * @static
+   * @async
+   * @method executeWithTransaction
+   * @param {Function} operation - Async function that accepts a session parameter
+   * @returns {Promise<*>} Result from the operation
+   * @throws {Error} If operation fails, transaction is rolled back
+   * 
+   * @example
+   * const result = await TransactionService.executeWithTransaction(async (session) => {
+   *   const doc1 = await Model1.create([{ data }], { session });
+   *   const doc2 = await Model2.findByIdAndUpdate(id, update, { session });
+   *   return { doc1, doc2 };
+   * });
    */
   static async executeWithTransaction(operation) {
     const session = await mongoose.startSession();
@@ -54,10 +84,25 @@ class TransactionService {
   }
 
   /**
-   * Execute operations with retry logic for transient failures
-   * @param {Function} operation - Async function that accepts session parameter
-   * @param {number} maxRetries - Maximum number of retry attempts (default: 3)
-   * @returns {Promise} Result from the operation
+   * Executes an operation with automatic retry logic for transient failures.
+   * Implements exponential backoff between retry attempts.
+   * 
+   * @static
+   * @async
+   * @method executeWithRetry
+   * @param {Function} operation - Async function that accepts a session parameter
+   * @param {number} [maxRetries=3] - Maximum number of retry attempts
+   * @returns {Promise<*>} Result from the successful operation
+   * @throws {Error} If operation fails after all retry attempts
+   * 
+   * @example
+   * // Retry up to 5 times for transient errors
+   * const result = await TransactionService.executeWithRetry(
+   *   async (session) => {
+   *     return await ComplexOperation.perform({ session });
+   *   },
+   *   5
+   * );
    */
   static async executeWithRetry(operation, maxRetries = 3) {
     let lastError;
@@ -87,9 +132,23 @@ class TransactionService {
   }
 
   /**
-   * Check if an error is retryable
+   * Determines if an error is retryable based on MongoDB error codes and messages.
+   * 
+   * @static
+   * @method isRetryableError
    * @param {Error} error - The error to check
-   * @returns {boolean} True if error is retryable
+   * @returns {boolean} True if the error is transient and operation can be retried
+   * 
+   * @example
+   * try {
+   *   await someOperation();
+   * } catch (error) {
+   *   if (TransactionService.isRetryableError(error)) {
+   *     // Retry the operation
+   *   } else {
+   *     // Handle non-retryable error
+   *   }
+   * }
    */
   static isRetryableError(error) {
     // MongoDB transient transaction errors that can be retried
@@ -108,17 +167,35 @@ class TransactionService {
   }
 
   /**
-   * Utility function to add delay
+   * Utility function to add delay between operations.
+   * Used for implementing exponential backoff in retry logic.
+   * 
+   * @static
+   * @method delay
    * @param {number} ms - Milliseconds to delay
+   * @returns {Promise<void>} Promise that resolves after the specified delay
+   * 
+   * @example
+   * await TransactionService.delay(1000); // Wait 1 second
    */
   static delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
-   * Validate transaction prerequisites
-   * @param {Object} options - Transaction options
-   * @throws {Error} If prerequisites are not met
+   * Validates that the database environment supports transactions.
+   * Checks for required prerequisites like replica set configuration.
+   * 
+   * @static
+   * @method validateTransactionPrerequisites
+   * @param {Object} [options={}] - Validation options
+   * @param {boolean} [options.requireReplicaSet] - Whether to require replica set
+   * @throws {Error} "Database connection not established" - If no database connection
+   * @throws {Error} If other prerequisites are not met
+   * 
+   * @example
+   * // Validate before using transactions
+   * TransactionService.validateTransactionPrerequisites({ requireReplicaSet: true });
    */
   static validateTransactionPrerequisites(options = {}) {
     // Check MongoDB version supports transactions
@@ -140,8 +217,21 @@ class TransactionService {
   }
 
   /**
-   * Get transaction statistics
+   * Retrieves current transaction statistics from MongoDB.
+   * Useful for monitoring and debugging transaction usage.
+   * 
+   * @static
+   * @method getTransactionStats
    * @returns {Object} Transaction statistics
+   * @returns {number} returns.activeSessions - Number of currently active sessions
+   * @returns {number} returns.totalStarted - Total transactions started
+   * @returns {number} returns.totalCommitted - Total transactions committed
+   * @returns {number} returns.totalAborted - Total transactions aborted
+   * 
+   * @example
+   * const stats = TransactionService.getTransactionStats();
+   * console.log(`Active sessions: ${stats.activeSessions}`);
+   * console.log(`Success rate: ${stats.totalCommitted / stats.totalStarted * 100}%`);
    */
   static getTransactionStats() {
     return {

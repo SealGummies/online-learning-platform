@@ -1,6 +1,75 @@
 /**
  * Standardized Populate Field Configurations
- * Defines consistent field sets for populating references across all services
+ * Defines consistent field sets for populating references across all services.
+ *
+ * @typedef {Object} PopulateConfig
+ * @property {Object} user - User populate configurations.
+ * @property {Object} course - Course populate configurations.
+ * @property {Object} enrollment - Enrollment populate configurations.
+ * @property {Object} exam - Exam populate configurations.
+ * @property {Object} nested - Nested populate configurations for complex queries.
+ * @property {Object} byRole - Role-based populate configurations.
+ * @property {Object} context - Context-specific populate configurations.
+ * @property {Object} helpers - Helper functions for common populate operations.
+ */
+
+/**
+ * Helper functions for common populate operations.
+ * @namespace PopulateConfig.helpers
+ */
+
+/**
+ * Get populate config based on user role and context.
+ * @function getFieldsByRole
+ * @memberof PopulateConfig.helpers
+ * @param {string} role - User role (student, instructor, admin).
+ * @param {string} field - Field to populate (instructor, course, etc.).
+ * @param {string} [context="basic"] - Context (basic, detailed, etc.).
+ * @returns {string} Field selection string.
+ */
+
+/**
+ * Get context-specific populate config.
+ * @function getFieldsByContext
+ * @memberof PopulateConfig.helpers
+ * @param {string} context - Context name.
+ * @param {string} field - Field to populate.
+ * @returns {string} Field selection string.
+ */
+
+/**
+ * Create populate object for nested population.
+ * @function createNestedPopulate
+ * @memberof PopulateConfig.helpers
+ * @param {string} path - Path to populate.
+ * @param {string} select - Fields to select.
+ * @param {Object} [nestedPopulate=null] - Nested populate configuration.
+ * @returns {Object} Populate configuration object.
+ */
+
+/**
+ * Get standard instructor populate based on context.
+ * @function getInstructorFields
+ * @memberof PopulateConfig.helpers
+ * @param {string} [context="public"] - Context (public, student, admin).
+ * @returns {string} Instructor fields.
+ */
+
+/**
+ * Get standard course populate based on context.
+ * @function getCourseFields
+ * @memberof PopulateConfig.helpers
+ * @param {string} [context="basic"] - Context (basic, detailed, full).
+ * @returns {string} Course fields.
+ */
+
+/**
+ * Get standard user populate based on role and context.
+ * @function getUserFields
+ * @memberof PopulateConfig.helpers
+ * @param {string} [role="student"] - Requesting user's role.
+ * @param {string} [context="basic"] - Context (basic, detailed, admin).
+ * @returns {string} User fields.
  */
 
 const PopulateConfig = {
@@ -10,15 +79,15 @@ const PopulateConfig = {
   user: {
     // Basic user info (for public display)
     basic: "firstName lastName",
-    
+
     // Detailed user info (includes contact)
     detailed: "firstName lastName email",
-    
+
     // Profile info (excludes sensitive data)
     profile: "firstName lastName email role isActive createdAt",
-    
+
     // Admin view (includes all non-sensitive fields)
-    admin: "firstName lastName email role isActive createdAt lastLogin"
+    admin: "firstName lastName email role isActive createdAt lastLogin",
   },
 
   /**
@@ -27,12 +96,12 @@ const PopulateConfig = {
   course: {
     // Basic course info
     basic: "title category level",
-    
+
     // Detailed course info
     detailed: "title description category level duration instructor isActive",
-    
+
     // Full course info (includes all fields except sensitive ones)
-    full: "title description category level duration instructor isActive createdAt updatedAt rating"
+    full: "title description category level duration instructor isActive createdAt updatedAt rating",
   },
 
   /**
@@ -41,12 +110,12 @@ const PopulateConfig = {
   enrollment: {
     // Basic enrollment info
     basic: "status enrollmentDate completionPercentage",
-    
+
     // Detailed enrollment info
     detailed: "status enrollmentDate completionPercentage finalGrade review",
-    
+
     // Full enrollment info
-    full: "status enrollmentDate completionPercentage finalGrade review createdAt updatedAt"
+    full: "status enrollmentDate completionPercentage finalGrade review createdAt updatedAt",
   },
 
   /**
@@ -55,12 +124,13 @@ const PopulateConfig = {
   exam: {
     // Basic exam info
     basic: "title type duration",
-    
+
     // Student view (excludes answers)
     student: "title description type duration startDate endDate isPublished instructions",
-    
+
     // Instructor view (includes all fields)
-    instructor: "title description type duration startDate endDate isPublished isActive questions totalPoints instructions"
+    instructor:
+      "title description type duration startDate endDate isPublished isActive questions totalPoints instructions",
   },
 
   /**
@@ -73,8 +143,8 @@ const PopulateConfig = {
       select: "title description category level duration instructor isActive",
       populate: {
         path: "instructor",
-        select: "firstName lastName email"
-      }
+        select: "firstName lastName email",
+      },
     },
 
     // Enrollment with course and instructor
@@ -83,14 +153,14 @@ const PopulateConfig = {
       select: "title category level instructor",
       populate: {
         path: "instructor",
-        select: "firstName lastName email"
-      }
+        select: "firstName lastName email",
+      },
     },
 
     // Student with basic info
     enrollmentWithStudent: {
       path: "student",
-      select: "firstName lastName email"
+      select: "firstName lastName email",
     },
 
     // Exam with course details
@@ -99,9 +169,9 @@ const PopulateConfig = {
       select: "title instructor",
       populate: {
         path: "instructor",
-        select: "firstName lastName email"
-      }
-    }
+        select: "firstName lastName email",
+      },
+    },
   },
 
   /**
@@ -111,20 +181,20 @@ const PopulateConfig = {
     student: {
       instructor: "firstName lastName email",
       course: "title description category level duration isActive rating",
-      enrollment: "status enrollmentDate completionPercentage finalGrade"
+      enrollment: "status enrollmentDate completionPercentage finalGrade",
     },
-    
+
     instructor: {
       student: "firstName lastName email",
       course: "title description category level duration isActive createdAt rating",
-      enrollment: "status enrollmentDate completionPercentage finalGrade review"
+      enrollment: "status enrollmentDate completionPercentage finalGrade review",
     },
-    
+
     admin: {
       user: "firstName lastName email role isActive createdAt lastLogin",
       course: "title description category level duration instructor isActive createdAt updatedAt rating",
-      enrollment: "status enrollmentDate completionPercentage finalGrade review createdAt updatedAt"
-    }
+      enrollment: "status enrollmentDate completionPercentage finalGrade review createdAt updatedAt",
+    },
   },
 
   /**
@@ -133,31 +203,31 @@ const PopulateConfig = {
   context: {
     // For public course listings
     publicCourseList: {
-      instructor: "firstName lastName"
+      instructor: "firstName lastName",
     },
-    
+
     // For enrolled student's course view
     studentCourseView: {
-      instructor: "firstName lastName email"
+      instructor: "firstName lastName email",
     },
-    
+
     // For instructor's student management
     instructorStudentView: {
-      student: "firstName lastName email"
+      student: "firstName lastName email",
     },
-    
+
     // For admin user management
     adminUserView: {
-      user: "firstName lastName email role isActive createdAt lastLogin"
+      user: "firstName lastName email role isActive createdAt lastLogin",
     },
-    
+
     // For dashboard displays
     dashboardView: {
       instructor: "firstName lastName",
       course: "title category level",
-      enrollment: "status completionPercentage"
-    }
-  }
+      enrollment: "status completionPercentage",
+    },
+  },
 };
 
 /**
@@ -171,13 +241,13 @@ PopulateConfig.helpers = {
    * @param {string} context - Context (basic, detailed, etc.)
    * @returns {string} Field selection string
    */
-  getFieldsByRole(role, field, context = 'basic') {
+  getFieldsByRole(role, field, context = "basic") {
     if (PopulateConfig.byRole[role] && PopulateConfig.byRole[role][field]) {
       return PopulateConfig.byRole[role][field];
     }
-    
+
     // Fallback to basic config
-    return PopulateConfig[field] ? PopulateConfig[field][context] : '';
+    return PopulateConfig[field] ? PopulateConfig[field][context] : "";
   },
 
   /**
@@ -190,9 +260,9 @@ PopulateConfig.helpers = {
     if (PopulateConfig.context[context] && PopulateConfig.context[context][field]) {
       return PopulateConfig.context[context][field];
     }
-    
+
     // Fallback to basic config
-    return PopulateConfig[field] ? PopulateConfig[field].basic : '';
+    return PopulateConfig[field] ? PopulateConfig[field].basic : "";
   },
 
   /**
@@ -215,14 +285,14 @@ PopulateConfig.helpers = {
    * @param {string} context - Context (public, student, admin)
    * @returns {string} Instructor fields
    */
-  getInstructorFields(context = 'public') {
+  getInstructorFields(context = "public") {
     switch (context) {
-      case 'public':
+      case "public":
         return PopulateConfig.user.basic;
-      case 'student':
-      case 'enrolled':
+      case "student":
+      case "enrolled":
         return PopulateConfig.user.detailed;
-      case 'admin':
+      case "admin":
         return PopulateConfig.user.admin;
       default:
         return PopulateConfig.user.basic;
@@ -234,7 +304,7 @@ PopulateConfig.helpers = {
    * @param {string} context - Context (basic, detailed, full)
    * @returns {string} Course fields
    */
-  getCourseFields(context = 'basic') {
+  getCourseFields(context = "basic") {
     return PopulateConfig.course[context] || PopulateConfig.course.basic;
   },
 
@@ -244,12 +314,12 @@ PopulateConfig.helpers = {
    * @param {string} context - Context (basic, detailed, admin)
    * @returns {string} User fields
    */
-  getUserFields(role = 'student', context = 'basic') {
-    if (role === 'admin') {
+  getUserFields(role = "student", context = "basic") {
+    if (role === "admin") {
       return PopulateConfig.user.admin;
     }
     return PopulateConfig.user[context] || PopulateConfig.user.basic;
-  }
+  },
 };
 
 module.exports = PopulateConfig;

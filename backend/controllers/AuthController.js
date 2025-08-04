@@ -6,11 +6,32 @@ const {
   sendMessageResponse,
 } = require("../utils/errorHandler");
 
+/**
+ * Controller for handling authentication-related operations.
+ * Provides methods for user registration, login, logout, password reset, and profile management.
+ *
+ * @module AuthController
+ */
+
 class AuthController {
   /**
-   * Register a new user
-   * @route POST /api/auth/register
-   * @access Public
+   * Register a new user.
+   * Creates a new user account and returns the user details along with a token.
+   *
+   * @static
+   * @async
+   * @function register
+   * @memberof AuthController
+   * @param {Object} req - Express request object.
+   * @param {Object} req.body - Request body containing user details.
+   * @param {string} req.body.firstName - First name of the user.
+   * @param {string} req.body.lastName - Last name of the user.
+   * @param {string} req.body.email - Email address of the user.
+   * @param {string} req.body.password - Password for the user account.
+   * @param {string} req.body.role - Role of the user (e.g., student, instructor).
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends the created user details and token in the response.
+   * @throws {Error} If registration fails.
    */
   static async register(req, res) {
     try {
@@ -38,9 +59,20 @@ class AuthController {
   }
 
   /**
-   * Login user
-   * @route POST /api/auth/login
-   * @access Public
+   * Login user.
+   * Authenticates the user and returns a token.
+   *
+   * @static
+   * @async
+   * @function login
+   * @memberof AuthController
+   * @param {Object} req - Express request object.
+   * @param {Object} req.body - Request body containing login credentials.
+   * @param {string} req.body.email - Email address of the user.
+   * @param {string} req.body.password - Password for the user account.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends the authenticated user details and token in the response.
+   * @throws {Error} If login fails.
    */
   static async login(req, res) {
     try {

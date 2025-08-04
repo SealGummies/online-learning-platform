@@ -6,7 +6,12 @@ const PopulateConfig = require("../config/populateConfig");
 
 class LessonService {
   /**
-   * Get lessons for a course
+   * Retrieve lessons for a course with access control based on user role.
+   * @param {string} courseId - ID of the course to fetch lessons for.
+   * @param {string} userId - ID of the requesting user.
+   * @param {string} userRole - Role of the requesting user ('student', 'instructor', 'admin').
+   * @returns {Promise<Array<Object>>} Sorted list of Lesson documents.
+   * @throws {Error} If courseId is missing, course not found, or access denied.
    */
   static async getLessons(courseId, userId, userRole) {
     if (!courseId) {
@@ -61,10 +66,18 @@ class LessonService {
   }
 
   /**
-   * Get lesson by ID
+   * Retrieve a specific lesson by ID with access control.
+   * @param {string} lessonId - ID of the lesson to retrieve.
+   * @param {string} userId - ID of the requesting user.
+   * @param {string} userRole - Role of the requesting user ('student', 'instructor', 'admin').
+   * @returns {Promise<Object>} Lesson document.
+   * @throws {Error} If lesson not found, access denied, or not published.
    */
   static async getLessonById(lessonId, userId, userRole) {
-    const lesson = await Lesson.findById(lessonId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor isActive");
+    const lesson = await Lesson.findById(lessonId).populate(
+      "course",
+      PopulateConfig.helpers.getCourseFields("basic") + " instructor isActive"
+    );
 
     if (!lesson) {
       throw new Error("Lesson not found");
@@ -108,7 +121,11 @@ class LessonService {
   }
 
   /**
-   * Create a new lesson
+   * Create a new lesson under an instructor's course.
+   * @param {Object} lessonData - Lesson details (title, course, order, type, content, isPublished).
+   * @param {string} instructorId - ID of the instructor creating the lesson.
+   * @returns {Promise<Object>} Created Lesson document.
+   * @throws {Error} If course not found, unauthorized, or validation fails.
    */
   static async createLesson(lessonData, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
@@ -127,18 +144,13 @@ class LessonService {
         throw new Error("Lesson title must be at least 5 characters long");
       }
 
-      if (
-        lessonData.type &&
-        !["video", "text", "interactive", "quiz"].includes(lessonData.type)
-      ) {
+      if (lessonData.type && !["video", "text", "interactive", "quiz"].includes(lessonData.type)) {
         throw new Error("Invalid lesson type");
       }
 
       // Set order if not provided
       if (!lessonData.order) {
-        const lastLesson = await Lesson.findOne({ course: lessonData.course })
-          .sort({ order: -1 })
-          .session(session);
+        const lastLesson = await Lesson.findOne({ course: lessonData.course }).sort({ order: -1 }).session(session);
         lessonData.order = lastLesson ? lastLesson.order + 1 : 1;
       }
 
@@ -149,20 +161,22 @@ class LessonService {
       });
 
       await lesson.save({ session });
-
-      // 删除lessonCount相关逻辑
-
       return lesson;
     });
   }
 
   /**
-   * Update a lesson
+   * Update an existing lesson's details.
+   * @param {string} lessonId - ID of the lesson to update.
+   * @param {Object} updateData - Fields to update (title, order, type, content, isPublished).
+   * @param {string} instructorId - ID of the instructor updating the lesson.
+   * @returns {Promise<Object>} Updated Lesson document.
+   * @throws {Error} If lesson not found, unauthorized, or validation fails.
    */
   static async updateLesson(lessonId, updateData, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
       const lesson = await Lesson.findById(lessonId)
-        .populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor")
+        .populate("course", PopulateConfig.helpers.getCourseFields("basic") + " instructor")
         .session(session);
 
       if (!lesson) {
@@ -179,10 +193,7 @@ class LessonService {
         throw new Error("Lesson title must be at least 5 characters long");
       }
 
-      if (
-        updateData.type &&
-        !["video", "text", "interactive", "quiz"].includes(updateData.type)
-      ) {
+      if (updateData.type && !["video", "text", "interactive", "quiz"].includes(updateData.type)) {
         throw new Error("Invalid lesson type");
       }
 
@@ -195,12 +206,16 @@ class LessonService {
   }
 
   /**
-   * Delete a lesson
+   * Delete a lesson owned by an instructor.
+   * @param {string} lessonId - ID of the lesson to delete.
+   * @param {string} instructorId - ID of the instructor requesting deletion.
+   * @returns {Promise<Object>} Confirmation message.
+   * @throws {Error} If lesson not found, unauthorized, or progress exists.
    */
   static async deleteLesson(lessonId, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
       const lesson = await Lesson.findById(lessonId)
-        .populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor")
+        .populate("course", PopulateConfig.helpers.getCourseFields("basic") + " instructor")
         .session(session);
 
       if (!lesson) {
@@ -225,22 +240,25 @@ class LessonService {
       await Lesson.findByIdAndDelete(lessonId).session(session);
 
       // Update course lesson count
-      await Course.findByIdAndUpdate(
-        lesson.course._id,
-        { $inc: { lessonCount: -1 } },
-        { session }
-      );
+      await Course.findByIdAndUpdate(lesson.course._id, { $inc: { lessonCount: -1 } }, { session });
 
       return { message: "Lesson deleted successfully" };
     });
   }
 
   /**
-   * Mark lesson as completed
+   * Mark a lesson as completed for a student.
+   * @param {string} lessonId - ID of the lesson to complete.
+   * @param {string} studentId - ID of the student.
+   * @param {Object} completionData - Completion details (completionPercentage).
+   * @returns {Promise<Object>} Result object with lesson completion status and updated progress.
+   * @throws {Error} If lesson not found, unpublished, or not enrolled.
    */
   static async completeLesson(lessonId, studentId, completionData) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const lesson = await Lesson.findById(lessonId).populate("course", PopulateConfig.helpers.getCourseFields('basic')).session(session);
+      const lesson = await Lesson.findById(lessonId)
+        .populate("course", PopulateConfig.helpers.getCourseFields("basic"))
+        .session(session);
       if (!lesson) {
         throw new Error("Lesson not found");
       }
@@ -261,7 +279,11 @@ class LessonService {
       if (typeof completionPercentage === "number") {
         enrollment.completionPercentage = Math.max(0, Math.min(100, completionPercentage));
       } else {
-        enrollment.completionPercentage = Math.min(100, enrollment.completionPercentage + 100 / (await Lesson.countDocuments({ course: lesson.course._id, isPublished: true }).session(session)));
+        enrollment.completionPercentage = Math.min(
+          100,
+          enrollment.completionPercentage +
+            100 / (await Lesson.countDocuments({ course: lesson.course._id, isPublished: true }).session(session))
+        );
       }
       if (enrollment.completionPercentage >= 100) {
         enrollment.status = "completed";
@@ -276,10 +298,15 @@ class LessonService {
   }
 
   /**
-   * Get lesson progress for a student
+   * Get progress for a specific lesson based on user role.
+   * @param {string} lessonId - ID of the lesson to retrieve progress for.
+   * @param {string} userId - ID of the requesting user.
+   * @param {string} userRole - Role of the requesting user ('student', 'instructor', 'admin').
+   * @returns {Promise<Object|Array>} Progress data for a student or array of progress records.
+   * @throws {Error} If lesson not found or access denied.
    */
   static async getLessonProgress(lessonId, userId, userRole) {
-    const lesson = await Lesson.findById(lessonId).populate("course", PopulateConfig.helpers.getCourseFields('basic'));
+    const lesson = await Lesson.findById(lessonId).populate("course", PopulateConfig.helpers.getCourseFields("basic"));
 
     if (!lesson) {
       throw new Error("Lesson not found");
@@ -306,12 +333,10 @@ class LessonService {
       const enrollments = await Enrollment.find({
         course: lesson.course._id,
         status: { $in: ["active", "completed"] },
-      }).populate("student", PopulateConfig.helpers.getUserFields('student', 'detailed'));
+      }).populate("student", PopulateConfig.helpers.getUserFields("student", "detailed"));
 
       const progressData = enrollments.map((enrollment) => {
-        const lessonProgress = enrollment.progress.lessons.find(
-          (p) => p.lesson.toString() === lessonId
-        );
+        const lessonProgress = enrollment.progress.lessons.find((p) => p.lesson.toString() === lessonId);
 
         return {
           student: enrollment.student,
@@ -324,12 +349,10 @@ class LessonService {
       // Admins can see all progress
       const enrollments = await Enrollment.find({
         course: lesson.course._id,
-      }).populate("student", PopulateConfig.helpers.getUserFields('student', 'detailed'));
+      }).populate("student", PopulateConfig.helpers.getUserFields("student", "detailed"));
 
       const progressData = enrollments.map((enrollment) => {
-        const lessonProgress = enrollment.progress.lessons.find(
-          (p) => p.lesson.toString() === lessonId
-        );
+        const lessonProgress = enrollment.progress.lessons.find((p) => p.lesson.toString() === lessonId);
 
         return {
           student: enrollment.student,
@@ -344,10 +367,17 @@ class LessonService {
   }
 
   /**
-   * Get lesson statistics
+   * Get lesson statistics for instructors.
+   * @param {string} lessonId - ID of the lesson to analyze.
+   * @param {string} instructorId - ID of the instructor requesting statistics.
+   * @returns {Promise<Object>} Object containing total students, completed count, and completion rate.
+   * @throws {Error} If lesson not found or unauthorized.
    */
   static async getLessonStats(lessonId, instructorId) {
-    const lesson = await Lesson.findById(lessonId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
+    const lesson = await Lesson.findById(lessonId).populate(
+      "course",
+      PopulateConfig.helpers.getCourseFields("basic") + " instructor"
+    );
 
     if (!lesson) {
       throw new Error("Lesson not found");
@@ -357,7 +387,7 @@ class LessonService {
       throw new Error("Access denied");
     }
 
-    // 统计报名数和完成数
+    // Get enrollment statistics
     const enrollments = await Enrollment.find({
       course: lesson.course._id,
     });
@@ -373,7 +403,12 @@ class LessonService {
   }
 
   /**
-   * Reorder lessons in a course
+   * Reorder lessons within a course in a specified sequence.
+   * @param {string} courseId - ID of the course whose lessons are reordered.
+   * @param {Array<string>} lessonOrder - Array of lesson IDs in desired order.
+   * @param {string} instructorId - ID of the instructor requesting reorder.
+   * @returns {Promise<Object>} Confirmation message.
+   * @throws {Error} If course not found, unauthorized, or invalid lesson order data.
    */
   static async reorderLessons(courseId, lessonOrder, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {

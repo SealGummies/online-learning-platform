@@ -1,166 +1,88 @@
-# Simplified Models
+# Models Directory
 
-Streamlined Mongoose schemas optimized for student projects and learning purposes.
+This directory contains Mongoose schemas and models that define the structure of our MongoDB collections.
 
-## Philosophy
+## Overview
 
-These models remove enterprise-level complexity while maintaining core functionality for:
+The models layer is responsible for:
+- Defining document schemas with validation rules
+- Setting up indexes for query optimization
+- Defining relationships between collections
+- Providing data-level validation
 
-- User management and authentication
-- Course creation and enrollment
-- Progress tracking and assessments
-- Basic analytics and reporting
+## Models
 
-## Files
+### User.js
+- **Purpose**: Defines user accounts for the platform
+- **Roles**: student, instructor, admin
+- **Key Fields**: firstName, lastName, email, password, role, isActive
+- **Indexes**: email (unique), role
 
-- `User.js` - Minimal user authentication (no profile, no stats)
-- `Course.js` - Essential course information (no stats, no redundant fields)
-- `Enrollment.js` - Student-course relationships with exam tracking
-- `Lesson.js` - Basic lesson content (unified content field)
-- `Exam.js` - Minimal exam records (no questions, no complex settings)
+### Course.js
+- **Purpose**: Defines courses offered on the platform
+- **Key Fields**: title, description, instructor, category, level, price, isActive
+- **Indexes**: instructor, category, level, isActive
+- **Relationships**: References User (instructor)
 
-## Key Simplifications
+### Enrollment.js
+- **Purpose**: Tracks student enrollments in courses
+- **Key Fields**: student, course, enrollmentDate, status, completionPercentage, finalGrade
+- **Indexes**: {student, course} (compound unique), student, course, status
+- **Relationships**: References User (student) and Course
 
-### ✂️ Removed Complexity
+### Lesson.js
+- **Purpose**: Defines individual lessons within courses
+- **Key Fields**: title, description, course, type, order, content, duration, isPublished
+- **Indexes**: course, order, isPublished
+- **Relationships**: References Course
 
-- **All statistics fields** (calculated via aggregation queries instead)
-- **Payment processing** and financial transactions
-- **User profiles** (bio, avatar, social links, preferences)
-- **Advanced multimedia** features (multiple video qualities, subtitles)
-- **Complex content structures** (unified into single content field)
-- **Exam questions and answers** (simplified to exam records only)
-- **Enterprise settings** (lockdown browser, proctoring, notifications)
-- **Resource management** systems and file attachments
-- **Advanced progress tracking** (detailed lesson/exam completion arrays)
-- **Certificate systems** and achievement tracking
+### Exam.js
+- **Purpose**: Defines exams and assessments for courses
+- **Key Fields**: title, description, course, type, questions, totalPoints, duration
+- **Indexes**: course, type, isPublished
+- **Relationships**: References Course
 
-### ✅ Retained Features
+## Schema Design Principles
 
-- **Core CRUD operations** and basic Mongoose functionality
-- **User roles and authentication** (student, instructor, admin)
-- **Essential relationships** between entities with proper foreign keys
-- **MongoDB indexing** for performance optimization
-- **Basic progress tracking** (completion percentage, final grades)
-- **Exam score recording** via Enrollment.examsCompleted
-- **Data normalization** (no redundant statistics)
+1. **Validation**: All models include comprehensive validation rules
+2. **Timestamps**: All models use Mongoose timestamps (createdAt, updatedAt)
+3. **Indexes**: Strategic indexing for common query patterns
+4. **Lean Documents**: Using .lean() for read-only operations to improve performance
 
-## Database Schema
+## Best Practices
 
-```
-User (student/instructor/admin)
-├── firstName, lastName, email, password
-├── role, isActive, lastLogin
-└── timestamps (createdAt, updatedAt)
+1. **Never expose passwords**: Always exclude password field in queries
+2. **Use appropriate types**: ObjectId for references, proper data types for fields
+3. **Set required fields**: Mark essential fields as required
+4. **Add default values**: Provide sensible defaults where appropriate
+5. **Index frequently queried fields**: But avoid over-indexing
 
-Course
-├── title, description, instructor → User
-├── category, level, price, isActive
-└── timestamps
-
-Enrollment (Many-to-Many: User ↔ Course)
-├── student → User, course → Course
-├── status, enrollmentDate, completionPercentage
-├── finalGrade, examsCompleted[] → Exam
-└── timestamps
-
-Lesson (One-to-Many: Course → Lessons)
-├── title, course → Course, order
-├── type, content, isPublished
-└── timestamps
-
-Exam (One-to-Many: Course → Exams)
-├── title, description, course → Course
-├── type, isActive
-└── timestamps
-```
-
-## Usage
+## Example Usage
 
 ```javascript
-// Import simplified models
-const User = require("./simplified/User");
-const Course = require("./simplified/Course");
-const Enrollment = require("./simplified/Enrollment");
+const User = require('./User');
 
-// Use exactly like regular Mongoose models
-const user = await User.findById(userId);
-const courses = await Course.find({ instructor: instructorId });
+// Create a new user
+const user = new User({
+  firstName: 'John',
+  lastName: 'Doe',
+  email: 'john@example.com',
+  password: hashedPassword,
+  role: 'student'
+});
+
+await user.save();
+
+// Query with index
+const instructors = await User.find({ role: 'instructor' }).select('-password');
 ```
 
-## Statistics via Aggregation
+## Relationships
 
-Since we removed redundant statistics fields, calculate them using aggregation:
-
-```javascript
-// Get course enrollment count
-const courseStats = await Course.aggregate([
-  { $match: { _id: courseId } },
-  {
-    $lookup: {
-      from: "enrollments",
-      localField: "_id",
-      foreignField: "course",
-      as: "enrollments",
-    },
-  },
-  {
-    $addFields: {
-      enrollmentCount: { $size: "$enrollments" },
-      completionCount: {
-        $size: {
-          $filter: {
-            input: "$enrollments",
-            cond: { $eq: ["$$this.status", "completed"] },
-          },
-        },
-      },
-    },
-  },
-]);
-
-// Get user's course progress
-const userProgress = await User.aggregate([
-  { $match: { _id: userId } },
-  {
-    $lookup: {
-      from: "enrollments",
-      localField: "_id",
-      foreignField: "student",
-      as: "enrollments",
-    },
-  },
-  {
-    $addFields: {
-      coursesEnrolled: { $size: "$enrollments" },
-      coursesCompleted: {
-        $size: {
-          $filter: {
-            input: "$enrollments",
-            cond: { $eq: ["$$this.status", "completed"] },
-          },
-        },
-      },
-    },
-  },
-]);
 ```
-
-## Benefits for Learning
-
-1. **Pure Database Focus**: No business logic complexity, focus on MongoDB concepts
-2. **Normalized Data**: Avoids redundancy, demonstrates proper database design
-3. **Aggregation Practice**: Statistics require aggregation queries for hands-on learning
-4. **Clear Relationships**: Simple foreign key relationships (1:N, M:N)
-5. **Index Optimization**: Essential indexes only, easier to understand performance impact
-6. **Minimal Fields**: Easier to create test data and understand schema structure
-
-## Schema Validation
-
-All models include:
-
-- ✅ **Required field validation**
-- ✅ **Enum constraints** for categorical data
-- ✅ **Unique indexes** where appropriate
-- ✅ **Foreign key references** with proper ObjectId types
-- ✅ **Essential indexes** for query performance
-- ✅ **Timestamps** for audit trails
+Users (1) -----> (N) Courses (as instructor)
+Users (1) -----> (N) Enrollments (as student)
+Courses (1) -----> (N) Enrollments
+Courses (1) -----> (N) Lessons
+Courses (1) -----> (N) Exams
+```

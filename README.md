@@ -1,126 +1,116 @@
 # Online Learning Platform
 
-A comprehensive online learning platform demonstrating advanced MongoDB usage with document-oriented design, CRUD operations, ACID transactions, role-based access control, advanced aggregation, and query optimization. Built with Node.js, Express, and MongoDB.
+A comprehensive online learning platform built with Node.js, Express, and MongoDB, demonstrating advanced database operations, ACID transactions, role-based access control, and query optimization.
 
 ## Features
 
-### Core Functionality
+- Course management with lessons and exams
+- Multi-role user system (Student, Instructor, Admin)
+- Student enrollment with progress tracking
+- Analytics dashboard with MongoDB aggregation
+- JWT authentication and role-based access control
+- Query optimization with strategic indexing
+- ACID transactions for data consistency
+- Comprehensive test coverage with Jest
 
-- **Course Management**: Create, update, and manage courses with lessons and exams
-- **User Management**: Multi-role system (Student, Instructor, Admin)
-- **Enrollment System**: Student enrollment with progress tracking
-- **Analytics Dashboard**: Advanced MongoDB aggregation queries
-- **Security**: JWT authentication with role-based access control
-- **Performance**: Optimized queries with strategic indexing
-
-### Technical Highlights
-
-- **MongoDB Integration**: Document-oriented design with 5+ collections
-- **ACID Transactions**: Data consistency for critical operations
-- **Query Optimization**: 22.4% average performance improvement with indexing
-- **Comprehensive Testing**: 85%+ test coverage with Jest
-- **MVC Architecture**: Clean separation of concerns
-
-## Architecture
-
-### Backend (Node.js + Express + MongoDB)
+## Project Structure
 
 ```
-backend/
-├── config/               # Database configuration
-├── controllers/          # Business logic
-├── middleware/           # Middleware functions
-├── models/               # Mongoose models
-├── routes/               # API routes
-├── scripts/              # Database scripts
-├── services/             # Business logic services
-├── tests/                # Unit and integration tests
-├── utils/                # Utility functions
-└── server.js             # Main application
+online-learning-platform/
+├── backend/              # Node.js + Express + MongoDB backend
+│   ├── config/          # Database and environment configuration
+│   ├── controllers/     # Request handlers and business logic
+│   ├── middleware/      # Authentication and validation middleware
+│   ├── models/          # Mongoose data models
+│   ├── routes/          # API route definitions
+│   ├── scripts/         # Database management scripts
+│   ├── services/        # Business logic services
+│   ├── tests/           # Unit and integration tests
+│   ├── utils/           # Utility functions and error handlers
+│   └── server.js        # Main application entry point
+├── frontend/            # Static web frontend
+│   ├── assets/          # Images, icons, and static resources
+│   ├── components/      # Reusable HTML components
+│   ├── css/             # Stylesheets
+│   ├── js/              # Frontend JavaScript logic
+│   ├── pages/           # Application pages
+│   └── index.html       # Main application page
+├── documents/           # Project documentation and reports
+└── setup.sh             # Automated setup script
 ```
 
-### Frontend (HTML/CSS/JavaScript)
-
-```
-frontend/
-├── assets/              # Static assets (images, styles)
-├── components/          # Reusable components
-├── css/                 # Stylesheets
-├── js/                  # Frontend logic
-├── pages/               # Application pages
-└── index.html           # Main HTML file
-```
-
-## Database Schema
+## Database Design
 
 ### Collections
 
-- **Users**: Student, Instructor, Admin accounts
+- **Users**: Student, Instructor, and Admin accounts
 - **Courses**: Course information and settings
-- **Enrollments**: Student enrollments and progress tracking
+- **Enrollments**: Student enrollment and progress tracking
 - **Lessons**: Course content structure
 - **Exams**: Assessments and submissions
 
 ### Key Features
 
-- Document-oriented design with nested JSON data
+- Document-oriented design with nested JSON
 - ObjectId references for relationships
-- Strategic indexing for query optimization
+- Strategic indexing for performance optimization
 - ACID transactions for data consistency
 
-## Quick Start
+## Installation
 
 ### Prerequisites
 
 - Node.js (v14 or higher)
-- MongoDB (local or Atlas)
-- npm or yarn
+- MongoDB (local installation or Atlas cloud)
+- npm package manager
 
-### Option 1: Automated Setup
+### Quick Setup
 
 ```bash
 git clone <repository-url>
-cd online-learning-platform-1
+cd online-learning-platform
 ./setup.sh
 ```
 
-### Option 2: Manual Setup
+### Manual Setup
 
 ```bash
+# Install backend dependencies
 cd backend
 npm install
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your MongoDB connection
+# Edit .env with your MongoDB connection string
 
-# Initialize database
+# Initialize database with sample data
 npm run seed
 
 # Start development server
-npm run dev
+npm start
 ```
 
-### Access URLs
+### Development URLs
 
-- **Backend API**: `http://localhost:3761/api`
+- Backend API: http://localhost:3761/api
+- Frontend: Open `frontend/index.html` in browser
 
-## Authentication
+## Default User Accounts
 
-### Sample Users (after seeding)
+After running the database seeding script, you can log in with these sample accounts:
 
-- **Admin**: `admin@example.com` / `password123`
-- **Instructor**: `john.smith@example.com` / `password123`
-- **Student**: `alice.johnson@example.com` / `password123`
+- **Admin**: admin@example.com / password123
+- **Instructor**: john.smith@example.com / password123
+- **Student**: alice.johnson@example.com / password123
 
-## API Endpoints
+## API Reference
 
-### Authentication
+### Authentication Endpoints
 
 ```
-POST   /api/auth/register    # Register new user
-POST   /api/auth/login       # User login
-GET    /api/auth/me          # Get current user profile
+POST /api/auth/register    # Register new user
+POST /api/auth/login       # User login
+GET  /api/auth/me          # Get current user profile
 ```
 
 ### Course Management
@@ -137,86 +127,24 @@ POST   /api/courses/:id/enroll # Enroll in course
 ### Enrollment Management
 
 ```
-GET    /api/enrollments      # Get student enrollments
-PUT    /api/enrollments/:id/progress # Update progress
-POST   /api/enrollments/:id/withdraw # Withdraw from course
+GET  /api/enrollments                    # Get student enrollments
+PUT  /api/enrollments/:id/progress       # Update progress
+POST /api/enrollments/:id/withdraw       # Withdraw from course
 ```
 
 ### Analytics
 
 ```
-GET    /api/analytics/courses/top-performing
-GET    /api/analytics/students/progress
-GET    /api/analytics/instructors/dashboard
+GET /api/analytics/courses/top-performing
+GET /api/analytics/students/progress
+GET /api/analytics/instructors/dashboard
 ```
 
-## Performance Features
+## Performance Optimization
 
-### Query Optimization
+### Query Performance Results
 
-- **22.4% average performance improvement** with strategic indexing
-- **49% improvement** on analytics queries
-- **Indexed fields**: email, role, category, instructor, isActive
-- **Text search indexes** for course and user search
-
-### ACID Transactions
-
-- Enrollment operations with rollback on failure
-- Progress updates with data consistency
-- Exam submissions with atomic operations
-
-## Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Run integration tests
-npm run test:integration
-
-# Run unit tests
-npm run test:unit
-```
-
-**Test Coverage**: 85%+ on core services
-
-## Analytics & Reporting
-
-### Advanced MongoDB Aggregation Queries
-
-- Top performing courses by enrollment and completion rates
-- Student progress analytics with time-based tracking
-- Instructor performance metrics
-- Course completion trends and patterns
-- Revenue analytics and financial reporting
-
-### Sample Analytics Queries
-
-```javascript
-// Top performing courses
-db.courses.aggregate([
-  {
-    $lookup: { from: "enrollments", localField: "_id", foreignField: "course" },
-  },
-  { $group: { _id: "$_id", enrollmentCount: { $sum: 1 } } },
-  { $sort: { enrollmentCount: -1 } },
-]);
-```
-
-## Security Features
-
-- **JWT Authentication**: Secure token-based authentication
-- **Role-Based Access Control (RBAC)**: Student, Instructor, Admin roles
-- **Input Validation**: Express-validator for request validation
-- **Password Hashing**: bcryptjs for secure password storage
-- **CORS Protection**: Configurable cross-origin resource sharing
-
-## Performance Highlights
-
-### Query Optimization Results
+Strategic indexing has improved query performance significantly:
 
 | Query Type              | Performance Improvement |
 | ----------------------- | ----------------------- |
@@ -228,16 +156,80 @@ db.courses.aggregate([
 
 ### Indexing Strategy
 
-- **Essential Indexes**: email, role, category, instructor, isActive
-- **Text Indexes**: Course and user search functionality
-- **Compound Indexes**: Multi-field query optimization
-- **Performance Monitoring**: Regular query analysis
+- Essential indexes on email, role, category, instructor, isActive fields
+- Text search indexes for course and user search functionality
+- Compound indexes for multi-field query optimization
+- Regular query performance monitoring
+
+### ACID Transactions
+
+- Enrollment operations with automatic rollback on failure
+- Progress updates with data consistency guarantees
+- Exam submissions with atomic operations
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run with coverage report
+npm run test:coverage
+
+# Run integration tests only
+npm run test:integration
+
+# Run unit tests only
+npm run test:unit
+```
+
+Test coverage: 85%+ on core services and business logic.
+
+## Analytics Features
+
+The platform includes advanced MongoDB aggregation queries for comprehensive analytics:
+
+- Top performing courses by enrollment and completion rates
+- Student progress tracking with time-based analytics
+- Instructor performance metrics and course statistics
+- Course completion trends and learning patterns
+- Revenue analytics and financial reporting
+
+### Sample Analytics Query
+
+```javascript
+// Top performing courses by enrollment count
+db.courses.aggregate([
+  {
+    $lookup: {
+      from: "enrollments",
+      localField: "_id",
+      foreignField: "course",
+    },
+  },
+  {
+    $group: {
+      _id: "$_id",
+      enrollmentCount: { $sum: 1 },
+    },
+  },
+  { $sort: { enrollmentCount: -1 } },
+]);
+```
+
+## Security
+
+- JWT token-based authentication
+- Role-based access control (Student, Instructor, Admin)
+- Input validation with Express-validator
+- Secure password hashing with bcryptjs
+- CORS protection for cross-origin requests
 
 ## Documentation
 
-- [`backend/README.md`](backend/README.md) - Backend API documentation
-- [`frontend/README.md`](frontend/README.md) - Frontend setup guide
-- [`performance_comparison_table.md`](performance_comparison_table.md) - Query optimization report
-- [`Milestone 1 Documentation.pdf`](Milestone%201%20Documentation.pdf) - Milestone 1 details
-- [`Milestone 2 Documentation.pdf`](Milestone%202%20Documentation.pdf) - Milestone 2 details
-- [`Milestone 3 Documentation.pdf`](Milestone%203%20Documentation.pdf) - Milestone 3 details
+- [Backend API Documentation](backend/README.md)
+- [Frontend Setup Guide](frontend/README.md)
+- [Query Optimization Report](performance_comparison_table.md)
+- [Milestone 1 Documentation](documents/Milestone%201%20Documentation.pdf)
+- [Milestone 2 Documentation](documents/Milestone%202%20Documentation.pdf)
+- [Milestone 3 Documentation](documents/Milestone%203%20Documentation.pdf)

@@ -5,10 +5,13 @@ const Enrollment = require("../models/Enrollment");
 const Exam = require("../models/Exam");
 
 class AnalyticsService {
+  // -------------------- Admin / Platform Analytics --------------------
+
   /**
    * Get top performing courses by enrollment count and average grades
    * Purpose: Identify most popular and successful courses for platform optimization
    * Business Value: Help administrators prioritize course promotion and instructor support
+   * @returns {Promise<Array<Object>>} Array of top performing course objects
    */
   static async getTopPerformingCourses() {
     try {
@@ -60,10 +63,7 @@ class AnalyticsService {
                 then: {
                   $round: [
                     {
-                      $multiply: [
-                        { $divide: ["$completedCount", "$enrollmentCount"] },
-                        100,
-                      ],
+                      $multiply: [{ $divide: ["$completedCount", "$enrollmentCount"] }, 100],
                     },
                     2,
                   ],
@@ -92,209 +92,15 @@ class AnalyticsService {
         { $limit: 10 },
       ]);
     } catch (error) {
-      throw new Error(
-        `Error fetching top performing courses: ${error.message}`
-      );
+      throw new Error(`Error fetching top performing courses: ${error.message}`);
     }
   }
 
   /**
-   * Get student progress analytics across all enrolled courses
-   * Purpose: Track individual student progress across all enrolled courses
-   * Business Value: Enable personalized learning recommendations and early intervention
-   */
-  static async getStudentProgressAnalytics() {
-    try {
-      return await User.aggregate([
-        { $match: { role: "student" } },
-        {
-          $lookup: {
-            from: "enrollments",
-            localField: "_id",
-            foreignField: "student",
-            as: "enrollments",
-          },
-        },
-        { $unwind: "$enrollments" },
-        {
-          $lookup: {
-            from: "courses",
-            localField: "enrollments.course",
-            foreignField: "_id",
-            as: "courseDetails",
-          },
-        },
-        { $unwind: "$courseDetails" },
-        {
-          $addFields: {
-            completionPercentage: "$enrollments.completionPercentage",
-            finalGrade: "$enrollments.finalGrade",
-          },
-        },
-        {
-          $project: {
-            studentName: { $concat: ["$firstName", " ", "$lastName"] },
-            studentEmail: "$email",
-            courseName: "$courseDetails.title",
-            courseCategory: "$courseDetails.category",
-            courseLevel: "$courseDetails.level",
-            completionPercentage: 1,
-            finalGrade: 1,
-            enrolledAt: "$enrollments.enrollmentDate",
-            status: "$enrollments.status",
-          },
-        },
-        { $sort: { completionPercentage: -1 } },
-      ]);
-    } catch (error) {
-      throw new Error(
-        `Error fetching student progress analytics: ${error.message}`
-      );
-    }
-  }
-
-  /**
-   * Get instructor teaching analytics
-   * Purpose: Analyze instructor performance and course management efficiency
-   * Business Value: Support instructor development and course quality improvement
-   */
-  static async getInstructorAnalytics() {
-    try {
-      return await User.aggregate([
-        { $match: { role: "instructor" } },
-        {
-          $lookup: {
-            from: "courses",
-            localField: "_id",
-            foreignField: "instructor",
-            as: "courses",
-          },
-        },
-        {
-          $lookup: {
-            from: "enrollments",
-            localField: "courses._id",
-            foreignField: "course",
-            as: "enrollments",
-          },
-        },
-        {
-          $addFields: {
-            totalCourses: { $size: "$courses" },
-            totalEnrollments: { $size: "$enrollments" },
-            completedEnrollments: {
-              $size: {
-                $filter: {
-                  input: "$enrollments",
-                  cond: { $eq: ["$$this.status", "completed"] },
-                },
-              },
-            },
-            averageCompletionPercentage: {
-              $avg: "$enrollments.completionPercentage",
-            },
-            averageEnrollmentsPerCourse: {
-              $cond: {
-                if: { $gt: [{ $size: "$courses" }, 0] },
-                then: {
-                  $divide: [{ $size: "$enrollments" }, { $size: "$courses" }],
-                },
-                else: 0,
-              },
-            },
-          },
-        },
-        {
-          $addFields: {
-            avgCompletionRate: {
-              $cond: {
-                if: { $gt: ["$totalEnrollments", 0] },
-                then: {
-                  $round: [
-                    {
-                      $multiply: [
-                        { $divide: ["$completedEnrollments", "$totalEnrollments"] },
-                        100,
-                      ],
-                    },
-                    2,
-                  ],
-                },
-                else: 0,
-              },
-            },
-          },
-        },
-        {
-          $project: {
-            instructorName: { $concat: ["$firstName", " ", "$lastName"] },
-            email: 1,
-            totalCourses: 1,
-            totalEnrollments: 1,
-            completedEnrollments: 1,
-            avgCompletionRate: 1,
-            averageCompletionPercentage: 1,
-            averageEnrollmentsPerCourse: 1,
-            createdAt: 1,
-          },
-        },
-        { $sort: { totalEnrollments: -1 } },
-      ]);
-    } catch (error) {
-      throw new Error(`Error fetching instructor analytics: ${error.message}`);
-    }
-  }
-
-  /**
-   * Get course completion trends over time
-   * Purpose: Track course completion patterns and identify seasonal trends
-   * Business Value: Optimize course scheduling and marketing campaigns
-   */
-  static async getCourseCompletionTrends() {
-    try {
-      return await Enrollment.aggregate([
-        { $match: { status: "completed" } },
-        {
-          $lookup: {
-            from: "courses",
-            localField: "course",
-            foreignField: "_id",
-            as: "courseInfo",
-          },
-        },
-        { $unwind: "$courseInfo" },
-        {
-          $group: {
-            _id: {
-              year: { $year: "$updatedAt" },
-              month: { $month: "$updatedAt" },
-              course: "$courseInfo.title",
-              courseId: "$courseInfo._id",
-            },
-            completions: { $sum: 1 },
-            category: { $first: "$courseInfo.category" },
-            level: { $first: "$courseInfo.level" },
-          },
-        },
-        {
-          $sort: {
-            "_id.year": -1,
-            "_id.month": -1,
-            completions: -1,
-          },
-        },
-      ]);
-    } catch (error) {
-      throw new Error(
-        `Error fetching course completion trends: ${error.message}`
-      );
-    }
-  }
-
-  /**
-   * Get exam performance analysis with grade distribution
+   * Get exam performance analysis for all courses
    * Purpose: Analyze exam difficulty and student performance patterns
    * Business Value: Identify courses needing curriculum adjustments
+   * @returns {Promise<Array<Object>>} Array of exam performance metrics
    */
   static async getExamPerformanceAnalysis() {
     try {
@@ -402,16 +208,15 @@ class AnalyticsService {
         { $sort: { averageGrade: -1 } },
       ]);
     } catch (error) {
-      throw new Error(
-        `Error fetching exam performance analysis: ${error.message}`
-      );
+      throw new Error(`Error fetching exam performance analysis: ${error.message}`);
     }
   }
 
   /**
-   * Get overall platform statistics
+   * Get overall platform statistics including users, courses, enrollments, exams, and revenue
    * Purpose: Provide high-level overview of platform performance
    * Business Value: Support executive decision making and reporting
+   * @returns {Promise<Object>} Platform overview data
    */
   static async getPlatformOverview() {
     try {
@@ -429,7 +234,7 @@ class AnalyticsService {
         status: "completed",
       });
       const totalExams = await Exam.countDocuments();
-      
+
       // Calculate revenue
       const revenueData = await Course.aggregate([
         {
@@ -454,9 +259,9 @@ class AnalyticsService {
           },
         },
       ]);
-      
+
       const totalRevenue = revenueData.length > 0 ? revenueData[0].total : 0;
-      
+
       return {
         users: {
           total: totalUsers,
@@ -469,10 +274,7 @@ class AnalyticsService {
           total: totalEnrollments,
           active: activeEnrollments,
           completed: completedEnrollments,
-          completionRate:
-            totalEnrollments > 0
-              ? ((completedEnrollments / totalEnrollments) * 100).toFixed(2)
-              : 0,
+          completionRate: totalEnrollments > 0 ? ((completedEnrollments / totalEnrollments) * 100).toFixed(2) : 0,
         },
         exams: { total: totalExams },
         revenue: {
@@ -486,16 +288,17 @@ class AnalyticsService {
 
   /**
    * Get filtered analytics based on date range and criteria
-   * @param {Object} filters - { startDate, endDate, category, level, type }
-   * @returns {Promise<Array>} Filtered analytics data
+   * Purpose: Enable analysis of specific time periods and criteria
+   * Business Value: Support targeted interventions and insights
+   * @param {Object} filters - Filter options
+   * @param {string} [filters.startDate] - Start date for filtering
+   * @param {string} [filters.endDate] - End date for filtering
+   * @param {string} [filters.category] - Course category to filter
+   * @param {string} [filters.level] - Course level to filter
+   * @param {string} [filters.type] - Exam type to filter
+   * @returns {Promise<Array<Object>>} Filtered analytics results
    */
-  static async getFilteredAnalytics({
-    startDate,
-    endDate,
-    category,
-    level,
-    type,
-  }) {
+  static async getFilteredAnalytics({ startDate, endDate, category, level, type }) {
     // Build match conditions
     const match = {};
     if (startDate || endDate) {
@@ -556,9 +359,199 @@ class AnalyticsService {
       },
     });
     pipeline.push({ $sort: { totalEnrollments: -1 } });
-    return await (this.Enrollment || require("../models/Enrollment")).aggregate(
-      pipeline
-    );
+    return await (this.Enrollment || require("../models/Enrollment")).aggregate(pipeline);
+  }
+
+  // -------------------- Student Analytics --------------------
+
+  /**
+   * Get student progress analytics across all enrolled courses
+   * Purpose: Track individual student progress across all enrolled courses
+   * Business Value: Enable personalized learning recommendations and early intervention
+   * @returns {Promise<Array<Object>>} Array of student progress objects
+   */
+  static async getStudentProgressAnalytics() {
+    try {
+      return await User.aggregate([
+        { $match: { role: "student" } },
+        {
+          $lookup: {
+            from: "enrollments",
+            localField: "_id",
+            foreignField: "student",
+            as: "enrollments",
+          },
+        },
+        { $unwind: "$enrollments" },
+        {
+          $lookup: {
+            from: "courses",
+            localField: "enrollments.course",
+            foreignField: "_id",
+            as: "courseDetails",
+          },
+        },
+        { $unwind: "$courseDetails" },
+        {
+          $addFields: {
+            completionPercentage: "$enrollments.completionPercentage",
+            finalGrade: "$enrollments.finalGrade",
+          },
+        },
+        {
+          $project: {
+            studentName: { $concat: ["$firstName", " ", "$lastName"] },
+            studentEmail: "$email",
+            courseName: "$courseDetails.title",
+            courseCategory: "$courseDetails.category",
+            courseLevel: "$courseDetails.level",
+            completionPercentage: 1,
+            finalGrade: 1,
+            enrolledAt: "$enrollments.enrollmentDate",
+            status: "$enrollments.status",
+          },
+        },
+        { $sort: { completionPercentage: -1 } },
+      ]);
+    } catch (error) {
+      throw new Error(`Error fetching student progress analytics: ${error.message}`);
+    }
+  }
+
+  // -------------------- Instructor Analytics --------------------
+
+  /**
+   * Get instructor teaching analytics across courses
+   * Purpose: Analyze instructor performance and course management efficiency
+   * Business Value: Support instructor development and course quality improvement
+   * @returns {Promise<Array<Object>>} Array of instructor performance metrics
+   */
+  static async getInstructorAnalytics() {
+    try {
+      return await User.aggregate([
+        { $match: { role: "instructor" } },
+        {
+          $lookup: {
+            from: "courses",
+            localField: "_id",
+            foreignField: "instructor",
+            as: "courses",
+          },
+        },
+        {
+          $lookup: {
+            from: "enrollments",
+            localField: "courses._id",
+            foreignField: "course",
+            as: "enrollments",
+          },
+        },
+        {
+          $addFields: {
+            totalCourses: { $size: "$courses" },
+            totalEnrollments: { $size: "$enrollments" },
+            completedEnrollments: {
+              $size: {
+                $filter: {
+                  input: "$enrollments",
+                  cond: { $eq: ["$$this.status", "completed"] },
+                },
+              },
+            },
+            averageCompletionPercentage: {
+              $avg: "$enrollments.completionPercentage",
+            },
+            averageEnrollmentsPerCourse: {
+              $cond: {
+                if: { $gt: [{ $size: "$courses" }, 0] },
+                then: {
+                  $divide: [{ $size: "$enrollments" }, { $size: "$courses" }],
+                },
+                else: 0,
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            avgCompletionRate: {
+              $cond: {
+                if: { $gt: ["$totalEnrollments", 0] },
+                then: {
+                  $round: [
+                    {
+                      $multiply: [{ $divide: ["$completedEnrollments", "$totalEnrollments"] }, 100],
+                    },
+                    2,
+                  ],
+                },
+                else: 0,
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            instructorName: { $concat: ["$firstName", " ", "$lastName"] },
+            email: 1,
+            totalCourses: 1,
+            totalEnrollments: 1,
+            completedEnrollments: 1,
+            avgCompletionRate: 1,
+            averageCompletionPercentage: 1,
+            averageEnrollmentsPerCourse: 1,
+            createdAt: 1,
+          },
+        },
+        { $sort: { totalEnrollments: -1 } },
+      ]);
+    } catch (error) {
+      throw new Error(`Error fetching instructor analytics: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get course completion trends over time
+   * Purpose: Track course completion patterns and identify seasonal trends
+   * Business Value: Optimize course scheduling and marketing campaigns
+   */
+  static async getCourseCompletionTrends() {
+    try {
+      return await Enrollment.aggregate([
+        { $match: { status: "completed" } },
+        {
+          $lookup: {
+            from: "courses",
+            localField: "course",
+            foreignField: "_id",
+            as: "courseInfo",
+          },
+        },
+        { $unwind: "$courseInfo" },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$updatedAt" },
+              month: { $month: "$updatedAt" },
+              course: "$courseInfo.title",
+              courseId: "$courseInfo._id",
+            },
+            completions: { $sum: 1 },
+            category: { $first: "$courseInfo.category" },
+            level: { $first: "$courseInfo.level" },
+          },
+        },
+        {
+          $sort: {
+            "_id.year": -1,
+            "_id.month": -1,
+            completions: -1,
+          },
+        },
+      ]);
+    } catch (error) {
+      throw new Error(`Error fetching course completion trends: ${error.message}`);
+    }
   }
 
   /**
@@ -612,9 +605,7 @@ class AnalyticsService {
         { $sort: { enrollmentDate: -1 } },
       ]);
     } catch (error) {
-      throw new Error(
-        `Error fetching instructor enrollments: ${error.message}`
-      );
+      throw new Error(`Error fetching instructor enrollments: ${error.message}`);
     }
   }
 
@@ -631,12 +622,7 @@ class AnalyticsService {
 
       const courseIds = instructorCourses.map((course) => course._id);
 
-      const [
-        totalEnrollments,
-        activeEnrollments,
-        completedEnrollments,
-        enrollmentStats,
-      ] = await Promise.all([
+      const [totalEnrollments, activeEnrollments, completedEnrollments, enrollmentStats] = await Promise.all([
         Enrollment.countDocuments({ course: { $in: courseIds } }),
         Enrollment.countDocuments({
           course: { $in: courseIds },
@@ -693,9 +679,7 @@ class AnalyticsService {
         },
       };
     } catch (error) {
-      throw new Error(
-        `Error fetching instructor dashboard overview: ${error.message}`
-      );
+      throw new Error(`Error fetching instructor dashboard overview: ${error.message}`);
     }
   }
 
@@ -749,9 +733,7 @@ class AnalyticsService {
         { $sort: { progress: -1, lastActivity: -1 } },
       ]);
     } catch (error) {
-      throw new Error(
-        `Error fetching instructor student progress: ${error.message}`
-      );
+      throw new Error(`Error fetching instructor student progress: ${error.message}`);
     }
   }
 }

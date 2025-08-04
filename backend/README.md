@@ -2,442 +2,156 @@
 
 REST API for the Online Learning Platform built with Node.js, Express, and MongoDB using **MVC Architecture**.
 
-## 🏗️ Architecture
+## Available Scripts
 
-This project follows a **Model-View-Controller (MVC) + Services** pattern:
+```bash
+# Development
+npm run dev              # Start development server with auto-reload
+npm start               # Start production server
+
+# Testing
+npm test                # Run Jest test suite
+npm run test:coverage   # Generate coverage report
+npm run test:integration # Run integration tests
+npm run test:unit       # Run unit tests
+
+# Database
+npm run seed            # Populate with sample data
+npm run config-db       # Database configuration wizard
+```
+
+##  Sample Data
+
+After running `npm run seed`, you can login with:
+
+- **Admin**: `admin1@example.com` / `password123`
+- **Instructor**: `instructor1@example.com` / `password123`
+- **Student**: `student1@example.com` / `password123`.
+
+##  Project Structure
 
 ```
 backend/
-├── controllers/          # 🎮 HTTP request handlers
-├── services/            # 🔧 Business logic & transactions
-├── routes/              # 🛣️ API route definitions
-├── models/              # 📊 Database schemas
-├── middleware/          # 🔒 Authentication & validation
-├── tests/               # 🧪 Jest test suite
-├── utils/               # 🛠️ Utility functions
-└── legacy/              # 📦 Pre-refactor files (archived)
+├── config/              # Database and environment configuration
+├── controllers/         # HTTP request handlers (MVC Controllers)
+├── middleware/          # Authentication and validation middleware
+├── models/              # MongoDB schemas (MVC Models)
+├── routes/              # API route definitions
+├── scripts/             # Database utilities and seeding
+├── services/            # Business logic and transactions
+├── tests/               # Jest test suite
+├── utils/               # Utility functions and error handling
+└── server.js            # Main application entry point
 ```
 
-## ✨ Features
+##  Key Features
 
-- **🔒 JWT Authentication** with role-based access control (RBAC)
-- **🗄️ MongoDB Integration** with ACID transactions
-- **🌐 RESTful API** with comprehensive CRUD operations
-- **📊 5 Collections**: Users, Courses, Enrollments, Lessons, Exams
-- **👥 3 User Roles**: Student, Instructor, Admin
-- **⚡ ACID Transactions** for data consistency
-- **🧪 Jest Testing** with 85%+ coverage
-- **🏗️ MVC Architecture** for maintainability
+- ** JWT Authentication** with role-based access control
+- ** MongoDB Integration** with ACID transactions
+- ** RESTful API** with comprehensive CRUD operations
+- ** 5 Collections**: Users, Courses, Enrollments, Lessons, Exams
+- ** 3 User Roles**: Student, Instructor, Admin
+- ** Jest Testing** with comprehensive coverage
 
 ## Quick Start
 
-### 1. Install Dependencies
+### 1. Prerequisites
+
+- Node.js (v14+)
+- MongoDB (local or Atlas)
+
+### 2. Installation
 
 ```bash
 npm install
-```
-
-### 2. Setup Environment
-
-```bash
-# Copy environment template
 cp .env.example .env
-
-# Edit .env with your settings
+# Edit .env with your MongoDB connection string and JWT secret
 ```
 
-### 3. Choose Database Option
-
-#### Option A: MongoDB Atlas (Recommended)
-
-1. Create account at [MongoDB Atlas](https://cloud.mongodb.com/)
-2. Create a cluster and get connection string
-3. Update `.env`:
-   ```env
-   MONGODB_URI=mongodb+srv://username:password@cluster.xxxxx.mongodb.net/online-learning-platform?retryWrites=true&w=majority&appName=AppName
-   ```
-4. Test connection:
-   ```bash
-   npm run test-atlas
-   ```
-
-#### Option B: Local MongoDB
-
-1. Install and start MongoDB locally
-2. Update `.env`:
-   ```env
-   MONGODB_URI=mongodb://localhost:27017/online-learning-platform
-   ```
-3. Test connection:
-   ```bash
-   npm run test-db
-   ```
-
-### 4. Initialize Database
+### 3. Database Setup
 
 ```bash
-# Populate with sample data
+# Configure database connection
+npm run config-db
+
+# Seed sample data
 npm run seed
 ```
 
-### 5. Run Tests
+### 4. Development
 
 ```bash
-# Run all tests
+# Start development server
+npm run dev
+
+# Run tests
 npm test
 
 # Run with coverage
 npm run test:coverage
-
-# Run integration tests only
-npm run test:integration
-
-# Run legacy transaction tests
-npm run test-transactions
 ```
 
-### 6. Start Development Server
-
-```bash
-# Development mode with auto-reload
-npm run dev
-
-# Production mode
-npm start
-```
-
-## 🧪 Testing
-
-The project includes comprehensive Jest-based testing:
-
-```bash
-# Available test commands
-npm test                    # Run all Jest tests
-npm run test:integration    # Integration tests
-npm run test:unit          # Unit tests
-npm run test:watch         # Watch mode
-npm run test:coverage      # Coverage report
-npm run test-transactions  # Legacy transaction tests
-```
-
-**Current Test Coverage**: 85%+ on core transaction services
-
-## 🏗️ MVC Architecture Details
-
-### Controllers (`controllers/`)
-
-Handle HTTP requests and responses:
-
-- `CourseController.js` - Course management endpoints
-- `EnrollmentController.js` - Student enrollment operations
-
-### Services (`services/`)
-
-Business logic and data operations:
-
-- `TransactionService.js` - ACID transaction management
-- `CourseService.js` - Course business logic
-- `EnrollmentService.js` - Enrollment business logic
-
-### Routes (`routes/`)
-
-API endpoint definitions:
-
-- `courses.js` - Course-related routes
-- `enrollments.js` - Enrollment-related routes
-- `auth.js` - Authentication routes
-- `users.js` - User management routes
-
-### Models (`models/`)
-
-Database schemas and validation:
-
-- `User.js` - User accounts and roles
-- `Course.js` - Course information and settings
-- `Enrollment.js` - Student enrollments and progress
-- `Lesson.js` - Course content structure
-- `Exam.js` - Assessments and submissions
-
-## 🚀 API Usage Examples
-
-### Authentication
-
-```bash
-# Register new user
-POST /api/auth/register
-{
-  "firstName": "John",
-  "lastName": "Doe",
-  "email": "john@example.com",
-  "password": "password123",
-  "role": "student"
-}
-
-# Login
-POST /api/auth/login
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-### Course Management
-
-```bash
-# Get all courses
-GET /api/courses
-
-# Enroll in course (requires authentication)
-POST /api/courses/:id/enroll
-Authorization: Bearer <token>
-
-# Update progress (requires authentication)
-PUT /api/enrollments/:id/progress
-Authorization: Bearer <token>
-{
-  "lessonId": "lesson_id",
-  "completed": true,
-  "timeSpent": 1800,
-  "score": 95
-}
-```
-
-## 🔧 Environment Variables
+## Environment Configuration
 
 Required variables in `.env`:
 
 ```env
 NODE_ENV=development
 PORT=3761
-MONGODB_URI=your-database-connection-string
-JWT_SECRET=your-super-secure-jwt-secret-key
+MONGODB_URI=your-mongodb-connection-string
+JWT_SECRET=your-jwt-secret-key
 JWT_EXPIRE=30d
 ```
 
-## 📊 Available Scripts
+## API Endpoints
 
-```bash
-# Development
-npm run dev                 # Start development server with auto-reload
-npm start                   # Start production server
-
-# Testing
-npm test                    # Run Jest test suite
-npm run test:integration    # Run integration tests
-npm run test:coverage       # Generate coverage report
-npm run test-transactions   # Run legacy transaction tests
-
-# Database
-npm run seed               # Populate with sample data
-npm run test-db            # Test local MongoDB connection
-npm run test-atlas         # Test MongoDB Atlas connection
-
-# Utilities
-npm run validate-env       # Validate environment configuration
-npm run config-db          # Database configuration wizard
-```
-
-## 🌐 API Endpoints
-
-### 🔐 Authentication Routes
+### Authentication
 
 ```
-POST   /api/auth/register    # Register new user
-POST   /api/auth/login       # User login
-GET    /api/auth/me          # Get current user profile
+POST /api/auth/register    # Register new user
+POST /api/auth/login       # User login
+GET  /api/auth/me          # Get current user profile
+PUT  /api/auth/me          # Update profile
+PUT  /api/auth/change-password # Change password
 ```
 
-### 📚 Course Management
+### Courses
 
 ```
-GET    /api/courses          # List all courses (public)
-POST   /api/courses          # Create course (instructor only)
-GET    /api/courses/:id      # Get course details
-PUT    /api/courses/:id      # Update course (instructor only)
-DELETE /api/courses/:id      # Delete course (instructor only)
-GET    /api/courses/:id/stats # Get course statistics
-POST   /api/courses/:id/enroll # Enroll in course (student only)
+GET    /api/courses        # List courses
+POST   /api/courses        # Create course (instructor)
+GET    /api/courses/:id    # Get course details
+PUT    /api/courses/:id    # Update course (instructor)
+DELETE /api/courses/:id    # Delete course (instructor)
+POST   /api/courses/:id/enroll # Enroll in course (student)
 ```
 
-### 📝 Enrollment Management
+### Enrollments
 
 ```
-GET    /api/enrollments      # Get student enrollments
-GET    /api/enrollments/:id  # Get enrollment details
-PUT    /api/enrollments/:id/progress # Update learning progress
-PUT    /api/enrollments/:id/review   # Submit course review
-POST   /api/enrollments/:id/withdraw # Withdraw from course
-GET    /api/enrollments/stats        # Get student statistics
+GET  /api/enrollments      # Get student enrollments
+PUT  /api/enrollments/:id/progress # Update progress
+POST /api/enrollments/:id/withdraw # Withdraw from course
 ```
 
-### 👥 User Management
+### Users (Admin)
 
 ```
-GET    /api/users           # List users (admin only)
-GET    /api/users/:id       # Get user details (admin only)
-PUT    /api/users/:id       # Update user (admin only)
-DELETE /api/users/:id       # Delete user (admin only)
+GET    /api/users          # List all users
+POST   /api/users          # Create user
+GET    /api/users/:id      # Get user details
+PUT    /api/users/:id      # Update user
+DELETE /api/users/:id      # Delete user
 ```
 
-## 📁 Project Structure
+## � Documentation
 
-```
-backend/
-├── controllers/         # 🎮 HTTP request handlers
-│   ├── CourseController.js
-│   └── EnrollmentController.js
-├── services/           # 🔧 Business logic & transactions
-│   ├── TransactionService.js
-│   ├── CourseService.js
-│   └── EnrollmentService.js
-├── routes/             # 🛣️ API route definitions
-│   ├── courses.js
-│   ├── enrollments.js
-│   ├── auth.js
-│   ├── users.js
-│   ├── lessons.js
-│   └── exams.js
-├── models/             # 📊 Database schemas
-│   ├── User.js
-│   ├── Course.js
-│   ├── Enrollment.js
-│   ├── Lesson.js
-│   └── Exam.js
-├── middleware/         # 🔒 Authentication & validation
-│   └── auth.js
-├── tests/              # 🧪 Test suite
-│   ├── integration/
-│   ├── unit/
-│   └── setup.js
-├── utils/              # 🛠️ Utility functions
-├── legacy/             # 📦 Archived pre-refactor files
-├── config/             # ⚙️ Database configuration
-└── scripts/            # 🛠️ Database seeding scripts
-```
+For detailed information, see the individual README files:
 
-## 🔒 Security Features
-
-- **JWT Authentication**: Secure token-based authentication
-- **Role-Based Access Control (RBAC)**: Student, Instructor, Admin roles
-- **Input Validation**: Express-validator for request validation
-- **Password Hashing**: bcryptjs for secure password storage
-- **CORS Protection**: Configurable cross-origin resource sharing
-- **Environment Variables**: Secure configuration management
-
-## ⚡ Performance Features
-
-- **ACID Transactions**: Data consistency and integrity
-- **Connection Pooling**: Efficient database connection management
-- **Validation Middleware**: Early request validation
-- **Error Handling**: Comprehensive error management
-- **Logging**: Structured application logging
-
-## 📚 Documentation
-
-- [`MVC_ARCHITECTURE.md`](./MVC_ARCHITECTURE.md) - Detailed architecture documentation
-- [`MVC_REFACTOR_SUMMARY.md`](./MVC_REFACTOR_SUMMARY.md) - Refactoring summary and benefits
-- [`TASK3_ACID_TRANSACTIONS.md`](../TASK3_ACID_TRANSACTIONS.md) - ACID transaction implementation
-- [`legacy/README.md`](./legacy/README.md) - Legacy files documentation
-
-## 🚀 Development Workflow
-
-1. **Setup**: Follow Quick Start guide
-2. **Development**: Use `npm run dev` for auto-reload
-3. **Testing**: Run `npm test` before commits
-4. **Database**: Use `npm run seed` for test data
-5. **Validation**: Run `npm run validate-env` for config check
-
-## 🔍 Troubleshooting
-
-### Database Connection Issues
-
-```bash
-# Test local MongoDB
-npm run test-db
-
-# Test Atlas connection
-npm run test-atlas
-
-# Validate environment
-npm run validate-env
-```
-
-### Test Failures
-
-```bash
-# Run specific test types
-npm run test:integration
-npm run test:unit
-
-# Check coverage
-npm run test:coverage
-```
-
-### Legacy Migration
-
-Check `legacy/` folder for pre-refactor implementations and comparison.
-
-## 📞 Support
-
-For issues and questions:
-
-1. Check existing documentation in `/docs` folder
-2. Review test files for usage examples
-3. Examine legacy implementations for reference
-4. Check environment configuration
-
----
-
-## 📊 Project Status
-
-✅ **Completed Features**:
-
-- MVC Architecture Implementation
-- ACID Transaction Management
-- JWT Authentication & RBAC
-- Comprehensive Test Suite (85%+ coverage)
-- API Documentation
-
-🔄 **In Progress**:
-
-- Advanced Query Implementation (Task 5)
-- Query Optimization & Indexing (Task 6)
-- Extended Test Coverage
-
-🎯 **Future Enhancements**:
-
-- Real-time notifications
-- File upload management
-- Advanced analytics
-- Performance monitoring
-  ├── routes/ # API endpoints
-  ├── scripts/ # Database seeding
-  ├── utils/ # Development tools
-  └── server.js # Main server file
-
-```
-
-## Sample Users
-
-After running `npm run seed`, you can login with:
-
-- **Admin**: `admin@example.com` / `password123`
-- **Instructor**: `john.smith@example.com` / `password123`
-- **Student**: `alice.johnson@example.com` / `password123`
-
-## Troubleshooting
-
-### Database Connection Issues
-
-1. **Local MongoDB**: Ensure MongoDB is running (`mongod`)
-2. **MongoDB Atlas**: Check connection string and IP whitelist
-3. **Validation**: Run `npm run validate-env`
-
-### Common Problems
-
-- **Port in use**: Change `PORT` in `.env`
-- **JWT errors**: Ensure `JWT_SECRET` is set
-- **Connection timeout**: Check network and credentials
-
-For detailed configuration help, see project documentation.
-```
+- [`/config/README.md`](./config/README.md) - Database configuration
+- [`/controllers/README.md`](./controllers/README.md) - Controller documentation
+- [`/models/README.md`](./models/README.md) - Database schemas
+- [`/routes/README.md`](./routes/README.md) - API routes
+- [`/services/README.md`](./services/README.md) - Business logic
+- [`/tests/README.md`](./tests/README.md) - Testing guide
+- [`/utils/README.md`](./utils/README.md) - Utility functions

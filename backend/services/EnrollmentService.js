@@ -26,10 +26,10 @@ class EnrollmentService {
       .sort(sort)
       .populate({
         path: "course",
-        select: PopulateConfig.helpers.getCourseFields('detailed'),
+        select: PopulateConfig.helpers.getCourseFields("detailed"),
         populate: {
           path: "instructor",
-          select: PopulateConfig.helpers.getInstructorFields('student'),
+          select: PopulateConfig.helpers.getInstructorFields("student"),
         },
       })
       .lean();
@@ -49,10 +49,10 @@ class EnrollmentService {
         path: "course",
         populate: {
           path: "instructor",
-          select: PopulateConfig.helpers.getInstructorFields('student'),
+          select: PopulateConfig.helpers.getInstructorFields("student"),
         },
       })
-      .populate("student", PopulateConfig.helpers.getUserFields('student', 'detailed'))
+      .populate("student", PopulateConfig.helpers.getUserFields("student", "detailed"))
       .lean();
 
     if (!enrollment) {
@@ -100,7 +100,7 @@ class EnrollmentService {
         enrollment.status = "completed";
       }
       await enrollment.save({ session });
-      await enrollment.populate("course", PopulateConfig.helpers.getCourseFields('basic'));
+      await enrollment.populate("course", PopulateConfig.helpers.getCourseFields("basic"));
       return {
         enrollment: enrollment.toObject(),
         message: "Progress updated successfully",
@@ -117,9 +117,7 @@ class EnrollmentService {
    */
   static async submitReview(enrollmentId, reviewData, studentId) {
     return TransactionService.executeWithTransaction(async (session) => {
-      const enrollment = await Enrollment.findById(enrollmentId).session(
-        session
-      );
+      const enrollment = await Enrollment.findById(enrollmentId).session(session);
 
       if (!enrollment) {
         throw new Error("Enrollment not found");
@@ -161,9 +159,7 @@ class EnrollmentService {
       }).session(session);
 
       const totalReviews = allReviews.length;
-      const avgRating =
-        allReviews.reduce((sum, enr) => sum + enr.review.rating, 0) /
-        totalReviews;
+      const avgRating = allReviews.reduce((sum, enr) => sum + enr.review.rating, 0) / totalReviews;
 
       await Course.findByIdAndUpdate(
         enrollment.course,
@@ -175,7 +171,7 @@ class EnrollmentService {
       );
 
       // Populate for response
-      await enrollment.populate("course", PopulateConfig.helpers.getCourseFields('basic') + " rating");
+      await enrollment.populate("course", PopulateConfig.helpers.getCourseFields("basic") + " rating");
 
       return {
         enrollment: enrollment.toObject(),

@@ -15,6 +15,10 @@ class UserController {
    * Get all users (admin only)
    * @route GET /api/users
    * @access Private/Admin
+   * @param {Object} req - Express request object
+   * @param {Object} req.query - Query parameters for filtering users
+   * @param {Object} res - Express response object
+   * @returns {void} Sends a list response with user data or an error response
    */
   static async getUsers(req, res) {
     try {
@@ -29,6 +33,11 @@ class UserController {
    * Get user by ID
    * @route GET /api/users/:id
    * @access Private/Admin
+   * @param {Object} req - Express request object
+   * @param {Object} req.params - Request parameters
+   * @param {string} req.params.id - ID of the user to retrieve
+   * @param {Object} res - Express response object
+   * @returns {void} Sends a success response with user data or an error response
    */
   static async getUserById(req, res) {
     try {
@@ -43,6 +52,16 @@ class UserController {
    * Create new user (admin only)
    * @route POST /api/users
    * @access Private/Admin
+   * @param {Object} req - Express request object
+   * @param {Object} req.body - Request body
+   * @param {string} req.body.firstName - First name of the user
+   * @param {string} req.body.lastName - Last name of the user
+   * @param {string} req.body.email - Email address of the user
+   * @param {string} req.body.password - Password for the user
+   * @param {string} req.body.role - Role of the user (e.g., admin, instructor, student)
+   * @param {boolean} req.body.isActive - Whether the user is active
+   * @param {Object} res - Express response object
+   * @returns {void} Sends a created response with user data or an error response
    */
   static async createUser(req, res) {
     try {
@@ -59,6 +78,16 @@ class UserController {
    * Update user
    * @route PUT /api/users/:id
    * @access Private/Admin
+   * @param {Object} req - Express request object
+   * @param {Object} req.params - Request parameters
+   * @param {string} req.params.id - ID of the user to update
+   * @param {Object} req.body - Request body
+   * @param {string} [req.body.firstName] - Updated first name of the user
+   * @param {string} [req.body.lastName] - Updated last name of the user
+   * @param {string} [req.body.role] - Updated role of the user
+   * @param {boolean} [req.body.isActive] - Updated active status of the user
+   * @param {Object} res - Express response object
+   * @returns {void} Sends a success response with updated user data or an error response
    */
   static async updateUser(req, res) {
     try {
@@ -75,6 +104,11 @@ class UserController {
    * Delete user
    * @route DELETE /api/users/:id
    * @access Private/Admin
+   * @param {Object} req - Express request object
+   * @param {Object} req.params - Request parameters
+   * @param {string} req.params.id - ID of the user to delete
+   * @param {Object} res - Express response object
+   * @returns {void} Sends a success response or an error response
    */
   static async deleteUser(req, res) {
     try {
@@ -89,6 +123,11 @@ class UserController {
    * Get user statistics
    * @route GET /api/users/:id/stats
    * @access Private
+   * @param {Object} req - Express request object
+   * @param {Object} req.params - Request parameters
+   * @param {string} req.params.id - ID of the user to retrieve statistics for
+   * @param {Object} res - Express response object
+   * @returns {void} Sends a success response with user statistics data or an error response
    */
   static async getUserStats(req, res) {
     try {
@@ -103,6 +142,13 @@ class UserController {
    * Update user status
    * @route PATCH /api/users/:id/status
    * @access Private/Admin
+   * @param {Object} req - Express request object
+   * @param {Object} req.params - Request parameters
+   * @param {string} req.params.id - ID of the user to update status for
+   * @param {Object} req.body - Request body
+   * @param {boolean} req.body.isActive - Updated active status of the user
+   * @param {Object} res - Express response object
+   * @returns {void} Sends a success response with updated user status or an error response
    */
   static async updateUserStatus(req, res) {
     try {
@@ -118,6 +164,12 @@ class UserController {
    * Get user enrollments
    * @route GET /api/users/:id/enrollments
    * @access Private
+   * @param {Object} req - Express request object
+   * @param {Object} req.params - Request parameters
+   * @param {string} req.params.id - ID of the user to retrieve enrollments for
+   * @param {Object} req.query - Query parameters for filtering enrollments
+   * @param {Object} res - Express response object
+   * @returns {void} Sends a list response with user enrollments or an error response
    */
   static async getUserEnrollments(req, res) {
     try {
@@ -132,6 +184,10 @@ class UserController {
    * Get instructors
    * @route GET /api/users/instructors
    * @access Private/Admin
+   * @param {Object} req - Express request object
+   * @param {Object} req.query - Query parameters for filtering instructors
+   * @param {Object} res - Express response object
+   * @returns {void} Sends a list response with instructor data or an error response
    */
   static async getInstructors(req, res) {
     try {
@@ -146,6 +202,10 @@ class UserController {
    * Get students
    * @route GET /api/users/students
    * @access Private/Admin
+   * @param {Object} req - Express request object
+   * @param {Object} req.query - Query parameters for filtering students
+   * @param {Object} res - Express response object
+   * @returns {void} Sends a list response with student data or an error response
    */
   static async getStudents(req, res) {
     try {

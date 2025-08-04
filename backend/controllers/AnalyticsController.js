@@ -1,11 +1,26 @@
 const AnalyticsService = require("../services/AnalyticsService");
 const { handleErrorResponse, sendListResponse, sendSuccessResponse } = require("../utils/errorHandler");
 
+/**
+ * Controller for handling analytics-related operations.
+ * Provides methods to retrieve analytics data for courses, students, and instructors.
+ *
+ * @module AnalyticsController
+ */
+
 class AnalyticsController {
   /**
-   * Get top performing courses
-   * @route GET /api/analytics/top-courses
-   * @access Private (Admin/Instructor)
+   * Get top performing courses.
+   * Retrieves a list of courses with the highest performance metrics.
+   *
+   * @static
+   * @async
+   * @function getTopPerformingCourses
+   * @memberof AnalyticsController
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends a list of top performing courses in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getTopPerformingCourses(req, res) {
     try {
@@ -18,9 +33,17 @@ class AnalyticsController {
   }
 
   /**
-   * Get student progress analytics
-   * @route GET /api/analytics/student-progress
-   * @access Private (Admin/Instructor)
+   * Get student progress analytics.
+   * Retrieves analytics data related to student progress.
+   *
+   * @static
+   * @async
+   * @function getStudentProgressAnalytics
+   * @memberof AnalyticsController
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends student progress analytics data in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getStudentProgressAnalytics(req, res) {
     try {
@@ -33,9 +56,17 @@ class AnalyticsController {
   }
 
   /**
-   * Get instructor analytics
-   * @route GET /api/analytics/instructor-analytics
-   * @access Private (Admin)
+   * Get instructor analytics.
+   * Retrieves analytics data related to instructors.
+   *
+   * @static
+   * @async
+   * @function getInstructorAnalytics
+   * @memberof AnalyticsController
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends instructor analytics data in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getInstructorAnalytics(req, res) {
     try {
@@ -48,9 +79,17 @@ class AnalyticsController {
   }
 
   /**
-   * Get course completion trends
-   * @route GET /api/analytics/completion-trends
-   * @access Private (Admin/Instructor)
+   * Get course completion trends.
+   * Retrieves analytics data related to course completion trends.
+   *
+   * @static
+   * @async
+   * @function getCourseCompletionTrends
+   * @memberof AnalyticsController
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends course completion trends data in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getCourseCompletionTrends(req, res) {
     try {
@@ -63,9 +102,17 @@ class AnalyticsController {
   }
 
   /**
-   * Get exam performance analysis
-   * @route GET /api/analytics/exam-performance
-   * @access Private (Admin/Instructor)
+   * Get exam performance analysis.
+   * Retrieves analytics data related to exam performance.
+   *
+   * @static
+   * @async
+   * @function getExamPerformanceAnalysis
+   * @memberof AnalyticsController
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends exam performance analysis data in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getExamPerformanceAnalysis(req, res) {
     try {
@@ -78,9 +125,17 @@ class AnalyticsController {
   }
 
   /**
-   * Get platform overview statistics
-   * @route GET /api/analytics/platform-overview
-   * @access Private (Admin)
+   * Get platform overview statistics.
+   * Retrieves overall statistics and analytics for the platform.
+   *
+   * @static
+   * @async
+   * @function getPlatformOverview
+   * @memberof AnalyticsController
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends platform overview statistics in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getPlatformOverview(req, res) {
     try {
@@ -93,9 +148,17 @@ class AnalyticsController {
   }
 
   /**
-   * Get filtered analytics based on date range and criteria
-   * @route GET /api/analytics/filtered
-   * @access Private (Admin/Instructor)
+   * Get filtered analytics based on date range and criteria.
+   * Retrieves analytics data filtered by the specified date range and other criteria.
+   *
+   * @static
+   * @async
+   * @function getFilteredAnalytics
+   * @memberof AnalyticsController
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends filtered analytics data in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getFilteredAnalytics(req, res) {
     try {
@@ -115,9 +178,17 @@ class AnalyticsController {
   }
 
   /**
-   * Get instructor-specific enrollment data
-   * @route GET /api/analytics/instructor/enrollments
-   * @access Private (Instructor)
+   * Get instructor-specific enrollment data.
+   * Retrieves enrollment data for courses taught by the authenticated instructor.
+   *
+   * @static
+   * @async
+   * @function getInstructorEnrollments
+   * @memberof AnalyticsController
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends instructor-specific enrollment data in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getInstructorEnrollments(req, res) {
     try {
@@ -131,9 +202,17 @@ class AnalyticsController {
   }
 
   /**
-   * Get instructor dashboard overview
-   * @route GET /api/analytics/instructor/overview
-   * @access Private (Instructor)
+   * Get instructor dashboard overview.
+   * Retrieves overview statistics and analytics for the instructor's dashboard.
+   *
+   * @static
+   * @async
+   * @function getInstructorDashboardOverview
+   * @memberof AnalyticsController
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends instructor dashboard overview data in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getInstructorDashboardOverview(req, res) {
     try {
@@ -147,9 +226,17 @@ class AnalyticsController {
   }
 
   /**
-   * Get instructor's student progress analytics
-   * @route GET /api/analytics/instructor/student-progress
-   * @access Private (Instructor)
+   * Get instructor's student progress analytics.
+   * Retrieves student progress analytics data for the instructor's students.
+   *
+   * @static
+   * @async
+   * @function getInstructorStudentProgress
+   * @memberof AnalyticsController
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends instructor's student progress analytics data in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getInstructorStudentProgress(req, res) {
     try {

@@ -7,19 +7,39 @@ const {
 } = require("../utils/errorHandler");
 
 /**
+ * Controller for handling course-related operations.
+ * Provides methods for retrieving, creating, updating, and deleting courses.
+ *
+ * @module CourseController
+ */
+
+/**
  * Course Controller - Handles HTTP requests for course operations (aligned with simplified models)
  */
 class CourseController {
   /**
-   * Get all courses with filtering
-   * @route GET /api/courses
-   * @access Public
+   * Get all courses with filtering.
+   * Retrieves a paginated list of courses, optionally filtered by category, level, search, instructor, and sorted.
+   *
+   * @static
+   * @async
+   * @function getCourses
+   * @memberof CourseController
+   * @param {Object} req - Express request object.
+   * @param {Object} req.query - Query parameters for filtering and pagination.
+   * @param {string} [req.query.category] - Filter by course category.
+   * @param {string} [req.query.level] - Filter by course level.
+   * @param {string} [req.query.search] - Search term for course title/description.
+   * @param {string} [req.query.instructor] - Filter by instructor ID.
+   * @param {string} [req.query.sortBy="createdAt"] - Field to sort by.
+   * @param {string} [req.query.sortOrder="desc"] - Sort order (asc/desc).
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends a list of courses and total count in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getCourses(req, res) {
     try {
       const options = {
-        page: parseInt(req.query.page) || 1,
-        limit: parseInt(req.query.limit) || 10,
         category: req.query.category,
         level: req.query.level,
         search: req.query.search,
@@ -28,16 +48,28 @@ class CourseController {
         sortOrder: req.query.sortOrder || "desc",
       };
       const result = await CourseService.getCourses(options);
-      return sendListResponse(res, result.courses, "Courses retrieved successfully", 200, result.total);
+      return sendListResponse(res, result.courses, "Courses retrieved successfully");
     } catch (error) {
       handleErrorResponse(error, res, "Failed to retrieve courses");
     }
   }
 
   /**
-   * Get course by ID
-   * @route GET /api/courses/:id
-   * @access Public
+   * Get course by ID.
+   * Retrieves a single course by its ID, optionally including user context.
+   *
+   * @static
+   * @async
+   * @function getCourseById
+   * @memberof CourseController
+   * @param {Object} req - Express request object.
+   * @param {Object} req.params - Route parameters.
+   * @param {string} req.params.id - Course ID.
+   * @param {Object} req.user - Authenticated user object (optional).
+   * @param {string} [req.user.id] - User ID (optional).
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>} Sends the course details in the response.
+   * @throws {Error} If retrieval fails.
    */
   static async getCourseById(req, res) {
     try {

@@ -7,7 +7,12 @@ const PopulateConfig = require("../config/populateConfig");
 
 class ExamService {
   /**
-   * Get exams for a course
+   * Retrieve exams for a specific course based on user role.
+   * @param {string} courseId - ID of the course to fetch exams for.
+   * @param {string} userId - ID of the requesting user.
+   * @param {string} userRole - Role of the requesting user (student, instructor, admin).
+   * @returns {Promise<Array<Object>>} List of exam documents.
+   * @throws {Error} If courseId missing, course not found, access denied, or other errors.
    */
   static async getExams(courseId, userId, userRole) {
     if (!courseId) {
@@ -18,7 +23,7 @@ class ExamService {
     if (!course) {
       throw new Error("Course not found");
     }
-    // 权限判断
+    // Check user role and permissions
     if (userRole === "student") {
       const enrollment = await Enrollment.findOne({
         student: userId,
@@ -28,52 +33,68 @@ class ExamService {
       if (!enrollment) {
         throw new Error("You must be enrolled in this course to view exams");
       }
-      // 只返回已发布的考试
-      return await Exam.find({ 
-        course: courseId, 
+      // Only return published exams
+      return await Exam.find({
+        course: courseId,
         isPublished: true,
-        isActive: true 
-      }).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
+        isActive: true,
+      }).populate("course", PopulateConfig.helpers.getCourseFields("basic") + " instructor");
     } else if (userRole === "instructor") {
       if (course.instructor.toString() !== userId) {
         throw new Error("Access denied. You can only view exams for your own courses.");
       }
-      return await Exam.find({ course: courseId }).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
+      return await Exam.find({ course: courseId }).populate(
+        "course",
+        PopulateConfig.helpers.getCourseFields("basic") + " instructor"
+      );
     } else if (userRole === "admin") {
-      return await Exam.find({ course: courseId }).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
+      return await Exam.find({ course: courseId }).populate(
+        "course",
+        PopulateConfig.helpers.getCourseFields("basic") + " instructor"
+      );
     }
     throw new Error("Access denied");
   }
 
   /**
-   * Get all exams for student (across all enrolled courses)
+   * Retrieve all published exams for a student across enrolled courses.
+   * @param {string} userId - ID of the student user.
+   * @returns {Promise<Array<Object>>} List of published exam documents.
    */
   static async getAllExamsForStudent(userId) {
     // Get all enrollments for the student
     const enrollments = await Enrollment.find({
       student: userId,
       status: { $in: ["enrolled", "in-progress", "completed"] },
-    }).populate("course", PopulateConfig.helpers.getCourseFields('basic'));
+    }).populate("course", PopulateConfig.helpers.getCourseFields("basic"));
 
-    const courseIds = enrollments.map(enrollment => enrollment.course._id);
-    
+    const courseIds = enrollments.map((enrollment) => enrollment.course._id);
+
     // Get all published exams for enrolled courses
     return await Exam.find({
       course: { $in: courseIds },
       isPublished: true,
-      isActive: true
-    }).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
+      isActive: true,
+    }).populate("course", PopulateConfig.helpers.getCourseFields("basic") + " instructor");
   }
 
   /**
-   * Get exam by ID
+   * Get a specific exam by ID with access control.
+   * @param {string} examId - ID of the exam to retrieve.
+   * @param {string} userId - ID of the requesting user.
+   * @param {string} userRole - Role of the requesting user (student, instructor, admin).
+   * @returns {Promise<Object>} Exam document.
+   * @throws {Error} If exam not found, not enrolled, not published, or access denied.
    */
   static async getExamById(examId, userId, userRole) {
-    const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
+    const exam = await Exam.findById(examId).populate(
+      "course",
+      PopulateConfig.helpers.getCourseFields("basic") + " instructor"
+    );
     if (!exam) {
       throw new Error("Exam not found");
     }
-    // 权限判断
+    // Check user role and permissions
     if (userRole === "student") {
       const enrollment = await Enrollment.findOne({
         student: userId,
@@ -99,11 +120,18 @@ class ExamService {
   }
 
   /**
-   * Submit exam answers
+   * Submit answers for an exam and calculate results.
+   * @param {string} examId - ID of the exam being submitted.
+   * @param {Object} answers - Key-value map of question IDs to student answers.
+   * @param {string} userId - ID of the student submitting the exam.
+   * @returns {Promise<Object>} Exam result object including score, percentage, and question results.
+   * @throws {Error} If exam not found, not enrolled, not published, or time constraints violated.
    */
   static async submitExam(examId, answers, userId) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic')).session(session);
+      const exam = await Exam.findById(examId)
+        .populate("course", PopulateConfig.helpers.getCourseFields("basic"))
+        .session(session);
       if (!exam) {
         throw new Error("Exam not found");
       }
@@ -114,7 +142,7 @@ class ExamService {
         course: exam.course._id,
         status: { $in: ["enrolled", "in-progress", "completed"] },
       }).session(session);
-      
+
       if (!enrollment) {
         throw new Error("You must be enrolled in this course to take this exam");
       }
@@ -139,7 +167,7 @@ class ExamService {
       exam.questions.forEach((question, index) => {
         const studentAnswer = answers[question._id];
         const isCorrect = studentAnswer === question.correctAnswer;
-        
+
         if (isCorrect) {
           score += question.points;
         }
@@ -150,7 +178,7 @@ class ExamService {
           correctAnswer: question.correctAnswer,
           yourAnswer: studentAnswer,
           correct: isCorrect,
-          points: question.points
+          points: question.points,
         });
       });
 
@@ -167,7 +195,7 @@ class ExamService {
         answers: answers,
         questionResults: questionResults,
         submittedAt: now,
-        timeTaken: 0 // You can calculate this if you track start time
+        timeTaken: 0, // You can calculate this if you track start time
       };
 
       // For now, we'll return the result directly
@@ -177,10 +205,14 @@ class ExamService {
   }
 
   /**
-   * Get exam results for a student
+   * Get exam results for a specific student.
+   * @param {string} examId - ID of the exam.
+   * @param {string} userId - ID of the student.
+   * @returns {Promise<Object>} Exam result object or mock data.
+   * @throws {Error} If exam not found or student not enrolled.
    */
   static async getExamResults(examId, userId) {
-    const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic'));
+    const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields("basic"));
     if (!exam) {
       throw new Error("Exam not found");
     }
@@ -191,7 +223,7 @@ class ExamService {
       course: exam.course._id,
       status: { $in: ["enrolled", "in-progress"] },
     });
-    
+
     if (!enrollment) {
       throw new Error("You must be enrolled in this course to view results");
     }
@@ -204,42 +236,48 @@ class ExamService {
       totalPoints: exam.totalPoints,
       percentage: 0,
       submittedAt: new Date(),
-      timeTaken: "N/A"
+      timeTaken: "N/A",
     };
   }
 
   /**
-   * Get all exam results for a student
+   * Retrieve all exam results for a student across courses.
+   * @param {string} userId - ID of the student.
+   * @returns {Promise<Array<Object>>} List of exam result objects (mock implementation).
    */
   static async getAllExamResults(userId) {
     // Get all enrollments for the student
     const enrollments = await Enrollment.find({
       student: userId,
       status: { $in: ["enrolled", "in-progress"] },
-    }).populate("course", PopulateConfig.helpers.getCourseFields('basic'));
+    }).populate("course", PopulateConfig.helpers.getCourseFields("basic"));
 
-    const courseIds = enrollments.map(enrollment => enrollment.course._id);
-    
+    const courseIds = enrollments.map((enrollment) => enrollment.course._id);
+
     // Get all exams for enrolled courses
     const exams = await Exam.find({
       course: { $in: courseIds },
-      isPublished: true
-    }).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
+      isPublished: true,
+    }).populate("course", PopulateConfig.helpers.getCourseFields("basic") + " instructor");
 
     // For now, return mock results
     // In a real implementation, you'd fetch from ExamResult collection
-    return exams.map(exam => ({
+    return exams.map((exam) => ({
       exam: exam,
       score: 0,
       totalPoints: exam.totalPoints,
       percentage: 0,
       submittedAt: new Date(),
-      timeTaken: "N/A"
+      timeTaken: "N/A",
     }));
   }
 
   /**
-   * Create a new exam
+   * Create a new exam under an instructor's course.
+   * @param {Object} examData - Exam details including title, description, type, questions, and schedule.
+   * @param {string} instructorId - ID of the instructor creating the exam.
+   * @returns {Promise<Object>} Created exam document.
+   * @throws {Error} If validation fails or instructor unauthorized.
    */
   static async createExam(examData, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
@@ -251,7 +289,7 @@ class ExamService {
       if (course.instructor.toString() !== instructorId) {
         throw new Error("You can only create exams for your own courses");
       }
-      
+
       // Validate exam data
       if (!examData.title || examData.title.length < 5) {
         throw new Error("Exam title must be at least 5 characters long");
@@ -280,27 +318,34 @@ class ExamService {
         isActive: examData.isActive !== false,
         allowRetake: examData.allowRetake || false,
         maxAttempts: examData.maxAttempts || 1,
-        instructions: examData.instructions || ""
+        instructions: examData.instructions || "",
       });
-      
+
       await exam.save({ session });
       return exam;
     });
   }
 
   /**
-   * Update an exam
+   * Update an existing exam's details.
+   * @param {string} examId - ID of the exam to update.
+   * @param {Object} updateData - Fields to update on the exam.
+   * @param {string} instructorId - ID of the instructor updating the exam.
+   * @returns {Promise<Object>} Updated exam document.
+   * @throws {Error} If exam not found, validation fails, or unauthorized.
    */
   static async updateExam(examId, updateData, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor").session(session);
+      const exam = await Exam.findById(examId)
+        .populate("course", PopulateConfig.helpers.getCourseFields("basic") + " instructor")
+        .session(session);
       if (!exam) {
         throw new Error("Exam not found");
       }
       if (exam.course.instructor.toString() !== instructorId) {
         throw new Error("You can only update your own exams");
       }
-      
+
       if (updateData.title && updateData.title.length < 5) {
         throw new Error("Exam title must be at least 5 characters long");
       }
@@ -310,7 +355,7 @@ class ExamService {
       if (updateData.type && !["quiz", "midterm", "final", "assignment"].includes(updateData.type)) {
         throw new Error("Invalid exam type");
       }
-      
+
       Object.assign(exam, updateData);
       await exam.save({ session });
       return exam;
@@ -318,11 +363,17 @@ class ExamService {
   }
 
   /**
-   * Delete an exam
+   * Delete an exam owned by an instructor.
+   * @param {string} examId - ID of the exam to delete.
+   * @param {string} instructorId - ID of the instructor requesting deletion.
+   * @returns {Promise<Object>} Message confirming deletion.
+   * @throws {Error} If exam not found or unauthorized.
    */
   static async deleteExam(examId, instructorId) {
     return await TransactionService.executeWithTransaction(async (session) => {
-      const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor").session(session);
+      const exam = await Exam.findById(examId)
+        .populate("course", PopulateConfig.helpers.getCourseFields("basic") + " instructor")
+        .session(session);
       if (!exam) {
         throw new Error("Exam not found");
       }
@@ -335,10 +386,17 @@ class ExamService {
   }
 
   /**
-   * Get exam statistics
+   * Get basic exam statistics for an instructor.
+   * @param {string} examId - ID of the exam to analyze.
+   * @param {string} instructorId - ID of the instructor requesting stats.
+   * @returns {Promise<Object>} Statistics including total students, average, highest, and lowest scores.
+   * @throws {Error} If exam not found or unauthorized.
    */
   static async getExamStats(examId, instructorId) {
-    const exam = await Exam.findById(examId).populate("course", PopulateConfig.helpers.getCourseFields('basic') + " instructor");
+    const exam = await Exam.findById(examId).populate(
+      "course",
+      PopulateConfig.helpers.getCourseFields("basic") + " instructor"
+    );
     if (!exam) {
       throw new Error("Exam not found");
     }
@@ -354,7 +412,7 @@ class ExamService {
       averageScore: 0,
       highestScore: 0,
       lowestScore: 0,
-      completionRate: 0
+      completionRate: 0,
     };
   }
 }

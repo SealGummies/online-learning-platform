@@ -7,7 +7,11 @@ const PasswordConfig = require("../config/passwordConfig");
 
 class AuthService {
   /**
-   * Generate JWT token
+   * Generate a JWT token for authentication.
+   * @param {Object|string} userData - User object or user ID.
+   * @param {string} [userData.email] - Email of the user (if object provided).
+   * @param {string} [userData.role] - Role of the user (if object provided).
+   * @returns {string} Signed JWT token.
    */
   static generateToken(userData) {
     // Handle both userId string and user object for backward compatibility
@@ -25,7 +29,15 @@ class AuthService {
   }
 
   /**
-   * Register a new user
+   * Register a new user and return user data with auth token.
+   * @param {Object} userData - Registration data.
+   * @param {string} userData.firstName - First name of the user.
+   * @param {string} userData.lastName - Last name of the user.
+   * @param {string} userData.email - User's email address.
+   * @param {string} userData.password - User's password.
+   * @param {string} [userData.role="student"] - Role assigned to the user.
+   * @returns {Promise<Object>} Object containing registered user data and JWT token.
+   * @throws {Error} If registration fails due to validation or existing user.
    */
   static async register(userData) {
     return await TransactionService.executeWithTransaction(async (session) => {
@@ -72,7 +84,11 @@ class AuthService {
   }
 
   /**
-   * Login user
+   * Authenticate a user and return user data with auth token.
+   * @param {string} email - User's email address.
+   * @param {string} password - User's password.
+   * @returns {Promise<Object>} Object containing authenticated user data and JWT token.
+   * @throws {Error} If credentials are invalid or account inactive.
    */
   static async login(email, password) {
     if (!email || !password) {
@@ -117,7 +133,10 @@ class AuthService {
   }
 
   /**
-   * Get current user profile
+   * Retrieve the current user's profile by ID.
+   * @param {string} userId - ID of the user to fetch.
+   * @returns {Promise<Object>} User profile data without sensitive fields.
+   * @throws {Error} If user not found or inactive.
    */
   static async getCurrentUser(userId) {
     const user = await User.findById(userId).select("-password");
@@ -133,7 +152,13 @@ class AuthService {
   }
 
   /**
-   * Update user profile
+   * Update the authenticated user's profile details.
+   * @param {string} userId - ID of the user to update.
+   * @param {Object} updateData - Data fields to update.
+   * @param {string} [updateData.firstName] - Updated first name.
+   * @param {string} [updateData.lastName] - Updated last name.
+   * @returns {Promise<Object>} Updated user profile data without password.
+   * @throws {Error} If validation fails or user not found.
    */
   static async updateProfile(userId, updateData) {
     return await TransactionService.executeWithTransaction(async (session) => {
@@ -173,7 +198,12 @@ class AuthService {
   }
 
   /**
-   * Change password
+   * Change the user's password after verifying current password.
+   * @param {string} userId - ID of the user to update password for.
+   * @param {string|Object} currentPasswordOrObj - Current password or object with currentPassword and newPassword.
+   * @param {string} [newPassword] - New password if using string parameters.
+   * @returns {Promise<Object>} Success message.
+   * @throws {Error} If validation fails, current password incorrect, or user not found.
    */
   static async changePassword(userId, currentPasswordOrObj, newPassword) {
     // Handle both parameter formats for backward compatibility
@@ -226,7 +256,9 @@ class AuthService {
   }
 
   /**
-   * Forgot password (generate reset token)
+   * Generate a password reset token and update user record.
+   * @param {string} email - Email address of the account to reset.
+   * @returns {Promise<Object>} Message indicating reset instructions delivery.
    */
   static async forgotPassword(email) {
     return await TransactionService.executeWithTransaction(async (session) => {
@@ -261,7 +293,11 @@ class AuthService {
   }
 
   /**
-   * Reset password using token
+   * Reset a user's password using a valid reset token.
+   * @param {string} token - Password reset token provided to the user.
+   * @param {string} newPassword - New password to set.
+   * @returns {Promise<Object>} Message indicating successful password reset.
+   * @throws {Error} If token is invalid/expired or validation fails.
    */
   static async resetPassword(token, newPassword) {
     return await TransactionService.executeWithTransaction(async (session) => {
@@ -298,7 +334,10 @@ class AuthService {
   }
 
   /**
-   * Verify JWT token
+   * Verify a JWT token and retrieve the associated user.
+   * @param {string} token - JWT token to verify.
+   * @returns {Promise<Object>} Authenticated user data without sensitive fields.
+   * @throws {Error} If token is invalid, expired, or user inactive.
    */
   static async verifyToken(token) {
     try {
@@ -316,7 +355,9 @@ class AuthService {
   }
 
   /**
-   * Logout user (invalidate token - for future token blacklisting)
+   * Logout a user (placeholder for future token blacklisting).
+   * @param {string} token - JWT token to invalidate (future use).
+   * @returns {Promise<Object>} Message indicating successful logout.
    */
   static async logout(token) {
     // TODO: Implement token blacklisting if needed
@@ -325,21 +366,28 @@ class AuthService {
   }
 
   /**
-   * Hash password using bcrypt
+   * Hash a password string using bcrypt.
+   * @param {string} password - Plain text password to hash.
+   * @returns {Promise<string>} Hashed password string.
    */
   static async hashPassword(password) {
     return await PasswordConfig.hashPassword(password);
   }
 
   /**
-   * Validate password against hash
+   * Compare a plain text password against its hashed version.
+   * @param {string} password - Plain text password to verify.
+   * @param {string} hashedPassword - Bcrypt hashed password.
+   * @returns {Promise<boolean>} True if passwords match, false otherwise.
    */
   static async validatePassword(password, hashedPassword) {
     return await PasswordConfig.comparePassword(password, hashedPassword);
   }
 
   /**
-   * Register user alias for test compatibility
+   * Alias for register method to support test compatibility.
+   * @param {Object} userData - Registration data (see register).
+   * @returns {Promise<Object>} Result including user data and token.
    */
   static async registerUser(userData) {
     const result = await this.register(userData);
@@ -351,7 +399,10 @@ class AuthService {
   }
 
   /**
-   * Login user alias for test compatibility
+   * Alias for login method to support test compatibility.
+   * @param {string} email - User's email address.
+   * @param {string} password - User's password.
+   * @returns {Promise<Object>} Result including user data and token.
    */
   static async loginUser(email, password) {
     const result = await this.login(email, password);
