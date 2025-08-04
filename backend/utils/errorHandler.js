@@ -101,28 +101,19 @@ const sendSuccessResponse = (res, data, message = "Operation successful", status
 };
 
 /**
- * Standardized success response for list/collection data
+ * Send formatted list response
  * @param {Object} res - Express response object
  * @param {Array} data - Response data array
  * @param {String} message - Success message
  * @param {Number} statusCode - HTTP status code (default: 200)
  * @param {Number} total - Total count of items
- * @param {Object} pagination - Pagination metadata
  */
-const sendListResponse = (
-  res,
-  data,
-  message = "Data retrieved successfully",
-  statusCode = 200,
-  total = null,
-  pagination = {}
-) => {
+const sendListResponse = (res, data, message = "Data retrieved successfully", statusCode = 200, total = null) => {
   const response = {
     success: true,
     message,
     data,
     total: total !== null ? total : Array.isArray(data) ? data.length : 0,
-    ...pagination,
   };
 
   return res.status(statusCode).json(response);

@@ -48,13 +48,9 @@ class UserService {
   }
 
   /**
-   * Get all users with pagination and filtering
+   * Get all users with filtering
    */
   static async getUsers(queryParams) {
-    const page = parseInt(queryParams.page) || 1;
-    const limit = parseInt(queryParams.limit) || 10;
-    const skip = (page - 1) * limit;
-
     // Build query
     const query = {};
     if (queryParams.role) query.role = queryParams.role;
@@ -69,20 +65,15 @@ class UserService {
       ];
     }
 
-    // Get users with pagination
-    const users = await User.find(query).select("-password").sort({ createdAt: -1 }).skip(skip).limit(limit);
+    // Get users without pagination
+    const users = await User.find(query).select("-password").sort({ createdAt: -1 });
 
-    // Get total count for pagination
+    // Get total count
     const total = await User.countDocuments(query);
 
     return {
       users,
-      pagination: {
-        current: page,
-        pages: Math.ceil(total / limit),
-        total,
-        limit,
-      },
+      total,
     };
   }
 

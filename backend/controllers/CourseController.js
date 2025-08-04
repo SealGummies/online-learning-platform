@@ -11,7 +11,7 @@ const {
  */
 class CourseController {
   /**
-   * Get all courses with filtering and pagination
+   * Get all courses with filtering
    * @route GET /api/courses
    * @access Public
    */
@@ -28,14 +28,7 @@ class CourseController {
         sortOrder: req.query.sortOrder || "desc",
       };
       const result = await CourseService.getCourses(options);
-      return sendListResponse(
-        res,
-        result.courses,
-        "Courses retrieved successfully",
-        200,
-        result.pagination.total,
-        result.pagination
-      );
+      return sendListResponse(res, result.courses, "Courses retrieved successfully", 200, result.total);
     } catch (error) {
       handleErrorResponse(error, res, "Failed to retrieve courses");
     }
@@ -160,14 +153,7 @@ class CourseController {
         instructor: instructorId,
       };
       const result = await CourseService.getCourses(options);
-      return sendListResponse(
-        res,
-        result.courses,
-        "Instructor courses retrieved successfully",
-        200,
-        result.pagination.total,
-        result.pagination
-      );
+      return sendListResponse(res, result.courses, "Instructor courses retrieved successfully", 200, result.total);
     } catch (error) {
       handleErrorResponse(error, res, "Failed to retrieve instructor courses");
     }

@@ -19,7 +19,7 @@ class UserController {
   static async getUsers(req, res) {
     try {
       const result = await UserService.getUsers(req.query);
-      sendListResponse(res, result.users, "Users retrieved successfully", 200, result.users.length, result.pagination);
+      sendListResponse(res, result.users, "Users retrieved successfully", 200, result.total);
     } catch (error) {
       handleErrorResponse(error, res, "Failed to retrieve users");
     }

@@ -8,21 +8,12 @@ const mongoose = require("mongoose");
  */
 class CourseService {
   /**
-   * Get all courses with pagination and filtering
+   * Get all courses with filtering
    * @param {Object} options - Query options
-   * @returns {Promise<Object>} Courses with pagination info
+   * @returns {Promise<Object>} Courses with filtering info
    */
   static async getCourses(options = {}) {
-    const {
-      page = 1,
-      limit = 10,
-      category,
-      level,
-      search,
-      instructor,
-      sortBy = "createdAt",
-      sortOrder = "desc",
-    } = options;
+    const { category, level, search, instructor, sortBy = "createdAt", sortOrder = "desc" } = options;
 
     const query = {};
 
@@ -31,34 +22,19 @@ class CourseService {
     if (level) query.level = level;
     if (instructor) query.instructor = instructor;
     if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
+      query.$or = [{ title: { $regex: search, $options: "i" } }, { description: { $regex: search, $options: "i" } }];
     }
 
-    const skip = (page - 1) * limit;
     const sort = { [sortBy]: sortOrder === "desc" ? -1 : 1 };
 
     const [courses, total] = await Promise.all([
-      Course.find(query)
-        .sort(sort)
-        .skip(skip)
-        .limit(parseInt(limit))
-        .populate("instructor", "firstName lastName email")
-        .lean(),
+      Course.find(query).sort(sort).populate("instructor", "firstName lastName email").lean(),
       Course.countDocuments(query),
     ]);
 
     return {
       courses,
-      pagination: {
-        current: parseInt(page),
-        pages: Math.ceil(total / limit),
-        total,
-        hasNext: page * limit < total,
-        hasPrev: page > 1,
-      },
+      total,
     };
   }
 
@@ -69,9 +45,7 @@ class CourseService {
    * @returns {Promise<Object>} Course with additional info
    */
   static async getCourseById(courseId, userId = null) {
-    const course = await Course.findById(courseId)
-      .populate("instructor", "firstName lastName email")
-      .lean();
+    const course = await Course.findById(courseId).populate("instructor", "firstName lastName email").lean();
 
     if (!course) {
       throw new Error("Course not found");
@@ -99,12 +73,12 @@ class CourseService {
    */
   static async enrollStudent(courseId, userId) {
     return TransactionService.executeWithTransaction(async (session) => {
-      // Check if course exists且激活
+      // Check if course exists and is active
       const course = await Course.findById(courseId).session(session);
       if (!course || !course.isActive) {
         throw new Error("Course not found or inactive");
       }
-      // 检查是否已报名
+      // Check if already enrolled
       const existingEnrollment = await Enrollment.findOne({
         course: courseId,
         student: userId,
@@ -193,7 +167,7 @@ class CourseService {
         throw new Error("Not authorized to delete this course");
       }
 
-      // 检查是否有在读报名
+      // Check if there are active enrollments
       const activeEnrollments = await Enrollment.countDocuments({
         course: courseId,
         status: { $in: ["enrolled", "in-progress"] },
@@ -251,10 +225,7 @@ class CourseService {
         };
         return acc;
       }, {}),
-      totalEnrollments: enrollmentStats.reduce(
-        (sum, stat) => sum + stat.count,
-        0
-      ),
+      totalEnrollments: enrollmentStats.reduce((sum, stat) => sum + stat.count, 0),
     };
     return stats;
   }
