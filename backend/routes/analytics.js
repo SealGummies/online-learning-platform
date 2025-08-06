@@ -3,6 +3,27 @@ const AnalyticsController = require("../controllers/AnalyticsController");
 const { protect } = require("../middleware/auth");
 
 const router = express.Router();
+  // -------------------- Admin / Platform Analytics --------------------
+
+/**
+ * @route   GET /api/analytics/platform-overview
+ * @desc    Get overall platform statistics and overview
+ * @access  Private (Admin)
+ * @param   {import('express').Request} req - Express request object
+ * @param   {import('express').Response} res - Express response object
+ * @returns {void} Sends JSON response with platform overview data
+ */
+router.get("/platform-overview", protect, AnalyticsController.getPlatformOverview);
+
+/**
+ * @route   GET /api/analytics/instructor-analytics
+ * @desc    Get instructor teaching analytics and performance
+ * @access  Private (Admin)
+ * @param   {import('express').Request} req - Express request object
+ * @param   {import('express').Response} res - Express response object
+ * @returns {void} Sends JSON response with instructor analytics data
+ */
+router.get("/instructor-analytics", protect, AnalyticsController.getInstructorAnalytics);
 
 /**
  * @route   GET /api/analytics/top-courses
@@ -24,15 +45,6 @@ router.get("/top-courses", protect, AnalyticsController.getTopPerformingCourses)
  */
 router.get("/student-progress", protect, AnalyticsController.getStudentProgressAnalytics);
 
-/**
- * @route   GET /api/analytics/instructor-analytics
- * @desc    Get instructor teaching analytics and performance
- * @access  Private (Admin)
- * @param   {import('express').Request} req - Express request object
- * @param   {import('express').Response} res - Express response object
- * @returns {void} Sends JSON response with instructor analytics data
- */
-router.get("/instructor-analytics", protect, AnalyticsController.getInstructorAnalytics);
 
 /**
  * @route   GET /api/analytics/completion-trends
@@ -54,15 +66,7 @@ router.get("/completion-trends", protect, AnalyticsController.getCourseCompletio
  */
 router.get("/exam-performance", protect, AnalyticsController.getExamPerformanceAnalysis);
 
-/**
- * @route   GET /api/analytics/platform-overview
- * @desc    Get overall platform statistics and overview
- * @access  Private (Admin)
- * @param   {import('express').Request} req - Express request object
- * @param   {import('express').Response} res - Express response object
- * @returns {void} Sends JSON response with platform overview data
- */
-router.get("/platform-overview", protect, AnalyticsController.getPlatformOverview);
+  // -------------------- Student Analytics --------------------
 
 /**
  * @route   GET /api/analytics/filtered

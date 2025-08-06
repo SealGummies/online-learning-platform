@@ -68,7 +68,7 @@ class ExamService {
       status: { $in: ["enrolled", "in-progress", "completed"] },
     }).populate("course", PopulateConfig.helpers.getCourseFields("basic"));
 
-    const courseIds = enrollments.map((enrollment) => enrollment.course._id);
+    const courseIds = enrollments.map((enrollment) => enrollment.course?._id).filter(Boolean);
 
     // Get all published exams for enrolled courses
     return await Exam.find({
